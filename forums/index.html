@@ -31,6 +31,13 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <div id="headerMember" class="site-header__member" hidden>
+              <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
+              <div>
+                <div id="headerMemberName" class="site-header__member-name"></div>
+                <div id="headerMemberEmail" class="site-header__member-email"></div>
+              </div>
+            </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -146,10 +153,12 @@
           photoData = await readFileAsDataUrl(photoFile);
         }
 
+        const currentMember = getCurrentMember();
         publicThreads.unshift({
           id: `public-${Date.now()}`,
           title,
-          author: 'Guest',
+          author: currentMember ? currentMember.name : 'Guest',
+          avatar: currentMember ? currentMember.avatar || '' : '',
           body: message,
           photo: photoData,
           replies: []
@@ -158,6 +167,11 @@
         publicForm.reset();
         renderThreads();
       }
+
+      const headerMember = document.getElementById('headerMember');
+      const headerMemberAvatar = document.getElementById('headerMemberAvatar');
+      const headerMemberName = document.getElementById('headerMemberName');
+      const headerMemberEmail = document.getElementById('headerMemberEmail');
 
       function getCurrentMember() {
         const stored = localStorage.getItem('theChosenCurrentMember');
@@ -174,7 +188,8 @@
           const member = {
             id: user.id || user.email,
             name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
           };
           localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
           return member;
@@ -200,13 +215,32 @@
         localStorage.setItem(MEMBER_THREADS_STORAGE_KEY, JSON.stringify(threads));
       }
 
+      function renderMemberBadge(member) {
+        if (!member) {
+          headerMember.hidden = true;
+          return;
+        }
+
+        headerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        headerMemberAvatar.alt = `${member.name || member.email} avatar`;
+        headerMemberName.textContent = member.name || member.email;
+        headerMemberEmail.textContent = member.email || 'Netlify member';
+        headerMember.hidden = false;
+      }
+
       function renderThreads() {
+        const currentMember = getCurrentMember();
+        renderMemberBadge(currentMember);
+
         publicThreadList.innerHTML = publicThreads.map((thread) => `
           <article class="panel forum-thread">
             <div class="forum-thread__header">
               <div>
                 <h3 class="forum-thread__title">${thread.title}</h3>
-                <p class="forum-thread__meta">Posted by <strong>${thread.author}</strong></p>
+                <div class="forum-thread__author">
+                  <img class="forum-thread__author-avatar" src="${thread.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(thread.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${thread.author} avatar" />
+                  <span class="forum-thread__author-name">${thread.author}</span>
+                </div>
               </div>
               <span class="forum-badge">Public</span>
             </div>
@@ -225,7 +259,6 @@
           </article>
         `).join('');
 
-        const currentMember = getCurrentMember();
         if (currentMember) {
           memberGate.hidden = true;
           memberForm.hidden = false;
@@ -235,7 +268,10 @@
               <div class="forum-thread__header">
                 <div>
                   <h3 class="forum-thread__title">${thread.title}</h3>
-                  <p class="forum-thread__meta">Posted by <strong>${thread.author}</strong></p>
+                  <div class="forum-thread__author">
+                    <img class="forum-thread__author-avatar" src="${thread.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(thread.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${thread.author} avatar" />
+                    <span class="forum-thread__author-name">${thread.author}</span>
+                  </div>
                 </div>
                 <span class="forum-badge forum-badge--member">Members</span>
               </div>
@@ -268,6 +304,7 @@
           id: `member-${Date.now()}`,
           title,
           author: currentMember.name,
+          avatar: currentMember.avatar || '',
           body
         });
         writeMemberThreads(memberThreads);

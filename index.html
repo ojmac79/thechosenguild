@@ -35,6 +35,13 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <div id="headerMember" class="site-header__member" hidden>
+              <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
+              <div>
+                <div id="headerMemberName" class="site-header__member-name"></div>
+                <div id="headerMemberEmail" class="site-header__member-email"></div>
+              </div>
+            </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -131,6 +138,10 @@
       const newsNotice = document.getElementById('newsNotice');
       const newPostButton = document.getElementById('newPostButton');
       const cancelNewsEdit = document.getElementById('cancelNewsEdit');
+      const headerMember = document.getElementById('headerMember');
+      const headerMemberAvatar = document.getElementById('headerMemberAvatar');
+      const headerMemberName = document.getElementById('headerMemberName');
+      const headerMemberEmail = document.getElementById('headerMemberEmail');
       let editingPostId = null;
 
       function readCurrentMember() {
@@ -148,7 +159,8 @@
           const member = {
             id: user.id || user.email,
             name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
           };
           localStorage.setItem(CURRENT_MEMBER_STORAGE_KEY, JSON.stringify(member));
           return member;
@@ -180,8 +192,22 @@
         newsBody.value = '';
       }
 
+      function renderMemberBadge(member) {
+        if (!member) {
+          headerMember.hidden = true;
+          return;
+        }
+
+        headerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        headerMemberAvatar.alt = `${member.name || member.email} avatar`;
+        headerMemberName.textContent = member.name || member.email;
+        headerMemberEmail.textContent = member.email || 'Netlify member';
+        headerMember.hidden = false;
+      }
+
       function renderNews() {
         const currentMember = readCurrentMember();
+        renderMemberBadge(currentMember);
         const posts = readPosts();
 
         if (!posts.length) {
@@ -202,7 +228,10 @@
                 <div class="forum-thread__header">
                   <div>
                     <h3 class="forum-thread__title">${post.title}</h3>
-                    <p class="forum-thread__meta">Posted by <strong>${post.author}</strong></p>
+                    <div class="forum-thread__author">
+                      <img class="forum-thread__author-avatar" src="${post.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(post.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${post.author} avatar" />
+                      <span class="forum-thread__author-name">${post.author}</span>
+                    </div>
                   </div>
                   <span class="forum-badge">News</span>
                 </div>
@@ -273,7 +302,8 @@
               ...posts[targetIndex],
               title,
               body,
-              author: currentMember.name
+              author: currentMember.name,
+              avatar: currentMember.avatar || ''
             };
           }
         } else {
@@ -281,7 +311,8 @@
             id: `news-${Date.now()}`,
             title,
             body,
-            author: currentMember.name
+            author: currentMember.name,
+            avatar: currentMember.avatar || ''
           });
         }
 

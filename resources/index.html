@@ -31,6 +31,13 @@
             <a class="site-nav__link active" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <div id="headerMember" class="site-header__member" hidden>
+              <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
+              <div>
+                <div id="headerMemberName" class="site-header__member-name"></div>
+                <div id="headerMemberEmail" class="site-header__member-email"></div>
+              </div>
+            </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -88,6 +95,10 @@
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
       const resourceList = document.getElementById('resourceList');
       const resourceNotice = document.getElementById('resourceNotice');
+      const headerMember = document.getElementById('headerMember');
+      const headerMemberAvatar = document.getElementById('headerMemberAvatar');
+      const headerMemberName = document.getElementById('headerMemberName');
+      const headerMemberEmail = document.getElementById('headerMemberEmail');
 
       const defaultResources = [];
 
@@ -123,7 +134,8 @@
           const member = {
             id: user.id || user.email,
             name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
           };
           localStorage.setItem(CURRENT_MEMBER_STORAGE_KEY, JSON.stringify(member));
           return member;
@@ -132,8 +144,22 @@
         return null;
       }
 
+      function renderMemberBadge(member) {
+        if (!member) {
+          headerMember.hidden = true;
+          return;
+        }
+
+        headerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        headerMemberAvatar.alt = `${member.name || member.email} avatar`;
+        headerMemberName.textContent = member.name || member.email;
+        headerMemberEmail.textContent = member.email || 'Netlify member';
+        headerMember.hidden = false;
+      }
+
       function renderResources() {
         const currentMember = readCurrentMember();
+        renderMemberBadge(currentMember);
         const resources = readResources();
 
         if (!resources.length) {
