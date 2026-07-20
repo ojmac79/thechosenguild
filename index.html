@@ -44,10 +44,13 @@
         <section class="hero">
           <p class="hero__eyebrow">The Guild Hall of Norrath</p>
           <h1 class="hero__title">The Chosen</h1>
-          <p class="hero__tagline">
-            Bound by oath, tempered by raid wipes, undefeated in spirit. Seek
-            word of the guild below, or cast your search further afield.
-          </p>
+          <div class="hero__tagline-wrap">
+            <p id="heroTagline" class="hero__tagline">
+              Bound by oath, tempered by raid wipes, undefeated in spirit. Seek
+              word of the guild below, or cast your search further afield.
+            </p>
+            <button class="hero__edit" type="button" onclick="editHeroTagline()">Edit</button>
+          </div>
           <form class="search-console">
             <div class="search-console__row">
               <input
@@ -68,16 +71,65 @@
 
         <div class="divider-rune" aria-hidden="true">✦</div>
 
-        <div class="news-list">
-          <div class="panel empty-state">
-            No announcements yet. The officer council has been quiet lately.
+        <section class="news-section" aria-label="Guild news">
+          <div class="news-section__header">
+            <h2 class="news-section__title">Latest News</h2>
+            <button class="btn-torch news-section__new">New Post</button>
           </div>
-        </div>
+
+          <article class="panel news-card">
+            <div class="news-card__top">
+              <div>
+                <p class="news-card__eyebrow">Announcement</p>
+                <h3 class="news-card__title">The Hall is Open</h3>
+              </div>
+              <button class="news-card__edit" type="button">Edit</button>
+            </div>
+            <p class="news-card__body">
+              The officer council has reopened the hall for a fresh season of raids,
+              planning, and guild fellowship.
+            </p>
+            <div class="news-card__meta-row">
+              <p class="news-card__meta">Posted by <strong>Officer Council</strong> • 2 hours ago</p>
+              <p class="news-card__meta">Last edited by <strong>Officer Council</strong> • 10 mins ago</p>
+            </div>
+          </article>
+
+          <article class="panel news-card">
+            <div class="news-card__top">
+              <div>
+                <p class="news-card__eyebrow">Update</p>
+                <h3 class="news-card__title">Roster Refresh Incoming</h3>
+              </div>
+              <button class="news-card__edit" type="button">Edit</button>
+            </div>
+            <p class="news-card__body">
+              Expect a roster check and a few community events this week as we prepare
+              for the next campaign.
+            </p>
+            <div class="news-card__meta-row">
+              <p class="news-card__meta">Posted by <strong>Murphy</strong> • yesterday</p>
+              <p class="news-card__meta">Last edited by <strong>Murphy</strong> • 1 hour ago</p>
+            </div>
+          </article>
+        </section>
       </main>
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
       </footer>
     </div>
+
+    <script>
+      function editHeroTagline() {
+        const tagline = document.getElementById('heroTagline');
+        const currentText = tagline.textContent.trim();
+        const nextText = prompt('Enter a new description for The Chosen:', currentText);
+
+        if (nextText && nextText.trim()) {
+          tagline.textContent = nextText.trim();
+        }
+      }
+    </script>
   </body>
 </html>

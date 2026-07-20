@@ -40,7 +40,45 @@
         <p class="hero__eyebrow">The Archives</p>
         <h1 class="page-title">Resources</h1>
         <p class="page-subtitle">Guides, tools, and lore compiled by the guild for the guild.</p>
-        <div class="panel empty-state">No resources have been catalogued yet. Check back soon.</div>
+
+        <section class="resource-section" aria-label="Resource links">
+          <div class="resource-section__header">
+            <h2 class="resource-section__title">Shared Links</h2>
+            <button class="btn-torch" type="button">Add Link</button>
+          </div>
+
+          <form class="panel resource-form">
+            <div class="resource-form__row">
+              <label class="resource-field">
+                <span>Link Name</span>
+                <input type="text" placeholder="Raid Prep Guide" />
+              </label>
+              <label class="resource-field">
+                <span>URL</span>
+                <input type="url" placeholder="https://example.com" />
+              </label>
+            </div>
+            <label class="resource-field resource-field--full">
+              <span>Description</span>
+              <textarea rows="3" placeholder="Describe what this link is for..."></textarea>
+            </label>
+            <button class="btn-primary" type="submit">Save Link</button>
+          </form>
+
+          <ul class="resource-list">
+            <li class="panel resource-item">
+              <div>
+                <h3 class="resource-item__title">Guild Handbook</h3>
+                <p class="resource-item__desc">A central guide for guild rules, events, and expectations.</p>
+              </div>
+              <div class="resource-item__side">
+                <p class="resource-item__meta">Added by <strong>Officer Council</strong> • 3 hours ago</p>
+                <p class="resource-item__meta">Last edited by <strong>Officer Council</strong> • 20 mins ago</p>
+                <a class="resource-item__link" href="https://example.com" target="_blank" rel="noreferrer">Open</a>
+              </div>
+            </li>
+          </ul>
+        </section>
       </main>
 
       <footer class="site-footer">

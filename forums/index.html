@@ -42,7 +42,46 @@
         <p class="page-subtitle">
           A place for strategy notes, raid plans, and spirited guild lore.
         </p>
-        <div class="panel empty-state">No forum threads have been posted yet.</div>
+
+        <section class="forum-section" aria-label="Public forum posts">
+          <div class="forum-section__header">
+            <h2 class="forum-section__title">Public Discussion</h2>
+            <button class="btn-torch" type="button">New Post</button>
+          </div>
+
+          <form class="panel forum-form">
+            <label class="resource-field">
+              <span>Post Title</span>
+              <input type="text" placeholder="Share a thought or update" />
+            </label>
+            <label class="resource-field">
+              <span>Message</span>
+              <textarea rows="4" placeholder="Write something for the public forum..."></textarea>
+            </label>
+            <button class="btn-primary" type="submit">Post Publicly</button>
+          </form>
+
+          <ul class="resource-list">
+            <li class="panel resource-item">
+              <div>
+                <h3 class="resource-item__title">Welcome to the Hall</h3>
+                <p class="resource-item__desc">A public welcome thread for new visitors and guild friends.</p>
+              </div>
+              <div class="resource-item__side">
+                <p class="resource-item__meta">Posted by <strong>Guest</strong> • 1 hour ago</p>
+                <p class="resource-item__meta">Last edited by <strong>Guest</strong> • 10 mins ago</p>
+              </div>
+            </li>
+          </ul>
+        </section>
+
+        <section class="forum-section forum-section--member" aria-label="Members-only forum area">
+          <div class="forum-section__header">
+            <h2 class="forum-section__title">Members Only</h2>
+            <button class="btn-torch" type="button">Private Post</button>
+          </div>
+          <div class="panel empty-state">Only sworn members may view or post in this restricted area.</div>
+        </section>
       </main>
 
       <footer class="site-footer">
