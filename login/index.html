@@ -127,7 +127,7 @@
       const forumRolePanel = document.getElementById('forumRolePanel');
       const forumRoleList = document.getElementById('forumRoleList');
 
-      function renderForumRolePanel(visible) {
+      function renderForumRolePanel(visible, userEmail) {
         if (!visible) {
           forumRolePanel.hidden = true;
           return;
@@ -142,18 +142,56 @@
           memberEmails: normalizeList(raw.memberEmails),
           allowAllAuthenticatedMembers: raw.allowAllAuthenticatedMembers === true
         };
+
+        const normalizedEmail = String(userEmail || '').trim().toLowerCase();
+        const isOwner = cfg.ownerEmails.length === 0 || cfg.ownerEmails.includes(normalizedEmail);
+        if (!isOwner) {
+          forumRolePanel.hidden = true;
+          return;
+        }
+
+        function makeEmailList(emails) {
+          if (!emails.length) {
+            const span = document.createElement('span');
+            span.textContent = '(none)';
+            return span;
+          }
+          const ul = document.createElement('ul');
+          ul.style.cssText = 'margin:0;padding:0 0 0 1.1rem;';
+          emails.forEach(function(email) {
+            const li = document.createElement('li');
+            li.style.cssText = 'word-break:break-all;';
+            li.textContent = email;
+            ul.appendChild(li);
+          });
+          return ul;
+        }
+
         const rows = [
-          { label: 'allowAllAuthenticatedMembers', value: String(cfg.allowAllAuthenticatedMembers) },
-          { label: 'ownerEmails', value: cfg.ownerEmails.length ? cfg.ownerEmails.join(', ') : '(none)' },
-          { label: 'moderatorEmails', value: cfg.moderatorEmails.length ? cfg.moderatorEmails.join(', ') : '(none)' },
-          { label: 'memberEmails', value: cfg.memberEmails.length ? cfg.memberEmails.join(', ') : '(none)' }
+          { label: 'allowAllAuthenticatedMembers', node: null, text: String(cfg.allowAllAuthenticatedMembers) },
+          { label: 'ownerEmails', node: makeEmailList(cfg.ownerEmails), text: null },
+          { label: 'moderatorEmails', node: makeEmailList(cfg.moderatorEmails), text: null },
+          { label: 'memberEmails', node: makeEmailList(cfg.memberEmails), text: null }
         ];
-        forumRoleList.innerHTML = rows.map(({ label, value }) =>
-          `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;border-bottom:1px solid rgba(255,123,123,0.14);padding-bottom:0.4rem;">` +
-          `<dt style="color:var(--muted);font-size:0.82rem;">${label}</dt>` +
-          `<dd style="margin:0;font-size:0.85rem;word-break:break-all;">${value}</dd>` +
-          `</div>`
-        ).join('');
+
+        forumRoleList.innerHTML = '';
+        rows.forEach(function(row) {
+          const wrap = document.createElement('div');
+          wrap.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;border-bottom:1px solid rgba(255,123,123,0.14);padding-bottom:0.4rem;';
+          const dt = document.createElement('dt');
+          dt.style.cssText = 'color:var(--muted);font-size:0.82rem;';
+          dt.textContent = row.label;
+          const dd = document.createElement('dd');
+          dd.style.cssText = 'margin:0;font-size:0.85rem;';
+          if (row.node) {
+            dd.appendChild(row.node);
+          } else {
+            dd.textContent = row.text;
+          }
+          wrap.appendChild(dt);
+          wrap.appendChild(dd);
+          forumRoleList.appendChild(wrap);
+        });
         forumRolePanel.hidden = false;
       }
 
@@ -242,7 +280,7 @@
 
         const member = saveCurrentMember(user);
         renderMemberBadge(member);
-        renderForumRolePanel(true);
+        renderForumRolePanel(true, member.email);
         gateTitle.textContent = 'The Gate Is Open';
         gateIntro.textContent = `Welcome back, ${member.name}. Your Netlify session is active.`;
         loginButton.hidden = true;
