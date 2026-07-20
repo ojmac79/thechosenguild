@@ -13,7 +13,7 @@
     discord: { sword: 2, axe: 2, staff: 2, dagger: 3 },
     resources: { sword: 1, axe: 1, staff: 4, dagger: 3 },
     lore: { sword: 1, axe: 1, staff: 5, dagger: 1 },
-    serverStatus: { sword: 2, axe: 2, staff: 3, dagger: 1 },
+    serverstatus: { sword: 2, axe: 2, staff: 3, dagger: 1 },
     login: { sword: 1, axe: 1, staff: 4, dagger: 2 },
     default: { sword: 2, axe: 2, staff: 2, dagger: 2 }
   };
@@ -43,7 +43,7 @@
       return routeProfiles.lore;
     }
     if (path.startsWith("/server-status")) {
-      return routeProfiles.serverStatus;
+      return routeProfiles.serverstatus;
     }
     if (path.startsWith("/login")) {
       return routeProfiles.login;
