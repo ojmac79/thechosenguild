@@ -307,6 +307,11 @@ a { color: inherit; text-decoration: none; }
   cursor: pointer;
 }
 .news-section__new { padding: 0.6rem 0.9rem; }
+.news-section__editor {
+  margin-top: 1.25rem;
+  display: grid;
+  gap: 0.6rem;
+}
 .page-title {
   margin: 0.2rem 0 0.4rem;
   font-size: 2rem;
@@ -482,10 +487,48 @@ a { color: inherit; text-decoration: none; }
   flex-shrink: 0;
 }
 .forum-thread__body { margin: 0; color: var(--text); }
+.forum-thread__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
 .forum-thread__replies { display: grid; gap: 0.7rem; margin-left: 1rem; padding-left: 1rem; border-left: 1px solid var(--border); }
 .forum-thread__reply { padding: 0.75rem; border-radius: 12px; background: rgba(255,255,255,0.03); }
+.forum-thread__reply-header {
+  display: flex;
+  align-items: center;
+  gap: 0.55rem;
+}
 .forum-thread__reply-author { margin: 0 0 0.25rem; font-weight: 700; color: var(--accent); }
 .forum-thread__reply-body { margin: 0; color: var(--muted); }
+.forum-thread__reply-children {
+  margin-top: 0.75rem;
+  margin-left: 0.8rem;
+  padding-left: 0.8rem;
+  border-left: 1px solid rgba(255, 123, 123, 0.22);
+  display: grid;
+  gap: 0.7rem;
+}
+.forum-reply-form {
+  display: grid;
+  gap: 0.65rem;
+  margin-top: 0.6rem;
+}
+.forum-reply-form__input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.62rem 0.74rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font: inherit;
+}
+.forum-reply-form__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
 .forum-gate { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .forum-gate__text { margin: 0; color: var(--muted); }
 .resource-section__header {
@@ -500,6 +543,7 @@ a { color: inherit; text-decoration: none; }
   font-size: 1.3rem;
 }
 .resource-form { display: grid; gap: 1rem; }
+.resource-form__actions { display: flex; align-items: center; gap: 0.75rem; flex-wrap: wrap; }
 .resource-form__row { display: grid; gap: 1rem; grid-template-columns: repeat(2, minmax(0, 1fr)); }
 .resource-field { display: grid; gap: 0.45rem; color: var(--muted); }
 .resource-field--full { grid-column: 1 / -1; }
@@ -542,6 +586,18 @@ a { color: inherit; text-decoration: none; }
 }
 .resource-item__delete:hover {
   background: rgba(255, 123, 123, 0.12);
+}
+.resource-item__edit {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+.resource-item__edit:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .resource-item--empty {
   justify-content: center;

@@ -87,23 +87,24 @@
             <button class="btn-torch news-section__new" id="newPostButton" type="button">New Post</button>
           </div>
 
-          <form class="panel forum-form" id="newsForm" hidden>
-            <label class="resource-field">
-              <span>Post Title</span>
-              <input id="newsTitle" type="text" placeholder="Announce the next guild event" required />
-            </label>
-            <label class="resource-field">
-              <span>Message</span>
-              <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
-            </label>
-            <div class="auth-actions">
-              <button class="btn-primary" type="submit">Save News Post</button>
-              <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
-            </div>
-          </form>
-
-          <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
           <div id="newsList"></div>
+          <div class="news-section__editor">
+            <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
+            <form class="panel forum-form" id="newsForm" hidden>
+              <label class="resource-field">
+                <span>Post Title</span>
+                <input id="newsTitle" type="text" placeholder="Announce the next guild event" required />
+              </label>
+              <label class="resource-field">
+                <span>Message</span>
+                <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
+              </label>
+              <div class="auth-actions">
+                <button class="btn-primary" type="submit">Save News Post</button>
+                <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
+              </div>
+            </form>
+          </div>
         </section>
 
         <div class="page-footer-links">
@@ -208,12 +209,33 @@
         try {
           const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
           if (Array.isArray(stored)) {
-            return stored;
+            return stored
+              .map((post, index) => normalizePost(post, index, stored.length))
+              .filter(Boolean)
+              .sort((a, b) => b.createdAt - a.createdAt);
           }
         } catch (error) {
           // Fall back to the default empty state.
         }
         return [];
+      }
+
+      function normalizePost(post, index = 0, total = 0) {
+        if (!post || typeof post !== 'object') {
+          return null;
+        }
+
+        const inferredCreatedAt = Math.max(0, total - index);
+        const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
+        return {
+          id: post.id || `news-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+          title: String(post.title || ''),
+          body: String(post.body || ''),
+          author: String(post.author || 'Guild Member'),
+          avatar: String(post.avatar || ''),
+          createdAt,
+          updatedAt: Number(post.updatedAt) || createdAt
+        };
       }
 
       function writePosts(posts) {
@@ -262,7 +284,12 @@
       function renderNews() {
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
-        const posts = readPosts();
+        const posts = readPosts().slice(0, 3);
+        const canEditNews = Boolean(currentMember);
+        newPostButton.hidden = !canEditNews;
+        if (!canEditNews) {
+          resetNewsForm();
+        }
 
         if (!posts.length) {
           newsList.innerHTML = '<div class="panel empty-state"><p>No news has been posted yet. Start a fresh entry for the guild hall.</p></div>';
@@ -274,7 +301,7 @@
 
         newsList.innerHTML = posts
           .map((post) => {
-            const editButton = currentMember
+            const editButton = canEditNews
               ? `<button class="resource-item__delete" type="button" data-edit-post="${post.id}">Edit</button>`
               : '';
             return `
@@ -352,25 +379,30 @@
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
           if (targetIndex >= 0) {
+            const now = Date.now();
             posts[targetIndex] = {
               ...posts[targetIndex],
               title,
               body,
               author: currentMember.name,
-              avatar: currentMember.avatar || ''
+              avatar: currentMember.avatar || '',
+              updatedAt: now
             };
           }
         } else {
+          const now = Date.now();
           posts.unshift({
             id: `news-${Date.now()}`,
             title,
             body,
             author: currentMember.name,
-            avatar: currentMember.avatar || ''
+            avatar: currentMember.avatar || '',
+            createdAt: now,
+            updatedAt: now
           });
         }
 
-        writePosts(posts);
+        writePosts(posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
         resetNewsForm();
         renderNews();
       });

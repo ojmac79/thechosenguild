@@ -121,9 +121,11 @@
     <script src="../../scripts/site-decor.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const publicThreads = [];
+      const PUBLIC_THREADS_STORAGE_KEY = 'theChosenPublicThreads';
       const MEMBER_THREADS_STORAGE_KEY = 'theChosenMemberThreads';
+      const publicThreads = readPublicThreads();
       const memberThreads = readMemberThreads();
+      let activeReplyComposer = null;
 
       const publicForm = document.getElementById('publicForm');
       const publicTitleInput = document.getElementById('publicTitle');
@@ -192,21 +194,23 @@
 
       async function handlePublicPost(event) {
         event.preventDefault();
-        const title = document.getElementById('publicTitle').value.trim();
-        const message = document.getElementById('publicMessage').value.trim();
+        const title = publicTitleInput.value.trim();
+        const message = publicMessageInput.value.trim();
         if (!title || !message) {
           return;
         }
 
         const currentMember = getCurrentMember();
         publicThreads.unshift({
-          id: `public-${Date.now()}`,
+          id: buildEntryId('public'),
           title,
-          author: currentMember ? currentMember.name : 'Guest',
+          author: currentMember ? currentMember.name : 'Guest Adventurer',
           avatar: currentMember ? currentMember.avatar || '' : '',
           body: message,
           replies: []
         });
+        writePublicThreads(publicThreads);
+        activeReplyComposer = null;
 
         publicForm.reset();
         renderThreads();
@@ -262,6 +266,194 @@
         localStorage.setItem(MEMBER_THREADS_STORAGE_KEY, JSON.stringify(threads));
       }
 
+      function readPublicThreads() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(PUBLIC_THREADS_STORAGE_KEY) || 'null');
+          if (Array.isArray(stored)) {
+            return stored.map(normalizePublicThread).filter(Boolean);
+          }
+        } catch (error) {
+          // Fall back to an empty list.
+        }
+
+        return [];
+      }
+
+      function writePublicThreads(threads) {
+        localStorage.setItem(PUBLIC_THREADS_STORAGE_KEY, JSON.stringify(threads));
+      }
+
+      function buildEntryId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return `${prefix}-${window.crypto.randomUUID()}`;
+        }
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
+      function normalizePublicThread(thread) {
+        if (!thread || typeof thread !== 'object') {
+          return null;
+        }
+        return {
+          id: typeof thread.id === 'string' ? thread.id : buildEntryId('public'),
+          title: typeof thread.title === 'string' ? thread.title : '',
+          author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guest Adventurer',
+          avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
+          body: typeof thread.body === 'string' ? thread.body : '',
+          replies: normalizeReplies(thread.replies)
+        };
+      }
+
+      function normalizeReplies(replies) {
+        if (!Array.isArray(replies)) {
+          return [];
+        }
+        return replies
+          .map((reply) => {
+            if (!reply || typeof reply !== 'object') {
+              return null;
+            }
+            return {
+              id: typeof reply.id === 'string' ? reply.id : buildEntryId('reply'),
+              author: typeof reply.author === 'string' && reply.author ? reply.author : 'Guest Adventurer',
+              avatar: typeof reply.avatar === 'string' ? reply.avatar : '',
+              body: typeof reply.body === 'string' ? reply.body : '',
+              replies: normalizeReplies(reply.replies)
+            };
+          })
+          .filter(Boolean);
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function getMemberName(member) {
+        return (member && (member.name || member.email)) || 'Guest Adventurer';
+      }
+
+      function getMemberAvatar(member, authorName) {
+        if (member && member.avatar) {
+          return member.avatar;
+        }
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName || 'Guild Member')}&background=ff7b7b&color=14070b`;
+      }
+
+      function appendNestedReply(replies, parentId, reply) {
+        for (let index = 0; index < replies.length; index += 1) {
+          const candidate = replies[index];
+          if (candidate.id === parentId) {
+            candidate.replies = Array.isArray(candidate.replies) ? candidate.replies : [];
+            candidate.replies.unshift(reply);
+            return true;
+          }
+          if (appendNestedReply(candidate.replies || [], parentId, reply)) {
+            return true;
+          }
+        }
+        return false;
+      }
+
+      function addReplyToThread(threadId, parentId, reply) {
+        for (let index = 0; index < publicThreads.length; index += 1) {
+          const thread = publicThreads[index];
+          if (thread.id !== threadId) {
+            continue;
+          }
+          thread.replies = Array.isArray(thread.replies) ? thread.replies : [];
+          if (parentId === thread.id) {
+            thread.replies.unshift(reply);
+            return true;
+          }
+          return appendNestedReply(thread.replies, parentId, reply);
+        }
+        return false;
+      }
+
+      function syncStoredPublicThreads() {
+        const latestThreads = readPublicThreads();
+        publicThreads.splice(0, publicThreads.length, ...latestThreads);
+      }
+
+      function renderReplyComposer(threadId, parentId) {
+        if (!activeReplyComposer || activeReplyComposer.threadId !== threadId || activeReplyComposer.parentId !== parentId) {
+          return '';
+        }
+
+        return `
+          <form class="forum-reply-form" data-public-reply-form="true" data-thread-id="${escapeHtml(threadId)}" data-parent-id="${escapeHtml(parentId)}">
+            <label class="resource-field">
+              <span>Your Reply</span>
+              <textarea class="forum-reply-form__input" rows="2" placeholder="Write your reply..." required></textarea>
+            </label>
+            <div class="forum-reply-form__actions">
+              <button class="btn-primary" type="submit">Reply</button>
+              <button class="resource-item__delete" type="button" data-cancel-reply="true">Cancel</button>
+            </div>
+          </form>
+        `;
+      }
+
+      function renderReplyNode(reply, threadId) {
+        const author = escapeHtml(reply.author || 'Guest Adventurer');
+        const body = escapeHtml(reply.body || '');
+        const avatar = escapeHtml(reply.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
+        const replyId = escapeHtml(reply.id);
+
+        return `
+          <div class="forum-thread__reply">
+            <div class="forum-thread__reply-header">
+              <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
+              <p class="forum-thread__reply-author">${author}</p>
+            </div>
+            <p class="forum-thread__reply-body">${body}</p>
+            <div class="forum-thread__actions">
+              <button class="resource-item__edit" type="button" data-reply-target="${replyId}" data-thread-id="${escapeHtml(threadId)}">Reply</button>
+            </div>
+            ${renderReplyComposer(threadId, reply.id)}
+            ${(Array.isArray(reply.replies) && reply.replies.length)
+              ? `<div class="forum-thread__reply-children">${reply.replies.map((nestedReply) => renderReplyNode(nestedReply, threadId)).join('')}</div>`
+              : ''}
+          </div>
+        `;
+      }
+
+      function renderPublicThread(thread) {
+        const author = escapeHtml(thread.author || 'Guest Adventurer');
+        const avatar = escapeHtml(thread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
+        const threadId = escapeHtml(thread.id);
+
+        return `
+          <article class="panel forum-thread">
+            <div class="forum-thread__header">
+              <div>
+                <h3 class="forum-thread__title">${escapeHtml(thread.title)}</h3>
+                <div class="forum-thread__author">
+                  <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
+                  <span class="forum-thread__author-name">${author}</span>
+                </div>
+              </div>
+              <span class="forum-badge">Public</span>
+            </div>
+            <div class="forum-thread__content">
+              <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
+            </div>
+            <div class="forum-thread__actions">
+              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}">Reply</button>
+            </div>
+            ${renderReplyComposer(thread.id, thread.id)}
+            <div class="forum-thread__replies">
+              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id)).join('')}
+            </div>
+          </article>
+        `;
+      }
+
       function renderMemberBadge(member) {
         if (!member) {
           footerMember.hidden = true;
@@ -278,35 +470,15 @@
       }
 
       function renderThreads() {
+        syncStoredPublicThreads();
         const currentMember = getCurrentMember();
         renderMemberBadge(currentMember);
 
-        publicThreadList.innerHTML = publicThreads.map((thread) => `
-          <article class="panel forum-thread">
-            <div class="forum-thread__header">
-              <div>
-                <h3 class="forum-thread__title">${thread.title}</h3>
-                <div class="forum-thread__author">
-                  <img class="forum-thread__author-avatar" src="${thread.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(thread.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${thread.author} avatar" />
-                  <span class="forum-thread__author-name">${thread.author}</span>
-                </div>
-              </div>
-              <span class="forum-badge">Public</span>
-            </div>
-            <div class="forum-thread__content">
-              ${thread.photo ? `<img class="forum-thread__photo" src="${thread.photo}" alt="Member upload" />` : ''}
-              <p class="forum-thread__body">${thread.body}</p>
-            </div>
-            <div class="forum-thread__replies">
-              ${thread.replies.map((reply) => `
-                <div class="forum-thread__reply">
-                  <p class="forum-thread__reply-author">${reply.author}</p>
-                  <p class="forum-thread__reply-body">${reply.body}</p>
-                </div>
-              `).join('')}
-            </div>
-          </article>
-        `).join('');
+        if (!publicThreads.length) {
+          publicThreadList.innerHTML = '<article class="panel forum-thread"><p class="empty-state">No public posts yet. Start the first thread.</p></article>';
+        } else {
+          publicThreadList.innerHTML = publicThreads.map((thread) => renderPublicThread(thread)).join('');
+        }
 
         if (currentMember) {
           memberGate.hidden = true;
@@ -370,6 +542,59 @@
 
       publicForm.addEventListener('submit', handlePublicPost);
       memberForm.addEventListener('submit', handleMemberPost);
+      publicThreadList.addEventListener('click', (event) => {
+        const replyButton = event.target.closest('[data-reply-target]');
+        if (replyButton) {
+          const threadId = replyButton.getAttribute('data-thread-id');
+          const parentId = replyButton.getAttribute('data-reply-target');
+          const isSameTarget = activeReplyComposer
+            && activeReplyComposer.threadId === threadId
+            && activeReplyComposer.parentId === parentId;
+          activeReplyComposer = isSameTarget ? null : { threadId, parentId };
+          renderThreads();
+          return;
+        }
+
+        const cancelButton = event.target.closest('[data-cancel-reply]');
+        if (cancelButton) {
+          activeReplyComposer = null;
+          renderThreads();
+        }
+      });
+      publicThreadList.addEventListener('submit', (event) => {
+        const replyForm = event.target.closest('[data-public-reply-form]');
+        if (!replyForm) {
+          return;
+        }
+        event.preventDefault();
+
+        const threadId = replyForm.getAttribute('data-thread-id');
+        const parentId = replyForm.getAttribute('data-parent-id');
+        const textarea = replyForm.querySelector('.forum-reply-form__input');
+        const body = textarea ? textarea.value.trim() : '';
+        if (!body) {
+          return;
+        }
+
+        const member = getCurrentMember();
+        const author = getMemberName(member);
+        const reply = {
+          id: buildEntryId('reply'),
+          author,
+          avatar: getMemberAvatar(member, author),
+          body,
+          replies: []
+        };
+
+        const inserted = addReplyToThread(threadId, parentId, reply);
+        if (!inserted) {
+          return;
+        }
+
+        writePublicThreads(publicThreads);
+        activeReplyComposer = null;
+        renderThreads();
+      });
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';

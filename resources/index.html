@@ -50,25 +50,28 @@
         <section class="resource-section" aria-label="Resource links">
           <div class="resource-section__header">
             <h2 class="resource-section__title">Shared Links</h2>
-            <button class="btn-torch" type="button">Add Link</button>
+            <button id="resourceAddLink" class="btn-torch" type="button">Add Link</button>
           </div>
 
-          <form class="panel resource-form">
+          <form id="resourceForm" class="panel resource-form">
             <div class="resource-form__row">
               <label class="resource-field">
                 <span>Link Name</span>
-                <input type="text" placeholder="Raid Prep Guide" />
+                <input id="resourceName" type="text" placeholder="Raid Prep Guide" />
               </label>
               <label class="resource-field">
                 <span>URL</span>
-                <input type="url" placeholder="https://example.com" />
+                <input id="resourceUrl" type="url" placeholder="https://example.com" />
               </label>
             </div>
             <label class="resource-field resource-field--full">
               <span>Description</span>
-              <textarea rows="3" placeholder="Describe what this link is for..."></textarea>
+              <textarea id="resourceDescription" rows="3" placeholder="Describe what this link is for..."></textarea>
             </label>
-            <button class="btn-primary" type="submit">Save Link</button>
+            <div class="resource-form__actions">
+              <button id="resourceSubmit" class="btn-primary" type="submit">Save Link</button>
+              <button id="resourceCancelEdit" class="resource-item__delete" type="button" hidden>Cancel Edit</button>
+            </div>
           </form>
 
           <p id="resourceNotice" class="resource-notice" aria-live="polite"></p>
@@ -127,6 +130,13 @@
       ];
       const resourceList = document.getElementById('resourceList');
       const resourceNotice = document.getElementById('resourceNotice');
+      const resourceForm = document.getElementById('resourceForm');
+      const resourceAddLink = document.getElementById('resourceAddLink');
+      const resourceNameInput = document.getElementById('resourceName');
+      const resourceUrlInput = document.getElementById('resourceUrl');
+      const resourceDescriptionInput = document.getElementById('resourceDescription');
+      const resourceSubmit = document.getElementById('resourceSubmit');
+      const resourceCancelEdit = document.getElementById('resourceCancelEdit');
       const footerMember = document.getElementById('footerMember');
       const footerMemberMenu = document.getElementById('footerMemberMenu');
       const footerMemberAvatar = document.getElementById('footerMemberAvatar');
@@ -136,6 +146,45 @@
       const footerLogoutButton = document.getElementById('footerLogoutButton');
 
       const defaultResources = [];
+      let editingResourceId = null;
+
+      function getNowLabel() {
+        return new Date().toLocaleString(undefined, {
+          month: 'short',
+          day: 'numeric',
+          year: 'numeric',
+          hour: 'numeric',
+          minute: '2-digit'
+        });
+      }
+
+      function buildResourceId() {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return window.crypto.randomUUID();
+        }
+        return `resource-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      function normalizeUrl(url) {
+        try {
+          const parsed = new URL(url);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            return '';
+          }
+          return parsed.href;
+        } catch (error) {
+          return '';
+        }
+      }
 
       function readResources() {
         try {
@@ -212,37 +261,73 @@
         footerMemberMenu.hidden = false;
       }
 
+      function clearEditingState() {
+        editingResourceId = null;
+        resourceSubmit.textContent = 'Save Link';
+        resourceCancelEdit.hidden = true;
+      }
+
+      function setEditingResource(resource) {
+        editingResourceId = resource.id;
+        resourceNameInput.value = resource.name;
+        resourceUrlInput.value = resource.url;
+        resourceDescriptionInput.value = resource.description;
+        resourceSubmit.textContent = 'Update Link';
+        resourceCancelEdit.hidden = false;
+        resourceNotice.textContent = 'Editing link. Update the fields and save.';
+      }
+
+      function setFormAccess(currentMember) {
+        const canManage = Boolean(currentMember);
+        const controls = resourceForm.querySelectorAll('input, textarea, button');
+        controls.forEach((control) => {
+          if (control.id === 'resourceCancelEdit') {
+            return;
+          }
+          control.disabled = !canManage;
+        });
+
+        if (!canManage) {
+          resourceCancelEdit.hidden = true;
+          clearEditingState();
+        }
+      }
+
       function renderResources() {
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
+        setFormAccess(currentMember);
         const resources = readResources();
 
         if (!resources.length) {
           resourceList.innerHTML = '<li class="panel resource-item resource-item--empty">No shared links are currently available.</li>';
           resourceNotice.textContent = currentMember
-            ? 'Authorized members can remove outdated links.'
-            : 'Sign in to remove links from the archive.';
+            ? 'Members can add, edit, and delete shared links.'
+            : 'Sign in to add, edit, or remove links from the archive.';
           return;
         }
 
         resourceList.innerHTML = resources
           .map((resource) => {
-            const deleteButton = currentMember
-              ? `<button class="resource-item__delete" type="button" data-delete-resource="${resource.id}">Delete</button>`
+            const memberActions = currentMember
+              ? `
+                <button class="resource-item__edit" type="button" data-edit-resource="${resource.id}">Edit</button>
+                <button class="resource-item__delete" type="button" data-delete-resource="${resource.id}">Delete</button>
+              `
               : '';
 
             return `
               <li class="panel resource-item">
                 <div>
-                  <h3 class="resource-item__title">${resource.name}</h3>
-                  <p class="resource-item__desc">${resource.description}</p>
+                  <h3 class="resource-item__title">${escapeHtml(resource.name)}</h3>
+                  <p class="resource-item__desc">${escapeHtml(resource.description)}</p>
                 </div>
                 <div class="resource-item__side">
-                  <p class="resource-item__meta">Added by <strong>${resource.addedBy}</strong> • ${resource.addedAt}</p>
-                  <p class="resource-item__meta">Last edited by <strong>${resource.editedBy}</strong> • ${resource.editedAt}</p>
+                  <p class="resource-item__meta">Added by <strong>${escapeHtml(resource.addedBy)}</strong> • ${escapeHtml(resource.addedAt)}</p>
+                  <p class="resource-item__meta">Last edited by <strong>${escapeHtml(resource.editedBy)}</strong> • ${escapeHtml(resource.editedAt)}</p>
                   <div class="resource-item__actions">
-                    <a class="resource-item__link" href="${resource.url}" target="_blank" rel="noreferrer">Open</a>
-                    ${deleteButton}
+                    <a class="resource-item__link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">Open</a>
+                    ${memberActions}
                   </div>
                 </div>
               </li>
@@ -251,25 +336,118 @@
           .join('');
 
         resourceNotice.textContent = currentMember
-          ? 'Authorized members can remove outdated links.'
-          : 'Sign in to remove links from the archive.';
+          ? 'Members can add, edit, and delete shared links.'
+          : 'Sign in to add, edit, or remove links from the archive.';
       }
 
-      resourceList.addEventListener('click', (event) => {
-        const button = event.target.closest('[data-delete-resource]');
-        if (!button) {
-          return;
-        }
-
+      resourceAddLink.addEventListener('click', () => {
         const currentMember = readCurrentMember();
         if (!currentMember) {
+          resourceNotice.textContent = 'Sign in to add, edit, or remove links from the archive.';
+          return;
+        }
+        resourceNameInput.focus();
+      });
+
+      resourceForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          resourceNotice.textContent = 'Sign in to add, edit, or remove links from the archive.';
           return;
         }
 
-        const resourceId = button.getAttribute('data-delete-resource');
+        const name = resourceNameInput.value.trim();
+        const normalizedUrl = normalizeUrl(resourceUrlInput.value.trim());
+        const description = resourceDescriptionInput.value.trim();
+
+        if (!name || !normalizedUrl || !description) {
+          resourceNotice.textContent = 'Please fill in Link Name, a valid URL, and Description.';
+          return;
+        }
+
+        const nowLabel = getNowLabel();
+        const memberName = currentMember.name || currentMember.email || 'Guild Member';
+        const resources = readResources();
+        let successMessage = '';
+
+        if (editingResourceId) {
+          const updatedResources = resources.map((resource) => {
+            if (resource.id !== editingResourceId) {
+              return resource;
+            }
+            return {
+              ...resource,
+              name,
+              url: normalizedUrl,
+              description,
+              editedBy: memberName,
+              editedAt: nowLabel
+            };
+          });
+          writeResources(updatedResources);
+          successMessage = 'Link updated.';
+        } else {
+          const nextResources = [
+            {
+              id: buildResourceId(),
+              name,
+              url: normalizedUrl,
+              description,
+              addedBy: memberName,
+              addedAt: nowLabel,
+              editedBy: memberName,
+              editedAt: nowLabel
+            },
+            ...resources
+          ];
+          writeResources(nextResources);
+          successMessage = 'Link added.';
+        }
+
+        resourceForm.reset();
+        clearEditingState();
+        renderResources();
+        resourceNotice.textContent = successMessage;
+      });
+
+      resourceCancelEdit.addEventListener('click', () => {
+        resourceForm.reset();
+        clearEditingState();
+        renderResources();
+      });
+
+      resourceList.addEventListener('click', (event) => {
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          resourceNotice.textContent = 'Sign in to add, edit, or remove links from the archive.';
+          return;
+        }
+
+        const editButton = event.target.closest('[data-edit-resource]');
+        if (editButton) {
+          const resourceId = editButton.getAttribute('data-edit-resource');
+          const resource = readResources().find((entry) => entry.id === resourceId);
+          if (!resource) {
+            return;
+          }
+          setEditingResource(resource);
+          resourceNameInput.focus();
+          return;
+        }
+
+        const deleteButton = event.target.closest('[data-delete-resource]');
+        if (!deleteButton) {
+          return;
+        }
+
+        const resourceId = deleteButton.getAttribute('data-delete-resource');
         const remainingResources = readResources().filter((resource) => resource.id !== resourceId);
         writeResources(remainingResources);
+        resourceForm.reset();
+        clearEditingState();
         renderResources();
+        resourceNotice.textContent = 'Link removed.';
       });
 
       footerAccountButton.addEventListener('click', () => {
