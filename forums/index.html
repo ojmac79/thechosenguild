@@ -4,13 +4,389 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Chosen — Forums</title>
+    <meta
+      name="description"
+      content="The Chosen guild forums — public discussion and members-only council threads with nested replies."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../../styles.css" />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      /* ── Forum-specific compact layout ── */
+
+      /* Tab strip */
+      .ftab-row {
+        display: flex;
+        gap: 0.35rem;
+        margin: 1.25rem 0 0;
+        border-bottom: 1px solid var(--border);
+      }
+      .ftab {
+        padding: 0.5rem 1.1rem;
+        border: 1px solid transparent;
+        border-bottom: none;
+        border-radius: 8px 8px 0 0;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.85rem;
+        font-weight: 700;
+        transition: color 0.15s;
+        position: relative;
+        bottom: -1px;
+      }
+      .ftab:hover { color: var(--text); }
+      .ftab.is-active {
+        border-color: var(--border);
+        background: rgba(120, 24, 38, 0.28);
+        color: var(--text);
+      }
+      .ftab--mgmt { color: var(--accent); }
+      .ftab--mgmt:hover { color: #ffaaaa; }
+
+      /* Panel */
+      .ftpanel { padding-top: 1.25rem; }
+
+      /* Section header */
+      .ft-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        margin-bottom: 0.85rem;
+      }
+      .ft-head__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1.15rem;
+      }
+      .ft-head__badge {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.22rem 0.65rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 0.75rem;
+        font-weight: 700;
+        color: var(--muted);
+      }
+      .ft-head__badge--member { color: var(--accent); border-color: rgba(255, 123, 123, 0.4); }
+
+      /* Compose form */
+      .ft-compose {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+        padding: 0.85rem 1rem;
+        display: grid;
+        gap: 0.55rem;
+        margin-bottom: 1rem;
+      }
+      .ft-compose__heading {
+        margin: 0 0 0.1rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.78rem;
+        color: var(--muted);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .ft-compose__label {
+        display: grid;
+        gap: 0.28rem;
+        font-size: 0.76rem;
+        color: var(--muted);
+        font-weight: 700;
+      }
+      .ft-compose input,
+      .ft-compose textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.58rem 0.75rem;
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.9rem;
+      }
+      .ft-compose input:focus,
+      .ft-compose textarea:focus {
+        outline: none;
+        border-color: var(--accent);
+        background: rgba(0, 0, 0, 0.45);
+      }
+      .ft-compose textarea { min-height: 70px; resize: vertical; }
+      .ft-compose__actions { display: flex; align-items: center; gap: 0.55rem; }
+
+      /* Auth gate */
+      .ft-gate {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+        padding: 1rem 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin-bottom: 1rem;
+      }
+      .ft-gate__text { margin: 0; color: var(--muted); font-size: 0.9rem; }
+
+      /* Thread list */
+      .ft-list { display: grid; gap: 0.55rem; }
+
+      /* Thread card */
+      .ft-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+      .ft-card--member { border-left: 3px solid rgba(255, 123, 123, 0.5); }
+
+      .ft-card__head {
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.65rem 0.9rem 0.3rem;
+      }
+      .ft-card__title {
+        margin: 0;
+        font-size: 0.95rem;
+        font-weight: 700;
+        color: var(--text);
+      }
+      .ft-card__meta {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        margin-top: 0.2rem;
+      }
+      .ft-card__avatar {
+        width: 17px;
+        height: 17px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid var(--border);
+      }
+      .ft-card__author { font-size: 0.76rem; color: var(--muted); font-weight: 600; }
+      .ft-card__right { display: flex; align-items: center; gap: 0.45rem; flex-shrink: 0; }
+      .ft-card__badge {
+        padding: 0.16rem 0.48rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        font-size: 0.68rem;
+        font-weight: 700;
+        color: var(--muted);
+        white-space: nowrap;
+      }
+      .ft-card__badge--member { color: var(--accent); border-color: rgba(255, 123, 123, 0.4); }
+
+      .ft-card__body {
+        padding: 0 0.9rem 0.55rem;
+        margin: 0;
+        color: var(--text);
+        font-size: 0.88rem;
+        line-height: 1.55;
+      }
+
+      .ft-card__actions {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+        padding: 0 0.9rem 0.6rem;
+      }
+
+      /* Inline buttons */
+      .ft-btn {
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        border-radius: 999px;
+        padding: 0.22rem 0.6rem;
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.73rem;
+        font-weight: 700;
+        transition: color 0.15s;
+      }
+      .ft-btn:hover { color: var(--text); }
+      .ft-btn--delete {
+        color: rgba(255, 123, 123, 0.5);
+        border-color: transparent;
+        padding: 0.22rem 0.45rem;
+        font-size: 0.88rem;
+      }
+      .ft-btn--delete:hover { color: var(--accent); background: rgba(255, 123, 123, 0.08); border-color: rgba(255, 123, 123, 0.3); }
+
+      /* Replies container */
+      .ft-replies { border-top: 1px solid rgba(255, 255, 255, 0.05); }
+
+      .ft-reply {
+        padding: 0.5rem 0.9rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+        display: grid;
+        gap: 0.22rem;
+      }
+      .ft-reply:last-child { border-bottom: none; }
+
+      .ft-reply__meta {
+        display: flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      .ft-reply__avatar {
+        width: 15px;
+        height: 15px;
+        border-radius: 50%;
+        object-fit: cover;
+        flex-shrink: 0;
+      }
+      .ft-reply__author { font-size: 0.73rem; font-weight: 700; color: var(--accent); }
+      .ft-reply__body {
+        margin: 0;
+        font-size: 0.84rem;
+        color: var(--text);
+        line-height: 1.45;
+      }
+      .ft-reply__actions { display: flex; gap: 0.35rem; }
+
+      /* Nested reply children */
+      .ft-reply-children {
+        margin-left: 1.1rem;
+        padding-left: 0.75rem;
+        border-left: 1px solid rgba(255, 123, 123, 0.18);
+      }
+      .ft-reply-children .ft-reply { padding-left: 0; padding-right: 0; }
+
+      /* Inline reply composer */
+      .ft-reply-form {
+        padding: 0.6rem 0.9rem;
+        background: rgba(0, 0, 0, 0.15);
+        border-top: 1px solid rgba(255, 255, 255, 0.05);
+        display: grid;
+        gap: 0.45rem;
+      }
+      .ft-reply-form textarea {
+        width: 100%;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        padding: 0.5rem 0.65rem;
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.85rem;
+        resize: vertical;
+        min-height: 60px;
+      }
+      .ft-reply-form textarea:focus { outline: none; border-color: var(--accent); }
+      .ft-reply-form__actions { display: flex; gap: 0.45rem; align-items: center; }
+
+      /* Empty state */
+      .ft-empty {
+        padding: 1.5rem 1rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.88rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+
+      /* ── Management panel ── */
+      .mgmt-section { display: grid; gap: 1.25rem; }
+      .mgmt-block { display: grid; gap: 0.6rem; }
+      .mgmt-block__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 0.9rem;
+        color: var(--accent);
+        letter-spacing: 0.14em;
+        text-transform: uppercase;
+      }
+      .mgmt-note {
+        margin: 0;
+        font-size: 0.85rem;
+        color: var(--muted);
+        padding: 0.75rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel);
+      }
+      .mgmt-note--error { color: #ff8d8d; border-color: rgba(255, 123, 123, 0.3); }
+      .mgmt-note--success { color: #a5f0c8; border-color: rgba(165, 240, 200, 0.3); }
+      .mgmt-user-list { display: grid; gap: 0.45rem; }
+      .mgmt-user {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        padding: 0.55rem 0.85rem;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: var(--panel);
+        flex-wrap: wrap;
+      }
+      .mgmt-user__info { display: flex; align-items: center; gap: 0.6rem; min-width: 0; }
+      .mgmt-user__avatar {
+        width: 26px;
+        height: 26px;
+        border-radius: 50%;
+        object-fit: cover;
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .mgmt-user__name { margin: 0; font-size: 0.88rem; font-weight: 700; }
+      .mgmt-user__email {
+        margin: 0;
+        font-size: 0.74rem;
+        color: var(--muted);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 240px;
+      }
+      .mgmt-user__actions { display: flex; align-items: center; gap: 0.4rem; flex-wrap: wrap; }
+      .mgmt-chip {
+        padding: 0.22rem 0.6rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.7rem;
+        font-weight: 700;
+        transition: background 0.15s, color 0.15s;
+      }
+      .mgmt-chip:hover { background: rgba(255, 255, 255, 0.08); }
+      .mgmt-chip:disabled { opacity: 0.5; cursor: default; }
+      .mgmt-chip.is-on {
+        background: rgba(255, 123, 123, 0.14);
+        color: var(--accent);
+        border-color: rgba(255, 123, 123, 0.4);
+      }
+      .mgmt-chip--admin.is-on {
+        background: rgba(255, 200, 100, 0.12);
+        color: #ffc87a;
+        border-color: rgba(255, 200, 100, 0.4);
+      }
+      .mgmt-gate {
+        padding: 1.5rem 1rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        background: var(--panel);
+      }
+    </style>
   </head>
   <body>
     <div class="chosen-shell">
@@ -41,65 +417,79 @@
       <main class="page">
         <p class="hero__eyebrow">The Hall of Debate</p>
         <h1 class="page-title">Guild Forums</h1>
-        <p class="page-subtitle">
-          A place for strategy notes, raid plans, and spirited guild lore.
-        </p>
+        <p class="page-subtitle">Strategy notes, raid plans, lore debates, and council announcements.</p>
 
-        <div class="thumbnail-strip" aria-label="EverQuest imagery">
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
+        <!-- Tab navigation -->
+        <div class="ftab-row" role="tablist" aria-label="Forum sections">
+          <button class="ftab is-active" role="tab" aria-selected="true" aria-controls="tab-public" id="btn-public" data-tab="public">Public Discussion</button>
+          <button class="ftab" role="tab" aria-selected="false" aria-controls="tab-members" id="btn-members" data-tab="members">Members Only</button>
+          <button class="ftab ftab--mgmt" role="tab" aria-selected="false" aria-controls="tab-management" id="btn-management" data-tab="management" hidden>⚙ Management</button>
         </div>
 
-        <section class="forum-section" aria-label="Public forum posts">
-          <div class="forum-section__header">
-            <h2 class="forum-section__title">Public Discussion</h2>
-            <span class="forum-badge">Open to all</span>
+        <!-- Public forum panel -->
+        <section id="tab-public" class="ftpanel" role="tabpanel" aria-labelledby="btn-public">
+          <div class="ft-head">
+            <h2 class="ft-head__title">Public Discussion</h2>
+            <span class="ft-head__badge">Open to all</span>
           </div>
 
-          <form class="panel forum-form forum-form--compact" id="publicForm">
-            <label class="resource-field">
-              <span>Post Title</span>
-              <input id="publicTitle" type="text" placeholder="Share a thought or update" required />
+          <form class="ft-compose" id="publicForm" novalidate>
+            <p class="ft-compose__heading">New Thread</p>
+            <label class="ft-compose__label">
+              Title
+              <input id="pubTitle" type="text" placeholder="Thread title…" required />
             </label>
-            <label class="resource-field">
-              <span>Message</span>
-              <textarea id="publicMessage" rows="3" placeholder="Write something for the public forum..." required></textarea>
+            <label class="ft-compose__label">
+              Message
+              <textarea id="pubBody" rows="3" placeholder="Write something for the public forum…" required></textarea>
             </label>
-            <button class="btn-primary" type="submit">Post Publicly</button>
+            <div class="ft-compose__actions">
+              <button class="btn-primary" type="submit">Post Publicly</button>
+            </div>
           </form>
 
-          <div class="forum-thread-list" id="publicThreadList"></div>
+          <div class="ft-list" id="publicList" aria-live="polite"></div>
         </section>
 
-        <section class="forum-section forum-section--member" aria-label="Members-only forum area">
-          <div class="forum-section__header">
-            <h2 class="forum-section__title">Members Only</h2>
-            <span class="forum-badge forum-badge--member">Requires Netlify account</span>
+        <!-- Members-only forum panel -->
+        <section id="tab-members" class="ftpanel" role="tabpanel" aria-labelledby="btn-members" hidden>
+          <div class="ft-head">
+            <h2 class="ft-head__title">Members Only</h2>
+            <span class="ft-head__badge ft-head__badge--member">Requires Netlify account</span>
           </div>
 
-          <div class="panel forum-gate" id="memberGate">
-            <p class="forum-gate__text">Sign in with your Netlify account to unlock the private council chamber and post members-only threads.</p>
+          <div class="ft-gate" id="memberGate" hidden>
+            <p class="ft-gate__text">Sign in with your Netlify Identity account to access the private council chamber.</p>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
 
-          <form class="panel forum-form forum-form--compact" id="memberForm" hidden>
-            <label class="resource-field">
-              <span>Members-Only Thread Title</span>
-              <input id="memberTitle" type="text" placeholder="Council planning or strategy note" required />
+          <form class="ft-compose" id="memberForm" hidden novalidate>
+            <p class="ft-compose__heading">New Members-Only Thread</p>
+            <label class="ft-compose__label">
+              Title
+              <input id="memTitle" type="text" placeholder="Thread title…" required />
             </label>
-            <label class="resource-field">
-              <span>Message</span>
-              <textarea id="memberMessage" rows="3" placeholder="Share a private update for the guild officers..." required></textarea>
+            <label class="ft-compose__label">
+              Message
+              <textarea id="memBody" rows="3" placeholder="Share a private update for the guild…" required></textarea>
             </label>
-            <label class="resource-field">
-              <span>Member Photo (optional)</span>
-              <input id="memberPhoto" type="file" accept="image/*" />
-            </label>
-            <button class="btn-primary" type="submit">Post for Members</button>
+            <div class="ft-compose__actions">
+              <button class="btn-primary" type="submit">Post for Members</button>
+            </div>
           </form>
 
-          <div class="forum-thread-list" id="memberThreadList" hidden></div>
+          <div class="ft-list" id="memberList" aria-live="polite" hidden></div>
+        </section>
+
+        <!-- Management panel (admin-only) -->
+        <section id="tab-management" class="ftpanel" role="tabpanel" aria-labelledby="btn-management" hidden>
+          <div class="ft-head">
+            <h2 class="ft-head__title">Forum Management</h2>
+            <span class="ft-head__badge ft-head__badge--member">Admins only</span>
+          </div>
+          <div id="mgmtContent">
+            <div class="mgmt-gate">Loading…</div>
+          </div>
         </section>
       </main>
 
@@ -120,229 +510,48 @@
       </footer>
     </div>
 
-    <script src="../../scripts/site-decor.js"></script>
+    <script src="../scripts/site-decor.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const PUBLIC_THREADS_STORAGE_KEY = 'theChosenPublicThreads';
-      const MEMBER_THREADS_STORAGE_KEY = 'theChosenMemberThreads';
-      const publicThreads = readPublicThreads();
-      const memberThreads = readMemberThreads();
-      let activeReplyComposer = null;
+    (function () {
+      'use strict';
 
-      const publicForm = document.getElementById('publicForm');
-      const publicTitleInput = document.getElementById('publicTitle');
-      const publicMessageInput = document.getElementById('publicMessage');
-      const publicThreadList = document.getElementById('publicThreadList');
-      const memberGate = document.getElementById('memberGate');
-      const memberThreadList = document.getElementById('memberThreadList');
-      const memberForm = document.getElementById('memberForm');
-      const thumbnailOptions = [
-        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
-        { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
-        { url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80', alt: 'Sunlit fantasy valley' },
-        { url: 'https://images.unsplash.com/photo-1464822759844-d150c6fb2c57?auto=format&fit=crop&w=1200&q=80', alt: 'Epic misty peaks' },
-        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Giant canyon vista' },
-        { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', alt: 'Stormy sky over distant ridges' },
-        { url: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=80', alt: 'Moonlit lake and cliffs' },
-        { url: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80', alt: 'Dawn over dramatic hills' },
-        { url: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80', alt: 'Cloud-kissed ancient ruins' },
-        { url: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80', alt: 'Lush green forest path' },
-        { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80', alt: 'Wild mountain pass' },
-        { url: 'https://images.unsplash.com/photo-1522093007474-d86e9bf7ba6f?auto=format&fit=crop&w=1200&q=80', alt: 'Cobalt sky over rolling hills' },
-        { url: 'https://images.unsplash.com/photo-1501786223405-6d024d7c3b8d?auto=format&fit=crop&w=1200&q=80', alt: 'Sunset over rocky cliffs' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Snowy peaks and pine forest' },
-        { url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80', alt: 'Deep evergreen woodland' },
-        { url: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1200&q=80', alt: 'Misty lake and pine trees' },
-        { url: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=1200&q=80', alt: 'Wide desert horizon' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Rugged alpine ridge' },
-        { url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80', alt: 'Golden desert plains' },
-        { url: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80', alt: 'Twilight over calm waters' },
-        { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', alt: 'Ocean cliffs and sea mist' },
-        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Dramatic mountain skyline' },
-        { url: 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient stone ruins in the wild' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Highland pass under storm clouds' },
-        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Grand canyon-like gorge' }
-      ];
-      const memberTitleInput = document.getElementById('memberTitle');
-      const memberMessageInput = document.getElementById('memberMessage');
-      const memberPhotoInput = document.getElementById('memberPhoto');
+      // ── Storage keys ──────────────────────────────────────────────
+      var PUBLIC_KEY  = 'theChosenPublicThreads';
+      var MEMBER_KEY  = 'theChosenMemberThreads';
+      var MEMBER_STORE = 'theChosenCurrentMember';
 
-      function randomizeThumbnailCards() {
-        const cards = Array.from(document.querySelectorAll('.thumbnail-card img'));
-        if (!cards.length) {
-          return;
-        }
+      // ── State ─────────────────────────────────────────────────────
+      var publicThreads = loadPublicThreads();
+      var memberThreads = loadMemberThreads();
+      var activeComposer = null; // { scope, threadId, parentId }
 
-        const shuffled = thumbnailOptions
-          .map((image) => ({ image, sort: Math.random() }))
-          .sort((a, b) => a.sort - b.sort)
-          .map((entry) => entry.image);
+      // ── DOM references ────────────────────────────────────────────
+      var publicForm  = document.getElementById('publicForm');
+      var pubTitle    = document.getElementById('pubTitle');
+      var pubBody     = document.getElementById('pubBody');
+      var publicList  = document.getElementById('publicList');
 
-        cards.forEach((img, index) => {
-          const image = shuffled[index % shuffled.length];
-          img.src = image.url;
-          img.alt = image.alt;
-        });
-      }
+      var memberGate  = document.getElementById('memberGate');
+      var memberForm  = document.getElementById('memberForm');
+      var memTitle    = document.getElementById('memTitle');
+      var memBody     = document.getElementById('memBody');
+      var memberList  = document.getElementById('memberList');
 
-      function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
+      var mgmtContent    = document.getElementById('mgmtContent');
+      var btnManagement  = document.getElementById('btn-management');
 
-      async function handlePublicPost(event) {
-        event.preventDefault();
-        const title = publicTitleInput.value.trim();
-        const message = publicMessageInput.value.trim();
-        if (!title || !message) {
-          return;
-        }
+      var footerMember       = document.getElementById('footerMember');
+      var footerMemberMenu   = document.getElementById('footerMemberMenu');
+      var footerMemberAvatar = document.getElementById('footerMemberAvatar');
+      var footerMemberName   = document.getElementById('footerMemberName');
+      var footerMemberEmail  = document.getElementById('footerMemberEmail');
+      var footerAccountButton = document.getElementById('footerAccountButton');
+      var footerLogoutButton  = document.getElementById('footerLogoutButton');
 
-        const currentMember = getCurrentMember();
-        publicThreads.unshift({
-          id: buildEntryId('public'),
-          title,
-          author: currentMember ? currentMember.name : 'Guest Adventurer',
-          avatar: currentMember ? currentMember.avatar || '' : '',
-          body: message,
-          replies: []
-        });
-        writePublicThreads(publicThreads);
-        activeReplyComposer = null;
-
-        publicForm.reset();
-        renderThreads();
-      }
-
-      const footerMember = document.getElementById('footerMember');
-      const footerMemberMenu = document.getElementById('footerMemberMenu');
-      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
-      const footerMemberName = document.getElementById('footerMemberName');
-      const footerMemberEmail = document.getElementById('footerMemberEmail');
-      const footerAccountButton = document.getElementById('footerAccountButton');
-      const footerLogoutButton = document.getElementById('footerLogoutButton');
-
-      function getCurrentMember() {
-        const stored = localStorage.getItem('theChosenCurrentMember');
-        if (stored) {
-          try {
-            return JSON.parse(stored);
-          } catch (error) {
-            return null;
-          }
-        }
-
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          const user = window.netlifyIdentity.currentUser();
-          const member = {
-            id: user.id || user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email,
-            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-          };
-          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
-          return member;
-        }
-
-        return null;
-      }
-
-      function readMemberThreads() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(MEMBER_THREADS_STORAGE_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored.map(normalizeMemberThread).filter(Boolean);
-          }
-        } catch (error) {
-          // Fall back to an empty list.
-        }
-
-        return [];
-      }
-
-      function writeMemberThreads(threads) {
-        localStorage.setItem(MEMBER_THREADS_STORAGE_KEY, JSON.stringify(threads));
-      }
-
-      function readPublicThreads() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(PUBLIC_THREADS_STORAGE_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored.map(normalizePublicThread).filter(Boolean);
-          }
-        } catch (error) {
-          // Fall back to an empty list.
-        }
-
-        return [];
-      }
-
-      function writePublicThreads(threads) {
-        localStorage.setItem(PUBLIC_THREADS_STORAGE_KEY, JSON.stringify(threads));
-      }
-
-      function buildEntryId(prefix) {
-        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-          return `${prefix}-${window.crypto.randomUUID()}`;
-        }
-        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-      }
-
-      function normalizePublicThread(thread) {
-        if (!thread || typeof thread !== 'object') {
-          return null;
-        }
-        return {
-          id: typeof thread.id === 'string' ? thread.id : buildEntryId('public'),
-          title: typeof thread.title === 'string' ? thread.title : '',
-          author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guest Adventurer',
-          avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
-          body: typeof thread.body === 'string' ? thread.body : '',
-          replies: normalizeReplies(thread.replies)
-        };
-      }
-
-      function normalizeMemberThread(thread) {
-        if (!thread || typeof thread !== 'object') {
-          return null;
-        }
-        return {
-          id: typeof thread.id === 'string' ? thread.id : buildEntryId('member'),
-          title: typeof thread.title === 'string' ? thread.title : '',
-          author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guild Member',
-          avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
-          body: typeof thread.body === 'string' ? thread.body : '',
-          photo: typeof thread.photo === 'string' ? thread.photo : '',
-          replies: normalizeReplies(thread.replies)
-        };
-      }
-
-      function normalizeReplies(replies) {
-        if (!Array.isArray(replies)) {
-          return [];
-        }
-        return replies
-          .map((reply) => {
-            if (!reply || typeof reply !== 'object') {
-              return null;
-            }
-            return {
-              id: typeof reply.id === 'string' ? reply.id : buildEntryId('reply'),
-              author: typeof reply.author === 'string' && reply.author ? reply.author : 'Guest Adventurer',
-              avatar: typeof reply.avatar === 'string' ? reply.avatar : '',
-              body: typeof reply.body === 'string' ? reply.body : '',
-              replies: normalizeReplies(reply.replies)
-            };
-          })
-          .filter(Boolean);
-      }
-
-      function escapeHtml(value) {
-        return String(value || '')
+      // ── Utilities ─────────────────────────────────────────────────
+      function esc(val) {
+        return String(val || '')
           .replace(/&/g, '&amp;')
           .replace(/</g, '&lt;')
           .replace(/>/g, '&gt;')
@@ -350,339 +559,578 @@
           .replace(/'/g, '&#39;');
       }
 
-      function getMemberName(member) {
-        return (member && (member.name || member.email)) || 'Guest Adventurer';
-      }
-
-      function getMemberAvatar(member, authorName) {
-        if (member && member.avatar) {
-          return member.avatar;
+      function uid(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return (prefix || 'id') + '-' + window.crypto.randomUUID();
         }
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        return (prefix || 'id') + '-' + Date.now() + '-' + Math.floor(Math.random() * 1e6);
       }
 
-      function appendNestedReply(replies, parentId, reply) {
-        for (let index = 0; index < replies.length; index += 1) {
-          const candidate = replies[index];
-          if (candidate.id === parentId) {
-            candidate.replies = Array.isArray(candidate.replies) ? candidate.replies : [];
-            candidate.replies.unshift(reply);
+      function avatarUrl(name) {
+        return 'https://ui-avatars.com/api/?name=' + encodeURIComponent(name || 'Guild Member') + '&background=ff7b7b&color=14070b';
+      }
+
+      // ── Auth helpers ──────────────────────────────────────────────
+      function getCurrentMember() {
+        var stored = localStorage.getItem(MEMBER_STORE);
+        if (stored) {
+          try { return JSON.parse(stored); } catch (e) { /* ignore */ }
+        }
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          return saveMember(window.netlifyIdentity.currentUser());
+        }
+        return null;
+      }
+
+      function saveMember(user) {
+        var m = {
+          id:     user.id || user.email,
+          name:   (user.user_metadata && user.user_metadata.full_name) || user.email.split('@')[0],
+          email:  user.email,
+          avatar: (user.user_metadata && user.user_metadata.avatar_url) || ''
+        };
+        localStorage.setItem(MEMBER_STORE, JSON.stringify(m));
+        return m;
+      }
+
+      function clearMember() {
+        localStorage.removeItem(MEMBER_STORE);
+      }
+
+      function getNetlifyUser() {
+        return window.netlifyIdentity ? window.netlifyIdentity.currentUser() : null;
+      }
+
+      function getUserRoles(user) {
+        if (!user) return [];
+        try {
+          var jwt = user.token && user.token.access_token;
+          if (!jwt) return [];
+          var payload = JSON.parse(atob(jwt.split('.')[1]));
+          return (payload.app_metadata && payload.app_metadata.roles) || [];
+        } catch (e) {
+          return [];
+        }
+      }
+
+      function isAdmin() {
+        return getUserRoles(getNetlifyUser()).indexOf('admin') !== -1;
+      }
+
+      // ── Storage ───────────────────────────────────────────────────
+      function normalizeReply(r) {
+        if (!r || typeof r !== 'object') return null;
+        return {
+          id:      typeof r.id     === 'string' ? r.id     : uid('reply'),
+          author:  typeof r.author === 'string' && r.author ? r.author : 'Guest Adventurer',
+          avatar:  typeof r.avatar === 'string' ? r.avatar : '',
+          body:    typeof r.body   === 'string' ? r.body   : '',
+          replies: normalizeReplies(r.replies)
+        };
+      }
+
+      function normalizeReplies(arr) {
+        if (!Array.isArray(arr)) return [];
+        return arr.map(normalizeReply).filter(Boolean);
+      }
+
+      function normalizeThread(t, isPublic) {
+        if (!t || typeof t !== 'object') return null;
+        return {
+          id:      typeof t.id     === 'string' ? t.id     : uid(isPublic ? 'public' : 'member'),
+          title:   typeof t.title  === 'string' ? t.title  : '',
+          author:  typeof t.author === 'string' && t.author ? t.author : (isPublic ? 'Guest Adventurer' : 'Guild Member'),
+          avatar:  typeof t.avatar === 'string' ? t.avatar : '',
+          body:    typeof t.body   === 'string' ? t.body   : '',
+          replies: normalizeReplies(t.replies)
+        };
+      }
+
+      function loadPublicThreads() {
+        try {
+          var stored = JSON.parse(localStorage.getItem(PUBLIC_KEY) || 'null');
+          if (Array.isArray(stored)) return stored.map(function (t) { return normalizeThread(t, true); }).filter(Boolean);
+        } catch (e) { /* ignore */ }
+        return [];
+      }
+
+      function loadMemberThreads() {
+        try {
+          var stored = JSON.parse(localStorage.getItem(MEMBER_KEY) || 'null');
+          if (Array.isArray(stored)) return stored.map(function (t) { return normalizeThread(t, false); }).filter(Boolean);
+        } catch (e) { /* ignore */ }
+        return [];
+      }
+
+      function savePublicThreads()  { localStorage.setItem(PUBLIC_KEY,  JSON.stringify(publicThreads)); }
+      function saveMemberThreads()  { localStorage.setItem(MEMBER_KEY,  JSON.stringify(memberThreads)); }
+
+      function syncThreads() {
+        var fp = loadPublicThreads();
+        publicThreads.splice(0, publicThreads.length);
+        Array.prototype.push.apply(publicThreads, fp);
+
+        var fm = loadMemberThreads();
+        memberThreads.splice(0, memberThreads.length);
+        Array.prototype.push.apply(memberThreads, fm);
+      }
+
+      // ── Tree helpers ──────────────────────────────────────────────
+      function insertReply(replies, parentId, reply) {
+        for (var i = 0; i < replies.length; i++) {
+          if (replies[i].id === parentId) {
+            replies[i].replies = replies[i].replies || [];
+            replies[i].replies.unshift(reply);
             return true;
           }
-          if (appendNestedReply(candidate.replies || [], parentId, reply)) {
-            return true;
-          }
+          if (insertReply(replies[i].replies || [], parentId, reply)) return true;
         }
         return false;
       }
 
-      function addReplyToThread(threads, threadId, parentId, reply) {
-        for (let index = 0; index < threads.length; index += 1) {
-          const thread = threads[index];
-          if (thread.id !== threadId) {
-            continue;
-          }
-          thread.replies = Array.isArray(thread.replies) ? thread.replies : [];
-          if (parentId === thread.id) {
-            thread.replies.unshift(reply);
-            return true;
-          }
-          return appendNestedReply(thread.replies, parentId, reply);
+      function addReply(threads, threadId, parentId, reply) {
+        for (var i = 0; i < threads.length; i++) {
+          if (threads[i].id !== threadId) continue;
+          threads[i].replies = threads[i].replies || [];
+          if (parentId === threadId) { threads[i].replies.unshift(reply); return true; }
+          return insertReply(threads[i].replies, parentId, reply);
         }
         return false;
       }
 
-      function syncStoredPublicThreads() {
-        const latestThreads = readPublicThreads();
-        publicThreads.splice(0, publicThreads.length, ...latestThreads);
-      }
-
-      function syncStoredMemberThreads() {
-        const latestThreads = readMemberThreads();
-        memberThreads.splice(0, memberThreads.length, ...latestThreads);
-      }
-
-      function renderReplyComposer(threadId, parentId, scope) {
-        if (
-          !activeReplyComposer
-          || activeReplyComposer.threadId !== threadId
-          || activeReplyComposer.parentId !== parentId
-          || activeReplyComposer.scope !== scope
-        ) {
-          return '';
+      function deleteThread(threads, threadId) {
+        for (var i = 0; i < threads.length; i++) {
+          if (threads[i].id === threadId) { threads.splice(i, 1); return true; }
         }
+        return false;
+      }
 
-        return `
-          <form class="forum-reply-form" data-thread-reply-form="true" data-thread-id="${escapeHtml(threadId)}" data-parent-id="${escapeHtml(parentId)}" data-reply-scope="${escapeHtml(scope)}">
-            <label class="resource-field">
-              <span>Your Reply</span>
-              <textarea class="forum-reply-form__input" rows="2" placeholder="Write your reply..." required></textarea>
-            </label>
-            <div class="forum-reply-form__actions">
-              <button class="btn-primary" type="submit">Reply</button>
-              <button class="resource-item__delete" type="button" data-cancel-reply="true">Cancel</button>
-            </div>
-          </form>
-        `;
+      // ── Rendering ─────────────────────────────────────────────────
+      function renderComposer(threadId, parentId, scope) {
+        if (!activeComposer ||
+          activeComposer.threadId !== threadId ||
+          activeComposer.parentId !== parentId ||
+          activeComposer.scope    !== scope) return '';
+
+        return '<div class="ft-reply-form"' +
+          ' data-reply-form' +
+          ' data-thread-id="'  + esc(threadId)  + '"' +
+          ' data-parent-id="'  + esc(parentId)  + '"' +
+          ' data-scope="'      + esc(scope)      + '">' +
+          '<textarea class="ft-reply-form__textarea" rows="2" placeholder="Write your reply…" required></textarea>' +
+          '<div class="ft-reply-form__actions">' +
+            '<button class="btn-primary ft-btn-submit-reply" type="button">Reply</button>' +
+            '<button class="ft-btn ft-btn-cancel-reply"      type="button">Cancel</button>' +
+          '</div></div>';
       }
 
       function renderReplyNode(reply, threadId, scope) {
-        const author = escapeHtml(reply.author || 'Guest Adventurer');
-        const body = escapeHtml(reply.body || '');
-        const avatar = escapeHtml(reply.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
-        const replyId = escapeHtml(reply.id);
+        var author   = esc(reply.author || 'Guest Adventurer');
+        var body     = esc(reply.body   || '');
+        var avatar   = esc(reply.avatar || avatarUrl(reply.author));
+        var replyId  = esc(reply.id);
 
-        return `
-          <div class="forum-thread__reply">
-            <div class="forum-thread__reply-header">
-              <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
-              <p class="forum-thread__reply-author">${author}</p>
-            </div>
-            <p class="forum-thread__reply-body">${body}</p>
-            <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${replyId}" data-thread-id="${escapeHtml(threadId)}" data-reply-scope="${escapeHtml(scope)}">Reply</button>
-            </div>
-            ${renderReplyComposer(threadId, reply.id, scope)}
-            ${(Array.isArray(reply.replies) && reply.replies.length)
-              ? `<div class="forum-thread__reply-children">${reply.replies.map((nestedReply) => renderReplyNode(nestedReply, threadId, scope)).join('')}</div>`
-              : ''}
-          </div>
-        `;
+        var children = (Array.isArray(reply.replies) && reply.replies.length)
+          ? '<div class="ft-reply-children">' +
+              reply.replies.map(function (r) { return renderReplyNode(r, threadId, scope); }).join('') +
+            '</div>'
+          : '';
+
+        return '<div class="ft-reply">' +
+          '<div class="ft-reply__meta">' +
+            '<img class="ft-reply__avatar" src="' + avatar + '" alt="' + author + ' avatar" />' +
+            '<span class="ft-reply__author">' + author + '</span>' +
+          '</div>' +
+          '<p class="ft-reply__body">' + body + '</p>' +
+          '<div class="ft-reply__actions">' +
+            '<button class="ft-btn" data-reply-btn' +
+              ' data-thread-id="'    + esc(threadId) + '"' +
+              ' data-reply-target="' + replyId       + '"' +
+              ' data-scope="'        + esc(scope)    + '">↩ Reply</button>' +
+          '</div>' +
+          renderComposer(threadId, reply.id, scope) +
+          children +
+        '</div>';
       }
 
-      function renderPublicThread(thread) {
-        const author = escapeHtml(thread.author || 'Guest Adventurer');
-        const avatar = escapeHtml(thread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
-        const threadId = escapeHtml(thread.id);
+      function renderThread(thread, scope) {
+        var isMember = scope === 'member';
+        var author   = esc(thread.author || (isMember ? 'Guild Member' : 'Guest Adventurer'));
+        var avatar   = esc(thread.avatar || avatarUrl(thread.author));
+        var threadId = esc(thread.id);
+        var badge    = isMember
+          ? '<span class="ft-card__badge ft-card__badge--member">Members</span>'
+          : '<span class="ft-card__badge">Public</span>';
 
-        return `
-          <article class="panel forum-thread">
-            <div class="forum-thread__header">
-              <div>
-                <h3 class="forum-thread__title">${escapeHtml(thread.title)}</h3>
-                <div class="forum-thread__author">
-                  <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
-                  <span class="forum-thread__author-name">${author}</span>
-                </div>
-              </div>
-              <span class="forum-badge">Public</span>
-            </div>
-            <div class="forum-thread__content">
-              <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
-            </div>
-            <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}" data-reply-scope="public">Reply</button>
-            </div>
-            ${renderReplyComposer(thread.id, thread.id, 'public')}
-            <div class="forum-thread__replies">
-              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id, 'public')).join('')}
-            </div>
-          </article>
-        `;
+        var replies = Array.isArray(thread.replies) ? thread.replies : [];
+
+        return '<article class="ft-card' + (isMember ? ' ft-card--member' : '') + '">' +
+          '<div class="ft-card__head">' +
+            '<div>' +
+              '<h3 class="ft-card__title">' + esc(thread.title) + '</h3>' +
+              '<div class="ft-card__meta">' +
+                '<img class="ft-card__avatar" src="' + avatar + '" alt="' + author + ' avatar" />' +
+                '<span class="ft-card__author">' + author + '</span>' +
+              '</div>' +
+            '</div>' +
+            '<div class="ft-card__right">' +
+              badge +
+              '<button class="ft-btn ft-btn--delete"' +
+                ' data-delete-thread' +
+                ' data-thread-id="' + threadId + '"' +
+                ' data-scope="'     + esc(scope) + '"' +
+                ' title="Delete thread" aria-label="Delete thread">×</button>' +
+            '</div>' +
+          '</div>' +
+          '<p class="ft-card__body">' + esc(thread.body) + '</p>' +
+          '<div class="ft-card__actions">' +
+            '<button class="ft-btn" data-reply-btn' +
+              ' data-thread-id="'    + threadId    + '"' +
+              ' data-reply-target="' + threadId    + '"' +
+              ' data-scope="'        + esc(scope)  + '">↩ Reply</button>' +
+          '</div>' +
+          renderComposer(thread.id, thread.id, scope) +
+          (replies.length
+            ? '<div class="ft-replies">' +
+                replies.map(function (r) { return renderReplyNode(r, thread.id, scope); }).join('') +
+              '</div>'
+            : '') +
+        '</article>';
       }
 
-      function renderMemberThread(thread) {
-        const author = escapeHtml(thread.author || 'Guild Member');
-        const avatar = escapeHtml(thread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
-        const threadId = escapeHtml(thread.id);
+      function renderForums() {
+        syncThreads();
+        var member = getCurrentMember();
 
-        return `
-          <article class="panel forum-thread forum-thread--member">
-            <div class="forum-thread__header">
-              <div>
-                <h3 class="forum-thread__title">${escapeHtml(thread.title)}</h3>
-                <div class="forum-thread__author">
-                  <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
-                  <span class="forum-thread__author-name">${author}</span>
-                </div>
-              </div>
-              <span class="forum-badge forum-badge--member">Members</span>
-            </div>
-            ${thread.photo ? `<img class="forum-thread__photo" src="${escapeHtml(thread.photo)}" alt="Member upload" />` : ''}
-            <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
-            <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}" data-reply-scope="member">Reply</button>
-            </div>
-            ${renderReplyComposer(thread.id, thread.id, 'member')}
-            <div class="forum-thread__replies">
-              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id, 'member')).join('')}
-            </div>
-          </article>
-        `;
+        renderFooterBadge(member);
+
+        // Reveal admin tab when signed in as admin
+        btnManagement.hidden = !isAdmin();
+
+        // Public list
+        if (publicThreads.length) {
+          publicList.innerHTML = publicThreads.map(function (t) { return renderThread(t, 'public'); }).join('');
+        } else {
+          publicList.innerHTML = '<div class="ft-empty">No public threads yet — be the first to post.</div>';
+        }
+
+        // Members section
+        if (member) {
+          memberGate.hidden  = true;
+          memberForm.hidden  = false;
+          memberList.hidden  = false;
+          if (memberThreads.length) {
+            memberList.innerHTML = memberThreads.map(function (t) { return renderThread(t, 'member'); }).join('');
+          } else {
+            memberList.innerHTML = '<div class="ft-empty">No members-only threads yet — share the first council update.</div>';
+          }
+        } else {
+          memberGate.hidden  = false;
+          memberForm.hidden  = true;
+          memberList.hidden  = true;
+          memberList.innerHTML = '';
+        }
       }
 
-      function renderMemberBadge(member) {
+      // ── Footer badge ──────────────────────────────────────────────
+      function renderFooterBadge(member) {
         if (!member) {
-          footerMember.hidden = true;
+          footerMember.hidden     = true;
           footerMemberMenu.hidden = true;
           return;
         }
-
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
-        footerMemberAvatar.alt = `${member.name || member.email} avatar`;
-        footerMemberName.textContent = member.name || member.email;
+        footerMemberAvatar.src = member.avatar || avatarUrl(member.name || member.email);
+        footerMemberAvatar.alt = (member.name || member.email) + ' avatar';
+        footerMemberName.textContent  = member.name  || member.email;
         footerMemberEmail.textContent = member.email || 'Netlify member';
-        footerMember.hidden = false;
+        footerMember.hidden     = false;
         footerMemberMenu.hidden = false;
       }
 
-      function renderThreads() {
-        syncStoredPublicThreads();
-        syncStoredMemberThreads();
-        const currentMember = getCurrentMember();
-        renderMemberBadge(currentMember);
+      // ── Tab switching ─────────────────────────────────────────────
+      var allTabs   = document.querySelectorAll('.ftab');
+      var allPanels = document.querySelectorAll('.ftpanel');
 
-        if (!publicThreads.length) {
-          publicThreadList.innerHTML = '<article class="panel forum-thread"><p class="empty-state">No public posts yet. Start the first thread.</p></article>';
-        } else {
-          publicThreadList.innerHTML = publicThreads.map((thread) => renderPublicThread(thread)).join('');
-        }
+      allTabs.forEach(function (btn) {
+        btn.addEventListener('click', function () {
+          var target = btn.getAttribute('data-tab');
 
-        if (currentMember) {
-          memberGate.hidden = true;
-          memberForm.hidden = false;
-          memberThreadList.hidden = false;
-          if (!memberThreads.length) {
-            memberThreadList.innerHTML = '<article class="panel forum-thread forum-thread--member"><p class="empty-state">No members-only posts yet. Share the first council update.</p></article>';
-          } else {
-            memberThreadList.innerHTML = memberThreads.map((thread) => renderMemberThread(thread)).join('');
-          }
-        } else {
-          memberGate.hidden = false;
-          memberForm.hidden = true;
-          memberThreadList.hidden = true;
-          memberThreadList.innerHTML = '';
-        }
-      }
+          allTabs.forEach(function (b) {
+            b.classList.toggle('is-active', b === btn);
+            b.setAttribute('aria-selected', b === btn ? 'true' : 'false');
+          });
+          allPanels.forEach(function (p) {
+            p.hidden = p.id !== ('tab-' + target);
+          });
 
-      async function handleMemberPost(event) {
-        event.preventDefault();
-        const currentMember = getCurrentMember();
-        if (!currentMember) {
-          window.location.href = '/login/';
-          return;
-        }
+          if (target === 'management') loadManagement();
+        });
+      });
 
-        const title = memberTitleInput.value.trim();
-        const body = memberMessageInput.value.trim();
-        if (!title || !body) {
-          return;
-        }
+      // ── Post handlers ─────────────────────────────────────────────
+      publicForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var title = pubTitle.value.trim();
+        var body  = pubBody.value.trim();
+        if (!title || !body) return;
 
-        let photoData = '';
-        if (memberPhotoInput.files[0]) {
-          photoData = await readFileAsDataUrl(memberPhotoInput.files[0]);
-        }
+        var member = getCurrentMember();
+        publicThreads.unshift({
+          id:      uid('public'),
+          title:   title,
+          author:  member ? (member.name || member.email) : 'Guest Adventurer',
+          avatar:  member ? (member.avatar || '') : '',
+          body:    body,
+          replies: []
+        });
+        savePublicThreads();
+        activeComposer = null;
+        publicForm.reset();
+        renderForums();
+      });
+
+      memberForm.addEventListener('submit', function (e) {
+        e.preventDefault();
+        var member = getCurrentMember();
+        if (!member) { window.location.href = '/login/'; return; }
+
+        var title = memTitle.value.trim();
+        var body  = memBody.value.trim();
+        if (!title || !body) return;
 
         memberThreads.unshift({
-          id: `member-${Date.now()}`,
-          title,
-          author: currentMember.name,
-          avatar: currentMember.avatar || '',
-          body,
-          photo: photoData,
+          id:      uid('member'),
+          title:   title,
+          author:  member.name || member.email,
+          avatar:  member.avatar || '',
+          body:    body,
           replies: []
         });
-        writeMemberThreads(memberThreads);
-        activeReplyComposer = null;
+        saveMemberThreads();
+        activeComposer = null;
         memberForm.reset();
-        renderThreads();
+        renderForums();
+      });
+
+      // ── List interaction (reply / delete) ─────────────────────────
+      function handleListClick(e) {
+        // Reply button — open/close composer
+        var replyBtn = e.target.closest('[data-reply-btn]');
+        if (replyBtn) {
+          var scope    = replyBtn.getAttribute('data-scope')        || 'public';
+          var threadId = replyBtn.getAttribute('data-thread-id');
+          var parentId = replyBtn.getAttribute('data-reply-target');
+          var same = activeComposer &&
+            activeComposer.scope    === scope &&
+            activeComposer.threadId === threadId &&
+            activeComposer.parentId === parentId;
+          activeComposer = same ? null : { scope: scope, threadId: threadId, parentId: parentId };
+          renderForums();
+          return;
+        }
+
+        // Cancel reply
+        if (e.target.closest('.ft-btn-cancel-reply')) {
+          activeComposer = null;
+          renderForums();
+          return;
+        }
+
+        // Submit reply
+        var submitBtn = e.target.closest('.ft-btn-submit-reply');
+        if (submitBtn) {
+          var form     = submitBtn.closest('[data-reply-form]');
+          if (!form) return;
+          var textarea = form.querySelector('.ft-reply-form__textarea');
+          var body     = textarea ? textarea.value.trim() : '';
+          if (!body) return;
+
+          var scope    = form.getAttribute('data-scope')    || 'public';
+          var threadId = form.getAttribute('data-thread-id');
+          var parentId = form.getAttribute('data-parent-id');
+          var member   = getCurrentMember();
+          var author   = member ? (member.name || member.email) : 'Guest Adventurer';
+
+          var reply = {
+            id:      uid('reply'),
+            author:  author,
+            avatar:  member ? (member.avatar || '') : '',
+            body:    body,
+            replies: []
+          };
+
+          var threads  = scope === 'member' ? memberThreads : publicThreads;
+          var inserted = addReply(threads, threadId, parentId, reply);
+          if (inserted) {
+            if (scope === 'member') saveMemberThreads(); else savePublicThreads();
+          }
+          activeComposer = null;
+          renderForums();
+          return;
+        }
+
+        // Delete thread
+        var deleteBtn = e.target.closest('[data-delete-thread]');
+        if (deleteBtn) {
+          var threadId = deleteBtn.getAttribute('data-thread-id');
+          var scope    = deleteBtn.getAttribute('data-scope') || 'public';
+          if (!window.confirm('Delete this thread and all its replies?')) return;
+          var threads  = scope === 'member' ? memberThreads : publicThreads;
+          if (deleteThread(threads, threadId)) {
+            if (scope === 'member') saveMemberThreads(); else savePublicThreads();
+          }
+          activeComposer = null;
+          renderForums();
+        }
       }
 
-      publicForm.addEventListener('submit', handlePublicPost);
-      memberForm.addEventListener('submit', handleMemberPost);
+      publicList.addEventListener('click', handleListClick);
+      memberList.addEventListener('click', handleListClick);
 
-      function handleThreadListClick(event) {
-        const replyButton = event.target.closest('[data-reply-target]');
-        if (replyButton) {
-          const scope = replyButton.getAttribute('data-reply-scope') || 'public';
-          const threadId = replyButton.getAttribute('data-thread-id');
-          const parentId = replyButton.getAttribute('data-reply-target');
-          const isSameTarget = activeReplyComposer
-            && activeReplyComposer.scope === scope
-            && activeReplyComposer.threadId === threadId
-            && activeReplyComposer.parentId === parentId;
-          activeReplyComposer = isSameTarget ? null : { scope, threadId, parentId };
-          renderThreads();
+      // ── Management panel ──────────────────────────────────────────
+      function loadManagement() {
+        if (!isAdmin()) {
+          mgmtContent.innerHTML =
+            '<div class="mgmt-gate">This section is restricted to site administrators.' +
+            ' Ensure your Netlify Identity account has the <strong>admin</strong> role assigned in the Netlify dashboard.</div>';
           return;
         }
 
-        const cancelButton = event.target.closest('[data-cancel-reply]');
-        if (cancelButton) {
-          activeReplyComposer = null;
-          renderThreads();
-        }
+        mgmtContent.innerHTML = '<div class="mgmt-gate">Loading members…</div>';
+
+        var user  = getNetlifyUser();
+        var token = user && user.token && user.token.access_token;
+
+        fetch('/.netlify/identity/admin/users?per_page=100', {
+          headers: { 'Authorization': 'Bearer ' + token }
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+          })
+          .then(function (data) { renderManagement(data.users || []); })
+          .catch(function (err) {
+            mgmtContent.innerHTML =
+              '<p class="mgmt-note mgmt-note--error">Could not load members: ' + esc(err.message) +
+              '. Make sure Netlify Identity is enabled and your account has admin privileges.</p>';
+          });
       }
 
-      function handleThreadListSubmit(event) {
-        const replyForm = event.target.closest('[data-thread-reply-form]');
-        if (!replyForm) {
-          return;
-        }
-        event.preventDefault();
-
-        const scope = replyForm.getAttribute('data-reply-scope') || 'public';
-        const threadId = replyForm.getAttribute('data-thread-id');
-        const parentId = replyForm.getAttribute('data-parent-id');
-        const textarea = replyForm.querySelector('.forum-reply-form__input');
-        const body = textarea ? textarea.value.trim() : '';
-        if (!body) {
+      function renderManagement(users) {
+        if (!users.length) {
+          mgmtContent.innerHTML = '<div class="mgmt-gate">No members found.</div>';
           return;
         }
 
-        const member = getCurrentMember();
-        const author = getMemberName(member);
-        const reply = {
-          id: buildEntryId('reply'),
-          author,
-          avatar: getMemberAvatar(member, author),
-          body,
-          replies: []
-        };
+        var html =
+          '<div class="mgmt-section">' +
+            '<div class="mgmt-block">' +
+              '<h3 class="mgmt-block__title">Site Members (' + users.length + ')</h3>' +
+              '<p class="mgmt-note">Toggle role chips to grant or revoke access.' +
+                ' Changes apply on the member\'s next sign-in.</p>' +
+              '<div class="mgmt-user-list" id="mgmtUserList">' +
+                users.map(renderMgmtUser).join('') +
+              '</div>' +
+            '</div>' +
+          '</div>';
 
-        const threads = scope === 'member' ? memberThreads : publicThreads;
-        const inserted = addReplyToThread(threads, threadId, parentId, reply);
-        if (!inserted) {
-          return;
-        }
+        mgmtContent.innerHTML = html;
 
-        if (scope === 'member') {
-          writeMemberThreads(memberThreads);
-        } else {
-          writePublicThreads(publicThreads);
-        }
-        activeReplyComposer = null;
-        renderThreads();
+        document.getElementById('mgmtUserList').addEventListener('click', function (e) {
+          var chip = e.target.closest('[data-role-toggle]');
+          if (!chip) return;
+          var userId  = chip.getAttribute('data-user-id');
+          var role    = chip.getAttribute('data-role');
+          var current = (chip.getAttribute('data-current-roles') || '').split(',').filter(Boolean);
+          var hasRole = current.indexOf(role) !== -1;
+          var newRoles = hasRole
+            ? current.filter(function (r) { return r !== role; })
+            : current.concat([role]);
+          setUserRole(userId, newRoles, chip);
+        });
       }
 
-      publicThreadList.addEventListener('click', handleThreadListClick);
-      memberThreadList.addEventListener('click', handleThreadListClick);
-      publicThreadList.addEventListener('submit', handleThreadListSubmit);
-      memberThreadList.addEventListener('submit', handleThreadListSubmit);
+      function renderMgmtUser(u) {
+        var name    = esc((u.user_metadata && u.user_metadata.full_name) || u.email.split('@')[0]);
+        var email   = esc(u.email || '');
+        var roles   = (u.app_metadata && u.app_metadata.roles) || [];
+        var userId  = esc(u.id || '');
+        var rolesStr = esc(roles.join(','));
 
-      footerAccountButton.addEventListener('click', () => {
+        var hasMember = roles.indexOf('member') !== -1;
+        var hasAdmin  = roles.indexOf('admin')  !== -1;
+
+        return '<div class="mgmt-user" id="mgmt-user-' + userId + '">' +
+          '<div class="mgmt-user__info">' +
+            '<img class="mgmt-user__avatar" src="' + esc(avatarUrl(name)) + '" alt="' + name + '" />' +
+            '<div>' +
+              '<p class="mgmt-user__name">'  + name  + '</p>' +
+              '<p class="mgmt-user__email">' + email + '</p>' +
+            '</div>' +
+          '</div>' +
+          '<div class="mgmt-user__actions">' +
+            '<button class="mgmt-chip' + (hasMember ? ' is-on' : '') + '"' +
+              ' data-role-toggle data-user-id="' + userId + '" data-role="member"' +
+              ' data-current-roles="' + rolesStr + '" title="Toggle member role">member</button>' +
+            '<button class="mgmt-chip mgmt-chip--admin' + (hasAdmin ? ' is-on' : '') + '"' +
+              ' data-role-toggle data-user-id="' + userId + '" data-role="admin"' +
+              ' data-current-roles="' + rolesStr + '" title="Toggle admin role">admin</button>' +
+          '</div>' +
+        '</div>';
+      }
+
+      function setUserRole(userId, newRoles, chipEl) {
+        var user  = getNetlifyUser();
+        var token = user && user.token && user.token.access_token;
+
+        chipEl.disabled    = true;
+        chipEl.textContent = '…';
+
+        fetch('/.netlify/identity/admin/users/' + userId, {
+          method: 'PUT',
+          headers: {
+            'Authorization': 'Bearer ' + token,
+            'Content-Type':  'application/json'
+          },
+          body: JSON.stringify({ app_metadata: { roles: newRoles } })
+        })
+          .then(function (res) {
+            if (!res.ok) throw new Error('HTTP ' + res.status);
+            return res.json();
+          })
+          .then(function (updated) {
+            var row = document.getElementById('mgmt-user-' + userId);
+            if (row) row.outerHTML = renderMgmtUser(updated);
+          })
+          .catch(function (err) {
+            chipEl.disabled    = false;
+            chipEl.textContent = 'Error';
+            window.alert('Could not update role: ' + err.message);
+          });
+      }
+
+      // ── Netlify Identity wiring ───────────────────────────────────
+      footerAccountButton.addEventListener('click', function () {
         window.location.href = '/login/';
       });
-      footerLogoutButton.addEventListener('click', () => {
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.logout();
-        }
-        localStorage.removeItem('theChosenCurrentMember');
-        renderMemberBadge(null);
-        renderThreads();
+
+      footerLogoutButton.addEventListener('click', function () {
+        if (window.netlifyIdentity) window.netlifyIdentity.logout();
+        clearMember();
+        renderForums();
       });
 
-      window.addEventListener('storage', renderThreads);
+      window.addEventListener('storage', renderForums);
+
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderThreads());
-        window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem('theChosenCurrentMember');
-          renderMemberBadge(null);
-          renderThreads();
-        });
+        window.netlifyIdentity.on('init',   function ()  { renderForums(); });
+        window.netlifyIdentity.on('login',  function (u) { saveMember(u); renderForums(); });
+        window.netlifyIdentity.on('logout', function ()  { clearMember(); renderForums(); });
       }
-      renderThreads();
+
+      renderForums();
+    }());
     </script>
   </body>
 </html>
