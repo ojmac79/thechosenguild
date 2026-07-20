@@ -31,19 +31,6 @@
             <a class="site-nav__link active" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <div id="headerMemberWrap" class="site-header__member-wrap" hidden>
-              <button id="headerMember" class="site-header__member" type="button" aria-expanded="false">
-                <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
-                <div>
-                  <div id="headerMemberName" class="site-header__member-name"></div>
-                  <div id="headerMemberEmail" class="site-header__member-email"></div>
-                </div>
-              </button>
-              <div id="headerMemberMenu" class="site-header__member-menu" hidden>
-                <button class="site-header__menu-button" type="button" id="headerAccountButton">Account Settings</button>
-                <button class="site-header__menu-button" type="button" id="headerLogoutButton">Log Out</button>
-              </div>
-            </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -91,6 +78,17 @@
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <div id="footerMember" class="site-footer__member" hidden>
+          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
+          <div>
+            <div id="footerMemberName" class="site-footer__member-name"></div>
+            <div id="footerMemberEmail" class="site-footer__member-email"></div>
+          </div>
+        </div>
+        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
+          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
+          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
+        </div>
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
@@ -99,16 +97,42 @@
     <script>
       const RESOURCE_STORAGE_KEY = 'theChosenResources';
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const thumbnailOptions = [
+        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
+        { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
+        { url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80', alt: 'Sunlit fantasy valley' },
+        { url: 'https://images.unsplash.com/photo-1464822759844-d150c6fb2c57?auto=format&fit=crop&w=1200&q=80', alt: 'Epic misty peaks' },
+        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Giant canyon vista' },
+        { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', alt: 'Stormy sky over distant ridges' },
+        { url: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=80', alt: 'Moonlit lake and cliffs' },
+        { url: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80', alt: 'Dawn over dramatic hills' },
+        { url: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80', alt: 'Cloud-kissed ancient ruins' },
+        { url: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80', alt: 'Lush green forest path' },
+        { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80', alt: 'Wild mountain pass' },
+        { url: 'https://images.unsplash.com/photo-1522093007474-d86e9bf7ba6f?auto=format&fit=crop&w=1200&q=80', alt: 'Cobalt sky over rolling hills' },
+        { url: 'https://images.unsplash.com/photo-1501786223405-6d024d7c3b8d?auto=format&fit=crop&w=1200&q=80', alt: 'Sunset over rocky cliffs' },
+        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Snowy peaks and pine forest' },
+        { url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80', alt: 'Deep evergreen woodland' },
+        { url: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1200&q=80', alt: 'Misty lake and pine trees' },
+        { url: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=1200&q=80', alt: 'Wide desert horizon' },
+        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Rugged alpine ridge' },
+        { url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80', alt: 'Golden desert plains' },
+        { url: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80', alt: 'Twilight over calm waters' },
+        { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', alt: 'Ocean cliffs and sea mist' },
+        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Dramatic mountain skyline' },
+        { url: 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient stone ruins in the wild' },
+        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Highland pass under storm clouds' },
+        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Grand canyon-like gorge' }
+      ];
       const resourceList = document.getElementById('resourceList');
       const resourceNotice = document.getElementById('resourceNotice');
-      const headerMemberWrap = document.getElementById('headerMemberWrap');
-      const headerMember = document.getElementById('headerMember');
-      const headerMemberMenu = document.getElementById('headerMemberMenu');
-      const headerMemberAvatar = document.getElementById('headerMemberAvatar');
-      const headerMemberName = document.getElementById('headerMemberName');
-      const headerMemberEmail = document.getElementById('headerMemberEmail');
-      const headerAccountButton = document.getElementById('headerAccountButton');
-      const headerLogoutButton = document.getElementById('headerLogoutButton');
+      const footerMember = document.getElementById('footerMember');
+      const footerMemberMenu = document.getElementById('footerMemberMenu');
+      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
+      const footerMemberName = document.getElementById('footerMemberName');
+      const footerMemberEmail = document.getElementById('footerMemberEmail');
+      const footerAccountButton = document.getElementById('footerAccountButton');
+      const footerLogoutButton = document.getElementById('footerLogoutButton');
 
       const defaultResources = [];
 
@@ -154,24 +178,37 @@
         return null;
       }
 
-      function renderMemberBadge(member) {
-        if (!member) {
-          headerMemberWrap.hidden = true;
-          headerMemberMenu.hidden = true;
+      function randomizeThumbnailCards() {
+        const cards = Array.from(document.querySelectorAll('.thumbnail-card img'));
+        if (!cards.length) {
           return;
         }
 
-        headerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
-        headerMemberAvatar.alt = `${member.name || member.email} avatar`;
-        headerMemberName.textContent = member.name || member.email;
-        headerMemberEmail.textContent = member.email || 'Netlify member';
-        headerMemberWrap.hidden = false;
+        const shuffled = thumbnailOptions
+          .map((image) => ({ image, sort: Math.random() }))
+          .sort((a, b) => a.sort - b.sort)
+          .map((entry) => entry.image);
+
+        cards.forEach((img, index) => {
+          const image = shuffled[index % shuffled.length];
+          img.src = image.url;
+          img.alt = image.alt;
+        });
       }
 
-      function toggleMemberMenu(force) {
-        const nextState = typeof force === 'boolean' ? force : headerMemberMenu.hidden;
-        headerMemberMenu.hidden = !nextState;
-        headerMember.setAttribute('aria-expanded', String(nextState));
+      function renderMemberBadge(member) {
+        if (!member) {
+          footerMember.hidden = true;
+          footerMemberMenu.hidden = true;
+          return;
+        }
+
+        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt = `${member.name || member.email} avatar`;
+        footerMemberName.textContent = member.name || member.email;
+        footerMemberEmail.textContent = member.email || 'Netlify member';
+        footerMember.hidden = false;
+        footerMemberMenu.hidden = false;
       }
 
       function renderResources() {
@@ -234,23 +271,16 @@
         renderResources();
       });
 
-      headerMember.addEventListener('click', () => toggleMemberMenu());
-      headerAccountButton.addEventListener('click', () => {
+      footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
       });
-      headerLogoutButton.addEventListener('click', () => {
+      footerLogoutButton.addEventListener('click', () => {
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
         localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
         renderMemberBadge(null);
         renderResources();
-      });
-
-      document.addEventListener('click', (event) => {
-        if (!headerMemberWrap.contains(event.target)) {
-          toggleMemberMenu(false);
-        }
       });
 
       if (window.netlifyIdentity) {
