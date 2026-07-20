@@ -134,7 +134,7 @@
         }
         const raw = (window.THE_CHOSEN_FORUM_CONFIG || {}).roleConfig || {};
         function normalizeList(v) {
-          return Array.isArray(v) ? v.map(String).filter(Boolean) : [];
+          return Array.isArray(v) ? v.map(String).filter(Boolean).map(function(s) { return s.trim().toLowerCase(); }) : [];
         }
         const cfg = {
           ownerEmails: normalizeList(raw.ownerEmails),
