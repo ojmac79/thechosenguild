@@ -166,7 +166,8 @@
       const roleConfig = {
         ownerEmails: normalizeEmailList(rawRoleConfig.ownerEmails),
         moderatorEmails: normalizeEmailList(rawRoleConfig.moderatorEmails),
-        memberEmails: normalizeEmailList(rawRoleConfig.memberEmails)
+        memberEmails: normalizeEmailList(rawRoleConfig.memberEmails),
+        allowAllAuthenticatedMembers: rawRoleConfig.allowAllAuthenticatedMembers === true
       };
       const uiState = {
         publicFilter: 'all',
@@ -226,7 +227,7 @@
           return true;
         }
         if (!roleConfig.memberEmails.length) {
-          return true;
+          return roleConfig.allowAllAuthenticatedMembers;
         }
         const email = normalizeEmail(member.email);
         return roleConfig.memberEmails.includes(email);
@@ -288,6 +289,9 @@
           return null;
         }
         const validCategoryIds = categories.map((category) => category.id);
+        if (!validCategoryIds.length) {
+          return null;
+        }
         const fallbackCategory = validCategoryIds[0] || '';
         const categoryId = validCategoryIds.includes(thread.categoryId) ? thread.categoryId : fallbackCategory;
 
