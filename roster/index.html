@@ -39,32 +39,56 @@
       <main class="page">
         <p class="hero__eyebrow">The Muster Roll</p>
         <h1 class="page-title">Guild Roster</h1>
-        <p class="page-subtitle">
-          The heroes of The Chosen and the levels they have earned in Norrath.
-        </p>
-        <div class="thumbnail-strip" aria-label="EverQuest imagery">
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
-        </div>
+        <p class="page-subtitle">Members can maintain character records. Entries are sorted by character first name.</p>
 
-        <div class="panel roster-table" id="rosterTable">
-          <div class="roster-row roster-row--head">
-            <span>Character</span>
-            <span>Classes</span>
-            <span>Level</span>
-            <span>Player</span>
+        <section class="panel roster-manager" aria-label="Roster manager">
+          <div class="roster-manager__top">
+            <h2 class="resource-section__title">Add or Edit Character</h2>
+            <p id="rosterNotice" class="resource-notice" aria-live="polite"></p>
           </div>
-          <div class="panel empty-state">
-            <p>No roster entries yet. Add the first member when the hall is ready.</p>
-          </div>
-        </div>
 
-        <div class="roster-access" id="rosterAccess">
-          <p class="roster-access__hint">Authorized members can edit roster details directly.</p>
-          <button class="btn-torch" type="button" id="rosterEditToggle">Enable Editing</button>
-        </div>
+          <form id="rosterForm" class="resource-form" hidden>
+            <div class="resource-form__row">
+              <label class="resource-field">
+                <span>Character First Name</span>
+                <input id="characterFirstName" type="text" maxlength="40" required />
+              </label>
+              <label class="resource-field">
+                <span>Character Last Name</span>
+                <input id="characterLastName" type="text" maxlength="40" required />
+              </label>
+            </div>
+            <div class="resource-form__row">
+              <label class="resource-field">
+                <span>Class 1</span>
+                <input id="classOne" type="text" maxlength="30" required />
+              </label>
+              <label class="resource-field">
+                <span>Class 2</span>
+                <input id="classTwo" type="text" maxlength="30" required />
+              </label>
+            </div>
+            <div class="resource-form__row">
+              <label class="resource-field">
+                <span>Class 3</span>
+                <input id="classThree" type="text" maxlength="30" required />
+              </label>
+              <label class="resource-field">
+                <span>Level</span>
+                <input id="characterLevel" type="number" min="1" max="125" required />
+              </label>
+            </div>
 
+            <div class="auth-actions roster-form__actions">
+              <button class="btn-primary" type="submit" id="rosterSaveButton">Save Entry</button>
+              <button class="btn-torch" type="button" id="rosterCancelEdit" hidden>Cancel Edit</button>
+            </div>
+          </form>
+        </section>
+
+        <section class="roster-list-wrap" aria-label="Roster entries">
+          <div id="rosterList" class="resource-list"></div>
+        </section>
       </main>
 
       <footer class="site-footer">
@@ -87,35 +111,23 @@
     <script src="../../scripts/site-decor.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const rosterTable = document.getElementById('rosterTable');
-      const editToggle = document.getElementById('rosterEditToggle');
-      const thumbnailOptions = [
-        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
-        { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
-        { url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80', alt: 'Sunlit fantasy valley' },
-        { url: 'https://images.unsplash.com/photo-1464822759844-d150c6fb2c57?auto=format&fit=crop&w=1200&q=80', alt: 'Epic misty peaks' },
-        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Giant canyon vista' },
-        { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', alt: 'Stormy sky over distant ridges' },
-        { url: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=80', alt: 'Moonlit lake and cliffs' },
-        { url: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80', alt: 'Dawn over dramatic hills' },
-        { url: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80', alt: 'Cloud-kissed ancient ruins' },
-        { url: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80', alt: 'Lush green forest path' },
-        { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80', alt: 'Wild mountain pass' },
-        { url: 'https://images.unsplash.com/photo-1522093007474-d86e9bf7ba6f?auto=format&fit=crop&w=1200&q=80', alt: 'Cobalt sky over rolling hills' },
-        { url: 'https://images.unsplash.com/photo-1501786223405-6d024d7c3b8d?auto=format&fit=crop&w=1200&q=80', alt: 'Sunset over rocky cliffs' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Snowy peaks and pine forest' },
-        { url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80', alt: 'Deep evergreen woodland' },
-        { url: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1200&q=80', alt: 'Misty lake and pine trees' },
-        { url: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=1200&q=80', alt: 'Wide desert horizon' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Rugged alpine ridge' },
-        { url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80', alt: 'Golden desert plains' },
-        { url: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80', alt: 'Twilight over calm waters' },
-        { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', alt: 'Ocean cliffs and sea mist' },
-        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Dramatic mountain skyline' },
-        { url: 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient stone ruins in the wild' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Highland pass under storm clouds' },
-        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Grand canyon-like gorge' }
-      ];
+      const ROSTER_STORAGE_KEY = 'theChosenRosterEntries';
+      const MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
+
+      const rosterForm = document.getElementById('rosterForm');
+      const rosterList = document.getElementById('rosterList');
+      const rosterNotice = document.getElementById('rosterNotice');
+      const rosterSaveButton = document.getElementById('rosterSaveButton');
+      const rosterCancelEdit = document.getElementById('rosterCancelEdit');
+
+      const characterFirstName = document.getElementById('characterFirstName');
+      const characterLastName = document.getElementById('characterLastName');
+      const classOne = document.getElementById('classOne');
+      const classTwo = document.getElementById('classTwo');
+      const classThree = document.getElementById('classThree');
+      const characterLevel = document.getElementById('characterLevel');
+
       const footerMember = document.getElementById('footerMember');
       const footerMemberMenu = document.getElementById('footerMemberMenu');
       const footerMemberAvatar = document.getElementById('footerMemberAvatar');
@@ -123,24 +135,61 @@
       const footerMemberEmail = document.getElementById('footerMemberEmail');
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
-      let editingEnabled = false;
 
-      function randomizeThumbnailCards() {
-        const cards = Array.from(document.querySelectorAll('.thumbnail-card img'));
-        if (!cards.length) {
-          return;
+      let editingEntryId = null;
+
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function getCurrentMember() {
+        const stored = localStorage.getItem(MEMBER_STORAGE_KEY);
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch (error) {
+            return null;
+          }
         }
 
-        const shuffled = thumbnailOptions
-          .map((image) => ({ image, sort: Math.random() }))
-          .sort((a, b) => a.sort - b.sort)
-          .map((entry) => entry.image);
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
+          };
+          localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(member));
+          return member;
+        }
 
-        cards.forEach((img, index) => {
-          const image = shuffled[index % shuffled.length];
-          img.src = image.url;
-          img.alt = image.alt;
-        });
+        return null;
+      }
+
+      function isOwner(member) {
+        return Boolean(member && member.email && member.email.toLowerCase() === OWNER_EMAIL.toLowerCase());
+      }
+
+      function readRosterEntries() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(ROSTER_STORAGE_KEY) || 'null');
+          if (Array.isArray(stored)) {
+            return stored;
+          }
+        } catch (error) {
+          // Fall back to empty roster.
+        }
+        return [];
+      }
+
+      function writeRosterEntries(entries) {
+        localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(entries));
       }
 
       function renderMemberBadge(member) {
@@ -158,72 +207,195 @@
         footerMemberMenu.hidden = false;
       }
 
-      function setEditing(enabled) {
-        editingEnabled = enabled;
-        rosterTable.querySelectorAll('input').forEach((input) => {
-          input.readOnly = !enabled;
-          input.classList.toggle('is-editable', enabled);
-        });
-        editToggle.textContent = enabled ? 'Editing Enabled' : 'Enable Editing';
-        editToggle.classList.toggle('is-active', enabled);
+      function canManageEntry(entry, member) {
+        if (!member) {
+          return false;
+        }
+        return isOwner(member) || entry.ownerId === member.id;
       }
 
-      function getCurrentMember() {
-        const stored = localStorage.getItem('theChosenCurrentMember');
-        if (stored) {
-          try {
-            return JSON.parse(stored);
-          } catch (error) {
-            return null;
-          }
-        }
-
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          const user = window.netlifyIdentity.currentUser();
-          const member = {
-            id: user.id || user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email,
-            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-          };
-          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
-          return member;
-        }
-
-        return null;
+      function resetForm() {
+        editingEntryId = null;
+        rosterForm.reset();
+        rosterSaveButton.textContent = 'Save Entry';
+        rosterCancelEdit.hidden = true;
       }
 
-      editToggle.addEventListener('click', () => {
-        const currentMember = getCurrentMember();
-        if (!currentMember) {
+      function setNoticeForMember(member) {
+        if (!member) {
+          rosterNotice.textContent = 'Sign in to add or edit your character listings.';
+          rosterForm.hidden = true;
+          return;
+        }
+
+        rosterForm.hidden = false;
+        rosterNotice.textContent = isOwner(member)
+          ? 'Owner access: you can edit or delete any roster entry.'
+          : 'Member access: you can add entries and edit/delete only your own.';
+      }
+
+      function renderRoster() {
+        const member = getCurrentMember();
+        const entries = readRosterEntries()
+          .slice()
+          .sort((a, b) => a.firstName.localeCompare(b.firstName, undefined, { sensitivity: 'base' }));
+
+        renderMemberBadge(member);
+        setNoticeForMember(member);
+
+        if (!entries.length) {
+          rosterList.innerHTML = '<div class="panel empty-state"><p>No roster entries yet. Add your character to begin the roll call.</p></div>';
+          return;
+        }
+
+        rosterList.innerHTML = entries
+          .map((entry) => {
+            const classes = [entry.classOne, entry.classTwo, entry.classThree].filter(Boolean).join(' / ');
+            const actionButtons = canManageEntry(entry, member)
+              ? `
+                <button class="resource-item__delete" type="button" data-edit-roster="${entry.id}">Edit</button>
+                <button class="resource-item__delete" type="button" data-delete-roster="${entry.id}">Delete</button>
+              `
+              : '';
+
+            return `
+              <article class="panel roster-entry">
+                <div class="roster-entry__main">
+                  <h3 class="roster-entry__name">${escapeHtml(entry.firstName)} ${escapeHtml(entry.lastName)}</h3>
+                  <p class="roster-entry__meta"><strong>Classes:</strong> ${escapeHtml(classes)}</p>
+                  <p class="roster-entry__meta"><strong>Level:</strong> ${escapeHtml(entry.level)}</p>
+                  <p class="roster-entry__meta">Added by ${escapeHtml(entry.ownerName || entry.ownerEmail || 'Member')}</p>
+                </div>
+                <div class="resource-item__actions">
+                  ${actionButtons}
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      function populateFormForEdit(entry) {
+        editingEntryId = entry.id;
+        characterFirstName.value = entry.firstName;
+        characterLastName.value = entry.lastName;
+        classOne.value = entry.classOne;
+        classTwo.value = entry.classTwo;
+        classThree.value = entry.classThree;
+        characterLevel.value = entry.level;
+        rosterSaveButton.textContent = 'Update Entry';
+        rosterCancelEdit.hidden = false;
+        rosterForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      rosterForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const member = getCurrentMember();
+        if (!member) {
           window.location.href = '/login/';
           return;
         }
-        setEditing(true);
+
+        const payload = {
+          firstName: characterFirstName.value.trim(),
+          lastName: characterLastName.value.trim(),
+          classOne: classOne.value.trim(),
+          classTwo: classTwo.value.trim(),
+          classThree: classThree.value.trim(),
+          level: characterLevel.value.trim()
+        };
+
+        if (!payload.firstName || !payload.lastName || !payload.classOne || !payload.classTwo || !payload.classThree || !payload.level) {
+          return;
+        }
+
+        const entries = readRosterEntries();
+
+        if (editingEntryId) {
+          const index = entries.findIndex((entry) => entry.id === editingEntryId);
+          if (index >= 0 && canManageEntry(entries[index], member)) {
+            entries[index] = {
+              ...entries[index],
+              ...payload,
+              updatedAt: new Date().toISOString()
+            };
+          }
+        } else {
+          entries.push({
+            id: `roster-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+            ownerId: member.id,
+            ownerEmail: member.email,
+            ownerName: member.name,
+            ...payload,
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString()
+          });
+        }
+
+        writeRosterEntries(entries);
+        resetForm();
+        renderRoster();
+      });
+
+      rosterList.addEventListener('click', (event) => {
+        const member = getCurrentMember();
+        const editButton = event.target.closest('[data-edit-roster]');
+        const deleteButton = event.target.closest('[data-delete-roster]');
+        if (!editButton && !deleteButton) {
+          return;
+        }
+
+        const targetId = (editButton || deleteButton).getAttribute(editButton ? 'data-edit-roster' : 'data-delete-roster');
+        const entries = readRosterEntries();
+        const entry = entries.find((item) => item.id === targetId);
+
+        if (!entry || !canManageEntry(entry, member)) {
+          return;
+        }
+
+        if (editButton) {
+          populateFormForEdit(entry);
+          return;
+        }
+
+        const remaining = entries.filter((item) => item.id !== targetId);
+        writeRosterEntries(remaining);
+        if (editingEntryId === targetId) {
+          resetForm();
+        }
+        renderRoster();
+      });
+
+      rosterCancelEdit.addEventListener('click', () => {
+        resetForm();
       });
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
       });
+
       footerLogoutButton.addEventListener('click', () => {
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem('theChosenCurrentMember');
+        localStorage.removeItem(MEMBER_STORAGE_KEY);
+        resetForm();
         renderMemberBadge(null);
+        renderRoster();
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderMemberBadge(getCurrentMember()));
+        window.netlifyIdentity.on('login', () => renderRoster());
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem('theChosenCurrentMember');
+          localStorage.removeItem(MEMBER_STORAGE_KEY);
+          resetForm();
           renderMemberBadge(null);
+          renderRoster();
         });
       }
-      randomizeThumbnailCards();
-      renderMemberBadge(getCurrentMember());
-      setEditing(false);
+
+      renderRoster();
     </script>
   </body>
 </html>
