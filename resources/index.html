@@ -53,29 +53,30 @@
             <button id="resourceAddLink" class="btn-torch" type="button">Add Link</button>
           </div>
 
-          <form id="resourceForm" class="panel resource-form">
-            <div class="resource-form__row">
-              <label class="resource-field">
-                <span>Link Name</span>
-                <input id="resourceName" type="text" placeholder="Raid Prep Guide" />
-              </label>
-              <label class="resource-field">
-                <span>URL</span>
-                <input id="resourceUrl" type="url" placeholder="https://example.com" />
-              </label>
-            </div>
-            <label class="resource-field resource-field--full">
-              <span>Description</span>
-              <textarea id="resourceDescription" rows="3" placeholder="Describe what this link is for..."></textarea>
-            </label>
-            <div class="resource-form__actions">
-              <button id="resourceSubmit" class="btn-primary" type="submit">Save Link</button>
-              <button id="resourceCancelEdit" class="resource-item__delete" type="button" hidden>Cancel Edit</button>
-            </div>
-          </form>
-
-          <p id="resourceNotice" class="resource-notice" aria-live="polite"></p>
           <ul id="resourceList" class="resource-list"></ul>
+          <div class="resource-section__editor">
+            <p id="resourceNotice" class="resource-notice" aria-live="polite"></p>
+            <form id="resourceForm" class="panel resource-form">
+              <div class="resource-form__row">
+                <label class="resource-field">
+                  <span>Link Name</span>
+                  <input id="resourceName" type="text" placeholder="Raid Prep Guide" />
+                </label>
+                <label class="resource-field">
+                  <span>URL</span>
+                  <input id="resourceUrl" type="url" placeholder="https://example.com" />
+                </label>
+              </div>
+              <label class="resource-field resource-field--full">
+                <span>Description</span>
+                <textarea id="resourceDescription" rows="3" placeholder="Describe what this link is for..."></textarea>
+              </label>
+              <div class="resource-form__actions">
+                <button id="resourceSubmit" class="btn-primary" type="submit">Save Link</button>
+                <button id="resourceCancelEdit" class="resource-item__delete" type="button" hidden>Cancel Edit</button>
+              </div>
+            </form>
+          </div>
         </section>
       </main>
 

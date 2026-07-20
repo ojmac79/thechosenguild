@@ -253,7 +253,7 @@
         try {
           const stored = JSON.parse(localStorage.getItem(MEMBER_THREADS_STORAGE_KEY) || 'null');
           if (Array.isArray(stored)) {
-            return stored;
+            return stored.map(normalizeMemberThread).filter(Boolean);
           }
         } catch (error) {
           // Fall back to an empty list.
@@ -300,6 +300,21 @@
           author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guest Adventurer',
           avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
           body: typeof thread.body === 'string' ? thread.body : '',
+          replies: normalizeReplies(thread.replies)
+        };
+      }
+
+      function normalizeMemberThread(thread) {
+        if (!thread || typeof thread !== 'object') {
+          return null;
+        }
+        return {
+          id: typeof thread.id === 'string' ? thread.id : buildEntryId('member'),
+          title: typeof thread.title === 'string' ? thread.title : '',
+          author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guild Member',
+          avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
+          body: typeof thread.body === 'string' ? thread.body : '',
+          photo: typeof thread.photo === 'string' ? thread.photo : '',
           replies: normalizeReplies(thread.replies)
         };
       }
@@ -359,9 +374,9 @@
         return false;
       }
 
-      function addReplyToThread(threadId, parentId, reply) {
-        for (let index = 0; index < publicThreads.length; index += 1) {
-          const thread = publicThreads[index];
+      function addReplyToThread(threads, threadId, parentId, reply) {
+        for (let index = 0; index < threads.length; index += 1) {
+          const thread = threads[index];
           if (thread.id !== threadId) {
             continue;
           }
@@ -380,13 +395,23 @@
         publicThreads.splice(0, publicThreads.length, ...latestThreads);
       }
 
-      function renderReplyComposer(threadId, parentId) {
-        if (!activeReplyComposer || activeReplyComposer.threadId !== threadId || activeReplyComposer.parentId !== parentId) {
+      function syncStoredMemberThreads() {
+        const latestThreads = readMemberThreads();
+        memberThreads.splice(0, memberThreads.length, ...latestThreads);
+      }
+
+      function renderReplyComposer(threadId, parentId, scope) {
+        if (
+          !activeReplyComposer
+          || activeReplyComposer.threadId !== threadId
+          || activeReplyComposer.parentId !== parentId
+          || activeReplyComposer.scope !== scope
+        ) {
           return '';
         }
 
         return `
-          <form class="forum-reply-form" data-public-reply-form="true" data-thread-id="${escapeHtml(threadId)}" data-parent-id="${escapeHtml(parentId)}">
+          <form class="forum-reply-form" data-thread-reply-form="true" data-thread-id="${escapeHtml(threadId)}" data-parent-id="${escapeHtml(parentId)}" data-reply-scope="${escapeHtml(scope)}">
             <label class="resource-field">
               <span>Your Reply</span>
               <textarea class="forum-reply-form__input" rows="2" placeholder="Write your reply..." required></textarea>
@@ -399,7 +424,7 @@
         `;
       }
 
-      function renderReplyNode(reply, threadId) {
+      function renderReplyNode(reply, threadId, scope) {
         const author = escapeHtml(reply.author || 'Guest Adventurer');
         const body = escapeHtml(reply.body || '');
         const avatar = escapeHtml(reply.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
@@ -413,11 +438,11 @@
             </div>
             <p class="forum-thread__reply-body">${body}</p>
             <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${replyId}" data-thread-id="${escapeHtml(threadId)}">Reply</button>
+              <button class="resource-item__edit" type="button" data-reply-target="${replyId}" data-thread-id="${escapeHtml(threadId)}" data-reply-scope="${escapeHtml(scope)}">Reply</button>
             </div>
-            ${renderReplyComposer(threadId, reply.id)}
+            ${renderReplyComposer(threadId, reply.id, scope)}
             ${(Array.isArray(reply.replies) && reply.replies.length)
-              ? `<div class="forum-thread__reply-children">${reply.replies.map((nestedReply) => renderReplyNode(nestedReply, threadId)).join('')}</div>`
+              ? `<div class="forum-thread__reply-children">${reply.replies.map((nestedReply) => renderReplyNode(nestedReply, threadId, scope)).join('')}</div>`
               : ''}
           </div>
         `;
@@ -444,11 +469,41 @@
               <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
             </div>
             <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}">Reply</button>
+              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}" data-reply-scope="public">Reply</button>
             </div>
-            ${renderReplyComposer(thread.id, thread.id)}
+            ${renderReplyComposer(thread.id, thread.id, 'public')}
             <div class="forum-thread__replies">
-              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id)).join('')}
+              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id, 'public')).join('')}
+            </div>
+          </article>
+        `;
+      }
+
+      function renderMemberThread(thread) {
+        const author = escapeHtml(thread.author || 'Guild Member');
+        const avatar = escapeHtml(thread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
+        const threadId = escapeHtml(thread.id);
+
+        return `
+          <article class="panel forum-thread forum-thread--member">
+            <div class="forum-thread__header">
+              <div>
+                <h3 class="forum-thread__title">${escapeHtml(thread.title)}</h3>
+                <div class="forum-thread__author">
+                  <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
+                  <span class="forum-thread__author-name">${author}</span>
+                </div>
+              </div>
+              <span class="forum-badge forum-badge--member">Members</span>
+            </div>
+            ${thread.photo ? `<img class="forum-thread__photo" src="${escapeHtml(thread.photo)}" alt="Member upload" />` : ''}
+            <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
+            <div class="forum-thread__actions">
+              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}" data-reply-scope="member">Reply</button>
+            </div>
+            ${renderReplyComposer(thread.id, thread.id, 'member')}
+            <div class="forum-thread__replies">
+              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id, 'member')).join('')}
             </div>
           </article>
         `;
@@ -471,6 +526,7 @@
 
       function renderThreads() {
         syncStoredPublicThreads();
+        syncStoredMemberThreads();
         const currentMember = getCurrentMember();
         renderMemberBadge(currentMember);
 
@@ -484,22 +540,11 @@
           memberGate.hidden = true;
           memberForm.hidden = false;
           memberThreadList.hidden = false;
-          memberThreadList.innerHTML = memberThreads.map((thread) => `
-            <article class="panel forum-thread forum-thread--member">
-              <div class="forum-thread__header">
-                <div>
-                  <h3 class="forum-thread__title">${thread.title}</h3>
-                  <div class="forum-thread__author">
-                    <img class="forum-thread__author-avatar" src="${thread.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(thread.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${thread.author} avatar" />
-                    <span class="forum-thread__author-name">${thread.author}</span>
-                  </div>
-                </div>
-                <span class="forum-badge forum-badge--member">Members</span>
-              </div>
-              ${thread.photo ? `<img class="forum-thread__photo" src="${thread.photo}" alt="Member upload" />` : ''}
-              <p class="forum-thread__body">${thread.body}</p>
-            </article>
-          `).join('');
+          if (!memberThreads.length) {
+            memberThreadList.innerHTML = '<article class="panel forum-thread forum-thread--member"><p class="empty-state">No members-only posts yet. Share the first council update.</p></article>';
+          } else {
+            memberThreadList.innerHTML = memberThreads.map((thread) => renderMemberThread(thread)).join('');
+          }
         } else {
           memberGate.hidden = false;
           memberForm.hidden = true;
@@ -533,24 +578,29 @@
           author: currentMember.name,
           avatar: currentMember.avatar || '',
           body,
-          photo: photoData
+          photo: photoData,
+          replies: []
         });
         writeMemberThreads(memberThreads);
+        activeReplyComposer = null;
         memberForm.reset();
         renderThreads();
       }
 
       publicForm.addEventListener('submit', handlePublicPost);
       memberForm.addEventListener('submit', handleMemberPost);
-      publicThreadList.addEventListener('click', (event) => {
+
+      function handleThreadListClick(event) {
         const replyButton = event.target.closest('[data-reply-target]');
         if (replyButton) {
+          const scope = replyButton.getAttribute('data-reply-scope') || 'public';
           const threadId = replyButton.getAttribute('data-thread-id');
           const parentId = replyButton.getAttribute('data-reply-target');
           const isSameTarget = activeReplyComposer
+            && activeReplyComposer.scope === scope
             && activeReplyComposer.threadId === threadId
             && activeReplyComposer.parentId === parentId;
-          activeReplyComposer = isSameTarget ? null : { threadId, parentId };
+          activeReplyComposer = isSameTarget ? null : { scope, threadId, parentId };
           renderThreads();
           return;
         }
@@ -560,14 +610,16 @@
           activeReplyComposer = null;
           renderThreads();
         }
-      });
-      publicThreadList.addEventListener('submit', (event) => {
-        const replyForm = event.target.closest('[data-public-reply-form]');
+      }
+
+      function handleThreadListSubmit(event) {
+        const replyForm = event.target.closest('[data-thread-reply-form]');
         if (!replyForm) {
           return;
         }
         event.preventDefault();
 
+        const scope = replyForm.getAttribute('data-reply-scope') || 'public';
         const threadId = replyForm.getAttribute('data-thread-id');
         const parentId = replyForm.getAttribute('data-parent-id');
         const textarea = replyForm.querySelector('.forum-reply-form__input');
@@ -586,15 +638,25 @@
           replies: []
         };
 
-        const inserted = addReplyToThread(threadId, parentId, reply);
+        const threads = scope === 'member' ? memberThreads : publicThreads;
+        const inserted = addReplyToThread(threads, threadId, parentId, reply);
         if (!inserted) {
           return;
         }
 
-        writePublicThreads(publicThreads);
+        if (scope === 'member') {
+          writeMemberThreads(memberThreads);
+        } else {
+          writePublicThreads(publicThreads);
+        }
         activeReplyComposer = null;
         renderThreads();
-      });
+      }
+
+      publicThreadList.addEventListener('click', handleThreadListClick);
+      memberThreadList.addEventListener('click', handleThreadListClick);
+      publicThreadList.addEventListener('submit', handleThreadListSubmit);
+      memberThreadList.addEventListener('submit', handleThreadListSubmit);
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
