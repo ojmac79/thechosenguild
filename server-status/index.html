@@ -457,7 +457,9 @@
       // Allowed status values (prevents CSS injection)
       const VALID_STATES = new Set(['online', 'offline', 'locked', 'checking', 'unknown']);
 
-      // Daybreak Census API — try EQ Legends namespaces first, then classic EQ as reference
+      // Daybreak Census API — 's:example' is the standard public service ID documented by
+      // Daybreak for unauthenticated read access. Try EQ Legends namespaces first,
+      // then the classic EQ namespace as a reference.
       const CENSUS_ENDPOINTS = [
         'https://census.daybreakgames.com/s:example/get/eql:world?c:limit=100',
         'https://census.daybreakgames.com/s:example/get/eq_legends:world?c:limit=100',
@@ -659,21 +661,24 @@
       /* ── Iframe load / block detection ── */
       statusIframe.addEventListener('load', () => {
         embedLoading.style.display = 'none';
-        // Cross-origin pages will throw on contentDocument access (X-Frame-Options blocked).
-        // An accessible but empty body also indicates the embed was blocked.
-        let blocked = false;
-        try {
-          const doc = statusIframe.contentDocument;
-          blocked = !!(doc && (doc.body === null || doc.body.innerHTML.trim() === ''));
-        } catch {
-          blocked = true;
-        }
-        if (blocked) {
-          statusIframe.style.display = 'none';
-          embedBlocked.style.display = 'block';
-          return;
-        }
-        statusIframe.classList.add('loaded');
+        // Wait briefly for any dynamic content to render before checking whether the
+        // embed was blocked (X-Frame-Options / CSP). Cross-origin access throws;
+        // a same-origin but empty body also signals the embed was refused.
+        setTimeout(() => {
+          let blocked = false;
+          try {
+            const doc = statusIframe.contentDocument;
+            blocked = !!(doc && (doc.body === null || doc.body.innerHTML.trim() === ''));
+          } catch {
+            blocked = true;
+          }
+          if (blocked) {
+            statusIframe.style.display = 'none';
+            embedBlocked.style.display = 'block';
+            return;
+          }
+          statusIframe.classList.add('loaded');
+        }, 500);
       });
 
       statusIframe.addEventListener('error', () => {
