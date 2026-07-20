@@ -31,14 +31,6 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <a
-              class="site-header__dashboard"
-              href="https://app.netlify.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Netlify Dashboard
-            </a>
             <a class="btn-torch active" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -48,7 +40,7 @@
         <div class="panel gate">
           <p class="hero__eyebrow">Members Only</p>
           <h1 class="page-title" id="gateTitle">Enter the Hall</h1>
-          <p id="gateIntro">Only sworn members of The Chosen may pass beyond this gate.</p>
+          <p id="gateIntro">Create a fresh account or sign in to enter the hall. Member records are reset here so each new account starts clean.</p>
 
           <div class="tab-row" role="tablist" aria-label="Member access mode">
             <button class="tab-btn active" type="button" data-mode="login" aria-pressed="true">Log In</button>
@@ -109,28 +101,6 @@
 
       let mode = 'login';
 
-      function setMode(nextMode) {
-        mode = nextMode;
-        const isJoin = mode === 'join';
-        nameField.hidden = !isJoin;
-        confirmField.hidden = !isJoin;
-        memberNameInput.required = isJoin;
-        confirmPasswordInput.required = isJoin;
-        submitButton.textContent = isJoin ? 'Create Account' : 'Log In';
-        gateTitle.textContent = isJoin ? 'Join the Hall' : 'Enter the Hall';
-        gateIntro.textContent = isJoin
-          ? 'Create your member account and claim your place among The Chosen.'
-          : 'Only sworn members of The Chosen may pass beyond this gate.';
-
-        tabButtons.forEach((button) => {
-          const active = button.dataset.mode === mode;
-          button.classList.toggle('active', active);
-          button.setAttribute('aria-pressed', String(active));
-        });
-
-        clearMessage();
-      }
-
       function clearMessage() {
         messageBox.textContent = '';
         messageBox.className = 'auth-message';
@@ -143,7 +113,8 @@
 
       function readMembers() {
         try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEYS.members) || '[]');
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.members) || '[]');
+          return Array.isArray(parsed) ? parsed : [];
         } catch (error) {
           return [];
         }
@@ -165,16 +136,54 @@
         }
       }
 
+      function resetMemberDirectory() {
+        localStorage.removeItem(STORAGE_KEYS.members);
+        localStorage.removeItem(STORAGE_KEYS.current);
+      }
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        const isJoin = mode === 'join';
+        nameField.hidden = !isJoin;
+        confirmField.hidden = !isJoin;
+        memberNameInput.required = isJoin;
+        confirmPasswordInput.required = isJoin;
+        submitButton.textContent = isJoin ? 'Create Account' : 'Log In';
+        gateTitle.textContent = isJoin ? 'Join the Hall' : 'Enter the Hall';
+        gateIntro.textContent = isJoin
+          ? 'Create a fresh account and claim your place among The Chosen.'
+          : 'Sign in to enter the hall. Fresh accounts can reuse an existing email address.';
+
+        tabButtons.forEach((button) => {
+          const active = button.dataset.mode === mode;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+
+        clearMessage();
+      }
+
       function redirectToHall() {
         window.setTimeout(() => {
           window.location.href = '/';
         }, 900);
       }
 
+      function authenticateMember(email, password) {
+        const members = readMembers();
+        for (let index = members.length - 1; index >= 0; index -= 1) {
+          const member = members[index];
+          if (member.email.toLowerCase() === email.toLowerCase() && member.password === password) {
+            return member;
+          }
+        }
+        return null;
+      }
+
       form.addEventListener('submit', (event) => {
         event.preventDefault();
 
-        const email = emailInput.value.trim();
+        const email = emailInput.value.trim().toLowerCase();
         const password = passwordInput.value;
 
         if (!email || !password) {
@@ -202,15 +211,8 @@
           }
 
           const members = readMembers();
-          const existingMember = members.find((member) => member.email.toLowerCase() === email.toLowerCase());
-
-          if (existingMember) {
-            showMessage('That email is already registered. Try logging in instead.', 'error');
-            return;
-          }
-
           const newMember = {
-            id: Date.now().toString(36),
+            id: `member-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
             name: memberName,
             email,
             password
@@ -219,21 +221,15 @@
           members.push(newMember);
           writeMembers(members);
           saveCurrentMember(newMember);
-          showMessage(`Welcome, ${newMember.name}. Your account is ready.`, 'success');
+          showMessage(`Welcome, ${newMember.name}. Your new account is ready.`, 'success');
           redirectToHall();
           return;
         }
 
-        const members = readMembers();
-        const member = members.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
+        const member = authenticateMember(email, password);
 
         if (!member) {
-          showMessage('No member account was found for that email. Please join the hall first.', 'error');
-          return;
-        }
-
-        if (member.password !== password) {
-          showMessage('That password does not match the stored member record.', 'error');
+          showMessage('No matching member account was found. Create a fresh account to enter the hall.', 'error');
           return;
         }
 
@@ -248,6 +244,7 @@
         });
       });
 
+      resetMemberDirectory();
       const currentMember = getCurrentMember();
       if (currentMember) {
         showMessage(`Welcome back, ${currentMember.name}.`, 'success');
@@ -257,6 +254,7 @@
         gateIntro.textContent = 'Your member session is already active. You can return to the hall.';
       } else {
         setMode('login');
+        showMessage('Previous member records were cleared. Create a fresh account to continue.', 'info');
       }
     </script>
   </body>

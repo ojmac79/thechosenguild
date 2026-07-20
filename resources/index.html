@@ -31,14 +31,6 @@
             <a class="site-nav__link active" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <a
-              class="site-header__dashboard"
-              href="https://app.netlify.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Netlify Dashboard
-            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -79,19 +71,8 @@
             <button class="btn-primary" type="submit">Save Link</button>
           </form>
 
-          <ul class="resource-list">
-            <li class="panel resource-item">
-              <div>
-                <h3 class="resource-item__title">Guild Handbook</h3>
-                <p class="resource-item__desc">A central guide for guild rules, events, and expectations.</p>
-              </div>
-              <div class="resource-item__side">
-                <p class="resource-item__meta">Added by <strong>Officer Council</strong> • 3 hours ago</p>
-                <p class="resource-item__meta">Last edited by <strong>Officer Council</strong> • 20 mins ago</p>
-                <a class="resource-item__link" href="https://example.com" target="_blank" rel="noreferrer">Open</a>
-              </div>
-            </li>
-          </ul>
+          <p id="resourceNotice" class="resource-notice" aria-live="polite"></p>
+          <ul id="resourceList" class="resource-list"></ul>
         </section>
       </main>
 
@@ -100,5 +81,104 @@
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
+
+    <script>
+      const RESOURCE_STORAGE_KEY = 'theChosenResources';
+      const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const resourceList = document.getElementById('resourceList');
+      const resourceNotice = document.getElementById('resourceNotice');
+
+      const defaultResources = [];
+
+      function readCurrentMember() {
+        try {
+          return JSON.parse(localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY) || 'null');
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function readResources() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(RESOURCE_STORAGE_KEY) || 'null');
+          if (Array.isArray(stored) && stored.length) {
+            return stored;
+          }
+        } catch (error) {
+          // Fall back to the default sample content.
+        }
+
+        return defaultResources;
+      }
+
+      function writeResources(resources) {
+        localStorage.setItem(RESOURCE_STORAGE_KEY, JSON.stringify(resources));
+      }
+
+      localStorage.removeItem('theChosenMembers');
+      localStorage.removeItem('theChosenCurrentMember');
+      localStorage.removeItem('theChosenResources');
+
+      function renderResources() {
+        const currentMember = readCurrentMember();
+        const resources = readResources();
+
+        if (!resources.length) {
+          resourceList.innerHTML = '<li class="panel resource-item resource-item--empty">No shared links are currently available.</li>';
+          resourceNotice.textContent = currentMember
+            ? 'Authorized members can remove outdated links.'
+            : 'Sign in to remove links from the archive.';
+          return;
+        }
+
+        resourceList.innerHTML = resources
+          .map((resource) => {
+            const deleteButton = currentMember
+              ? `<button class="resource-item__delete" type="button" data-delete-resource="${resource.id}">Delete</button>`
+              : '';
+
+            return `
+              <li class="panel resource-item">
+                <div>
+                  <h3 class="resource-item__title">${resource.name}</h3>
+                  <p class="resource-item__desc">${resource.description}</p>
+                </div>
+                <div class="resource-item__side">
+                  <p class="resource-item__meta">Added by <strong>${resource.addedBy}</strong> • ${resource.addedAt}</p>
+                  <p class="resource-item__meta">Last edited by <strong>${resource.editedBy}</strong> • ${resource.editedAt}</p>
+                  <div class="resource-item__actions">
+                    <a class="resource-item__link" href="${resource.url}" target="_blank" rel="noreferrer">Open</a>
+                    ${deleteButton}
+                  </div>
+                </div>
+              </li>
+            `;
+          })
+          .join('');
+
+        resourceNotice.textContent = currentMember
+          ? 'Authorized members can remove outdated links.'
+          : 'Sign in to remove links from the archive.';
+      }
+
+      resourceList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-delete-resource]');
+        if (!button) {
+          return;
+        }
+
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          return;
+        }
+
+        const resourceId = button.getAttribute('data-delete-resource');
+        const remainingResources = readResources().filter((resource) => resource.id !== resourceId);
+        writeResources(remainingResources);
+        renderResources();
+      });
+
+      renderResources();
+    </script>
   </body>
 </html>

@@ -31,14 +31,6 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <a
-              class="site-header__dashboard"
-              href="https://app.netlify.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Netlify Dashboard
-            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -63,17 +55,8 @@
             <span>Level</span>
             <span>Player</span>
           </div>
-          <div class="roster-row">
-            <input class="roster-input roster-input--char" value="Murphy" aria-label="Character name" />
-            <input class="roster-input roster-input--class" value="Shaman, Warrior, Cleric" aria-label="Character classes" />
-            <input class="roster-input roster-input--level" value="60" aria-label="Character level" />
-            <input class="roster-input roster-input--player" value="Murphy" aria-label="Player name" />
-          </div>
-          <div class="roster-row">
-            <input class="roster-input roster-input--char" value="Kira" aria-label="Character name" />
-            <input class="roster-input roster-input--class" value="Bard, Enchanter" aria-label="Character classes" />
-            <input class="roster-input roster-input--level" value="58" aria-label="Character level" />
-            <input class="roster-input roster-input--player" value="Kira" aria-label="Player name" />
+          <div class="panel empty-state">
+            <p>No roster entries yet. Add the first member when the hall is ready.</p>
           </div>
         </div>
 
@@ -106,6 +89,8 @@
             setEditing(true);
           });
 
+          localStorage.removeItem('theChosenMembers');
+          localStorage.removeItem('theChosenCurrentMember');
           setEditing(false);
         </script>
       </main>

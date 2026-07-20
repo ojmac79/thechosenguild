@@ -31,14 +31,6 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <a
-              class="site-header__dashboard"
-              href="https://app.netlify.com/"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              Netlify Dashboard
-            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -104,35 +96,8 @@
     </div>
 
     <script>
-      const publicThreads = [
-        {
-          id: 'public-1',
-          title: 'Welcome to the Hall',
-          author: 'Guest',
-          body: 'A public welcome thread for new visitors and guild friends.',
-          replies: [
-            {
-              author: 'Kira',
-              body: 'Glad to be here. The guild feels welcoming already.'
-            }
-          ]
-        }
-      ];
-
-      const memberThreads = [
-        {
-          id: 'member-1',
-          title: 'Raid Prep for the Next Clear',
-          author: 'Officer Council',
-          body: 'A private planning thread for the next campaign and class assignments.',
-          replies: [
-            {
-              author: 'Murphy',
-              body: 'I can cover the support roster and keep the group moving.'
-            }
-          ]
-        }
-      ];
+      const publicThreads = [];
+      const memberThreads = [];
 
       const publicForm = document.getElementById('publicForm');
       const publicTitleInput = document.getElementById('publicTitle');
@@ -232,6 +197,9 @@
           memberThreadList.innerHTML = '';
         }
       }
+
+      localStorage.removeItem('theChosenMembers');
+      localStorage.removeItem('theChosenCurrentMember');
 
       publicForm.addEventListener('submit', handlePublicPost);
 

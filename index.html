@@ -87,44 +87,9 @@
             <button class="btn-torch news-section__new">New Post</button>
           </div>
 
-          <article class="panel news-card">
-            <div class="news-card__top">
-              <div>
-                <p class="news-card__eyebrow">Announcement</p>
-                <h3 class="news-card__title">The Hall is Open</h3>
-              </div>
-              <button class="news-card__edit" type="button" onclick="editNewsCard(this)">Edit</button>
-            </div>
-            <div class="news-card__content">
-              <img id="newsPhoto" class="news-card__photo" src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=600&q=80" alt="Guild hall" />
-              <p class="news-card__body">
-                The officer council has reopened the hall for a fresh season of raids,
-                planning, and guild fellowship.
-              </p>
-            </div>
-            <div class="news-card__meta-row">
-              <p class="news-card__meta">Posted by <strong>Officer Council</strong> • 2 hours ago</p>
-              <p class="news-card__meta">Last edited by <strong>Officer Council</strong> • 10 mins ago</p>
-            </div>
-          </article>
-
-          <article class="panel news-card">
-            <div class="news-card__top">
-              <div>
-                <p class="news-card__eyebrow">Update</p>
-                <h3 class="news-card__title">Roster Refresh Incoming</h3>
-              </div>
-              <button class="news-card__edit" type="button">Edit</button>
-            </div>
-            <p class="news-card__body">
-              Expect a roster check and a few community events this week as we prepare
-              for the next campaign.
-            </p>
-            <div class="news-card__meta-row">
-              <p class="news-card__meta">Posted by <strong>Murphy</strong> • yesterday</p>
-              <p class="news-card__meta">Last edited by <strong>Murphy</strong> • 1 hour ago</p>
-            </div>
-          </article>
+          <div class="panel empty-state">
+            <p>No news has been posted yet. Start a fresh entry for the guild hall.</p>
+          </div>
         </section>
 
         <div class="page-footer-links">
@@ -149,32 +114,6 @@
         if (nextText && nextText.trim()) {
           tagline.textContent = nextText.trim();
         }
-      }
-
-      function editNewsCard(button) {
-        const card = button.closest('.news-card');
-        const body = card.querySelector('.news-card__body');
-        const currentText = body.textContent.trim();
-        const nextText = prompt('Update the news entry:', currentText);
-
-        if (nextText && nextText.trim()) {
-          body.textContent = nextText.trim();
-        }
-
-        const photoInput = document.createElement('input');
-        photoInput.type = 'file';
-        photoInput.accept = 'image/*';
-        photoInput.onchange = (event) => {
-          const file = event.target.files[0];
-          if (!file) return;
-          const reader = new FileReader();
-          reader.onload = () => {
-            const image = card.querySelector('.news-card__photo');
-            image.src = reader.result;
-          };
-          reader.readAsDataURL(file);
-        };
-        photoInput.click();
       }
     </script>
   </body>
