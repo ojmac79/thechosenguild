@@ -638,27 +638,38 @@
           if (countdownSeconds <= 0) {
             clearInterval(countdownTimer);
             fetchStatus();
+            reloadStatusIframe();
           }
         }, 1000);
+      }
+
+      /* ── Iframe reload helper ── */
+      function reloadStatusIframe() {
+        statusIframe.classList.remove('loaded');
+        embedLoading.style.display = 'flex';
+        statusIframe.src = `${OFFICIAL_STATUS}?_t=${Date.now()}`;
       }
 
       refreshBtn.addEventListener('click', () => {
         clearInterval(countdownTimer);
         fetchStatus();
+        reloadStatusIframe();
       });
 
       /* ── Iframe load / block detection ── */
       statusIframe.addEventListener('load', () => {
         embedLoading.style.display = 'none';
-        // If the iframe loaded but is blank (X-Frame-Options blocked), contentDocument will be empty
+        // Cross-origin pages will throw on contentDocument access (X-Frame-Options blocked).
+        // An accessible but empty body also indicates the embed was blocked.
+        let blocked = false;
         try {
           const doc = statusIframe.contentDocument;
-          if (doc && (doc.body === null || doc.body.innerHTML.trim() === '')) {
-            throw new Error('blocked');
-          }
+          blocked = !!(doc && (doc.body === null || doc.body.innerHTML.trim() === ''));
         } catch {
+          blocked = true;
+        }
+        if (blocked) {
           statusIframe.style.display = 'none';
-          embedLoading.style.display = 'none';
           embedBlocked.style.display = 'block';
           return;
         }
@@ -670,16 +681,6 @@
         embedLoading.style.display  = 'none';
         embedBlocked.style.display  = 'block';
       });
-
-      // Auto-refresh also reloads the iframe
-      const originalFetch = fetchStatus;
-      window.fetchStatus = async function () {
-        await originalFetch();
-        // Reload the iframe on each status refresh
-        statusIframe.classList.remove('loaded');
-        embedLoading.style.display = 'flex';
-        statusIframe.src = OFFICIAL_STATUS + '?_t=' + Date.now();
-      };
 
       // Kick off on page load
       fetchStatus();
