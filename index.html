@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — EverQuest Legends</title>
+    <meta
+      name="description"
+      content="The Chosen Guild is a community-driven EverQuest guild hall with news, forums, roster, and resources."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand active" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link active" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/resources/">Resources</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <section class="hero">
+          <p class="hero__eyebrow">The Guild Hall of Norrath</p>
+          <h1 class="hero__title">The Chosen</h1>
+          <p class="hero__tagline">
+            Bound by oath, tempered by raid wipes, undefeated in spirit. Seek
+            word of the guild below, or cast your search further afield.
+          </p>
+          <form class="search-console">
+            <div class="search-console__row">
+              <input
+                class="search-console__input"
+                type="text"
+                placeholder="Search guild news and announcements…"
+              />
+              <button type="submit" class="search-console__submit">
+                Search Hall
+              </button>
+            </div>
+            <div class="search-console__scope">
+              <button type="button" class="scope-btn active">This Site</button>
+              <button type="button" class="scope-btn">The Web</button>
+            </div>
+          </form>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <div class="news-list">
+          <div class="panel empty-state">
+            No announcements yet. The officer council has been quiet lately.
+          </div>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+      </footer>
+    </div>
+  </body>
+</html>
