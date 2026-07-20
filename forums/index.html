@@ -77,13 +77,25 @@
         <section class="forum-section forum-section--member" aria-label="Members-only forum area">
           <div class="forum-section__header">
             <h2 class="forum-section__title">Members Only</h2>
-            <span class="forum-badge forum-badge--member">Requires login</span>
+            <span class="forum-badge forum-badge--member">Requires Netlify account</span>
           </div>
 
           <div class="panel forum-gate" id="memberGate">
-            <p class="forum-gate__text">Sign in to unlock the private council chamber and reply to members-only threads.</p>
+            <p class="forum-gate__text">Sign in with your Netlify account to unlock the private council chamber and post members-only threads.</p>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
+
+          <form class="panel forum-form" id="memberForm" hidden>
+            <label class="resource-field">
+              <span>Members-Only Thread Title</span>
+              <input id="memberTitle" type="text" placeholder="Council planning or strategy note" required />
+            </label>
+            <label class="resource-field">
+              <span>Message</span>
+              <textarea id="memberMessage" rows="4" placeholder="Share a private update for the guild officers..." required></textarea>
+            </label>
+            <button class="btn-primary" type="submit">Post for Members</button>
+          </form>
 
           <div class="forum-thread-list" id="memberThreadList" hidden></div>
         </section>
@@ -98,7 +110,8 @@
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const publicThreads = [];
-      const memberThreads = [];
+      const MEMBER_THREADS_STORAGE_KEY = 'theChosenMemberThreads';
+      const memberThreads = readMemberThreads();
 
       const publicForm = document.getElementById('publicForm');
       const publicTitleInput = document.getElementById('publicTitle');
@@ -106,6 +119,9 @@
       const publicThreadList = document.getElementById('publicThreadList');
       const memberGate = document.getElementById('memberGate');
       const memberThreadList = document.getElementById('memberThreadList');
+      const memberForm = document.getElementById('memberForm');
+      const memberTitleInput = document.getElementById('memberTitle');
+      const memberMessageInput = document.getElementById('memberMessage');
 
       function readFileAsDataUrl(file) {
         return new Promise((resolve, reject) => {
@@ -167,6 +183,23 @@
         return null;
       }
 
+      function readMemberThreads() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(MEMBER_THREADS_STORAGE_KEY) || 'null');
+          if (Array.isArray(stored)) {
+            return stored;
+          }
+        } catch (error) {
+          // Fall back to an empty list.
+        }
+
+        return [];
+      }
+
+      function writeMemberThreads(threads) {
+        localStorage.setItem(MEMBER_THREADS_STORAGE_KEY, JSON.stringify(threads));
+      }
+
       function renderThreads() {
         publicThreadList.innerHTML = publicThreads.map((thread) => `
           <article class="panel forum-thread">
@@ -195,6 +228,7 @@
         const currentMember = getCurrentMember();
         if (currentMember) {
           memberGate.hidden = true;
+          memberForm.hidden = false;
           memberThreadList.hidden = false;
           memberThreadList.innerHTML = memberThreads.map((thread) => `
             <article class="panel forum-thread forum-thread--member">
@@ -206,28 +240,49 @@
                 <span class="forum-badge forum-badge--member">Members</span>
               </div>
               <p class="forum-thread__body">${thread.body}</p>
-              <div class="forum-thread__replies">
-                ${thread.replies.map((reply) => `
-                  <div class="forum-thread__reply">
-                    <p class="forum-thread__reply-author">${reply.author}</p>
-                    <p class="forum-thread__reply-body">${reply.body}</p>
-                  </div>
-                `).join('')}
-              </div>
             </article>
           `).join('');
         } else {
           memberGate.hidden = false;
+          memberForm.hidden = true;
           memberThreadList.hidden = true;
           memberThreadList.innerHTML = '';
         }
       }
 
+      async function handleMemberPost(event) {
+        event.preventDefault();
+        const currentMember = getCurrentMember();
+        if (!currentMember) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const title = memberTitleInput.value.trim();
+        const body = memberMessageInput.value.trim();
+        if (!title || !body) {
+          return;
+        }
+
+        memberThreads.unshift({
+          id: `member-${Date.now()}`,
+          title,
+          author: currentMember.name,
+          body
+        });
+        writeMemberThreads(memberThreads);
+        memberForm.reset();
+        renderThreads();
+      }
+
       publicForm.addEventListener('submit', handlePublicPost);
+      memberForm.addEventListener('submit', handleMemberPost);
 
       window.addEventListener('storage', renderThreads);
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => renderThreads());
+        window.netlifyIdentity.on('logout', () => renderThreads());
       }
       renderThreads();
     </script>

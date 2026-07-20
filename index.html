@@ -84,12 +84,26 @@
         <section class="news-section" aria-label="Guild news">
           <div class="news-section__header">
             <h2 class="news-section__title">Latest News</h2>
-            <button class="btn-torch news-section__new">New Post</button>
+            <button class="btn-torch news-section__new" id="newPostButton" type="button">New Post</button>
           </div>
 
-          <div class="panel empty-state">
-            <p>No news has been posted yet. Start a fresh entry for the guild hall.</p>
-          </div>
+          <form class="panel forum-form" id="newsForm" hidden>
+            <label class="resource-field">
+              <span>Post Title</span>
+              <input id="newsTitle" type="text" placeholder="Announce the next guild event" required />
+            </label>
+            <label class="resource-field">
+              <span>Message</span>
+              <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
+            </label>
+            <div class="auth-actions">
+              <button class="btn-primary" type="submit">Save News Post</button>
+              <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
+            </div>
+          </form>
+
+          <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
+          <div id="newsList"></div>
         </section>
 
         <div class="page-footer-links">
@@ -105,16 +119,209 @@
       </footer>
     </div>
 
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
+      const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
+      const heroTagline = document.getElementById('heroTagline');
+      const newsForm = document.getElementById('newsForm');
+      const newsTitle = document.getElementById('newsTitle');
+      const newsBody = document.getElementById('newsBody');
+      const newsList = document.getElementById('newsList');
+      const newsNotice = document.getElementById('newsNotice');
+      const newPostButton = document.getElementById('newPostButton');
+      const cancelNewsEdit = document.getElementById('cancelNewsEdit');
+      let editingPostId = null;
+
+      function readCurrentMember() {
+        const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch (error) {
+            return null;
+          }
+        }
+
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email
+          };
+          localStorage.setItem(CURRENT_MEMBER_STORAGE_KEY, JSON.stringify(member));
+          return member;
+        }
+
+        return null;
+      }
+
+      function readPosts() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
+          if (Array.isArray(stored)) {
+            return stored;
+          }
+        } catch (error) {
+          // Fall back to the default empty state.
+        }
+        return [];
+      }
+
+      function writePosts(posts) {
+        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(posts));
+      }
+
+      function resetNewsForm() {
+        editingPostId = null;
+        newsForm.hidden = true;
+        newsTitle.value = '';
+        newsBody.value = '';
+      }
+
+      function renderNews() {
+        const currentMember = readCurrentMember();
+        const posts = readPosts();
+
+        if (!posts.length) {
+          newsList.innerHTML = '<div class="panel empty-state"><p>No news has been posted yet. Start a fresh entry for the guild hall.</p></div>';
+          newsNotice.textContent = currentMember
+            ? 'Signed in Netlify members can add or update guild news.'
+            : 'Sign in with your Netlify account to publish or edit news.';
+          return;
+        }
+
+        newsList.innerHTML = posts
+          .map((post) => {
+            const editButton = currentMember
+              ? `<button class="resource-item__delete" type="button" data-edit-post="${post.id}">Edit</button>`
+              : '';
+            return `
+              <article class="panel forum-thread">
+                <div class="forum-thread__header">
+                  <div>
+                    <h3 class="forum-thread__title">${post.title}</h3>
+                    <p class="forum-thread__meta">Posted by <strong>${post.author}</strong></p>
+                  </div>
+                  <span class="forum-badge">News</span>
+                </div>
+                <p class="forum-thread__body">${post.body}</p>
+                <div class="resource-item__actions">${editButton}</div>
+              </article>
+            `;
+          })
+          .join('');
+
+        newsNotice.textContent = currentMember
+          ? 'Signed in Netlify members can add or update guild news.'
+          : 'Sign in with your Netlify account to publish or edit news.';
+      }
+
       function editHeroTagline() {
-        const tagline = document.getElementById('heroTagline');
-        const currentText = tagline.textContent.trim();
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const currentText = heroTagline.textContent.trim();
         const nextText = prompt('Enter a new description for The Chosen:', currentText);
 
         if (nextText && nextText.trim()) {
-          tagline.textContent = nextText.trim();
+          heroTagline.textContent = nextText.trim();
         }
       }
+
+      newPostButton.addEventListener('click', () => {
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        editingPostId = null;
+        newsTitle.value = '';
+        newsBody.value = '';
+        newsForm.hidden = false;
+        newsTitle.focus();
+      });
+
+      cancelNewsEdit.addEventListener('click', () => {
+        resetNewsForm();
+      });
+
+      newsForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const title = newsTitle.value.trim();
+        const body = newsBody.value.trim();
+        if (!title || !body) {
+          return;
+        }
+
+        const posts = readPosts();
+        if (editingPostId) {
+          const targetIndex = posts.findIndex((post) => post.id === editingPostId);
+          if (targetIndex >= 0) {
+            posts[targetIndex] = {
+              ...posts[targetIndex],
+              title,
+              body,
+              author: currentMember.name
+            };
+          }
+        } else {
+          posts.unshift({
+            id: `news-${Date.now()}`,
+            title,
+            body,
+            author: currentMember.name
+          });
+        }
+
+        writePosts(posts);
+        resetNewsForm();
+        renderNews();
+      });
+
+      newsList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-edit-post]');
+        if (!button) {
+          return;
+        }
+
+        const currentMember = readCurrentMember();
+        if (!currentMember) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const posts = readPosts();
+        const targetPost = posts.find((post) => post.id === button.getAttribute('data-edit-post'));
+        if (!targetPost) {
+          return;
+        }
+
+        editingPostId = targetPost.id;
+        newsTitle.value = targetPost.title;
+        newsBody.value = targetPost.body;
+        newsForm.hidden = false;
+        newsTitle.focus();
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => renderNews());
+        window.netlifyIdentity.on('logout', () => renderNews());
+      }
+
+      renderNews();
     </script>
   </body>
 </html>
