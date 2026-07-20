@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Server Status</title>
+    <meta
+      name="description"
+      content="Live EverQuest Legends server status for the Qeynos server, sourced from Daybreak Game Company."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      /* ── Server Status page ── */
+
+      /* Primary server card */
+      .server-primary {
+        margin: 1.5rem 0;
+        padding: 2rem;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
+      }
+      .server-primary__name {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 2rem;
+        color: #fff;
+        letter-spacing: 0.06em;
+      }
+      .server-primary__type {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+      }
+
+      /* Status badge */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.55rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        font-family: 'Cinzel', serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        transition: border-color 0.4s, background 0.4s;
+      }
+      .status-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: background 0.4s, box-shadow 0.4s;
+      }
+
+      .status-badge--online  { border-color: rgba(72,220,130,0.55); background: rgba(72,220,130,0.1); color: #6dffb2; }
+      .status-badge--online  .status-dot { background: #48dc82; box-shadow: 0 0 8px rgba(72,220,130,0.85); animation: pulseDot 2.2s ease-in-out infinite; }
+
+      .status-badge--offline { border-color: rgba(255,80,80,0.5); background: rgba(255,80,80,0.1); color: #ff7b7b; }
+      .status-badge--offline .status-dot { background: #ff5050; box-shadow: 0 0 6px rgba(255,80,80,0.7); }
+
+      .status-badge--locked  { border-color: rgba(255,196,60,0.5); background: rgba(255,196,60,0.1); color: #ffd060; }
+      .status-badge--locked  .status-dot { background: #ffc43c; box-shadow: 0 0 6px rgba(255,196,60,0.7); animation: pulseDot 1.4s ease-in-out infinite; }
+
+      .status-badge--checking { border-color: var(--border); background: rgba(255,255,255,0.04); color: var(--muted); }
+      .status-badge--checking .status-dot { background: var(--muted); animation: pulseDot 0.9s ease-in-out infinite; }
+
+      .status-badge--unknown { border-color: var(--border); color: var(--muted); }
+      .status-badge--unknown .status-dot { background: var(--muted); }
+
+      @keyframes pulseDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.4; transform: scale(0.75); }
+      }
+
+      .server-primary__meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .server-primary__meta span strong { color: var(--text); }
+
+      /* Refresh row */
+      .refresh-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin: 1.25rem 0 0.5rem;
+      }
+      .refresh-row__info { font-size: 0.82rem; color: var(--muted); }
+      .refresh-row__info span { color: var(--text); font-weight: 700; }
+
+      .btn-refresh {
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        font-size: 0.8rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: background 0.2s;
+      }
+      .btn-refresh:hover    { background: rgba(255,255,255,0.07); }
+      .btn-refresh:disabled { opacity: 0.4; cursor: default; }
+
+      /* Notice */
+      .status-notice {
+        margin-top: 0.75rem;
+        padding: 0.7rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255,196,60,0.35);
+        background: rgba(255,196,60,0.07);
+        font-size: 0.82rem;
+        color: var(--muted);
+        text-align: center;
+        display: none;
+      }
+      .status-notice.visible { display: block; }
+      .status-notice a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+      /* Official source strip */
+      .official-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255,255,255,0.03);
+        margin-top: 1.5rem;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .official-strip__label { display: flex; align-items: center; gap: 0.5rem; }
+      .official-strip__sigil { color: var(--accent); font-size: 1rem; }
+      .official-strip a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; font-weight: 600; font-size: 0.85rem; }
+      .official-strip a:hover { color: var(--text); }
+
+      /* Embedded status iframe */
+      .embed-section { margin-top: 2.5rem; }
+      .embed-section__title {
+        margin: 0 0 0.75rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1.25rem;
+        color: var(--text);
+      }
+      .embed-wrap {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        overflow: hidden;
+        background: rgba(0,0,0,0.3);
+        position: relative;
+      }
+      .embed-wrap__loading {
+        position: absolute;
+        inset: 0;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 0.75rem;
+        color: var(--muted);
+        font-size: 0.88rem;
+        pointer-events: none;
+      }
+      .embed-wrap__loading-dot {
+        width: 10px; height: 10px; border-radius: 50%;
+        background: var(--accent);
+        animation: pulseDot 0.9s ease-in-out infinite;
+      }
+      .status-iframe {
+        display: block;
+        width: 100%;
+        height: 600px;
+        border: none;
+        opacity: 0;
+        transition: opacity 0.4s;
+      }
+      .status-iframe.loaded { opacity: 1; }
+      .embed-blocked {
+        padding: 2rem;
+        text-align: center;
+        color: var(--muted);
+        font-size: 0.9rem;
+        display: none;
+      }
+      .embed-blocked a { color: var(--accent); text-decoration: underline; text-underline-offset: 2px; }
+
+      /* Other servers grid */
+      .other-servers { margin-top: 2.5rem; }
+      .other-servers__title { margin: 0 0 1rem; font-family: 'Cinzel', serif; font-size: 1.25rem; color: var(--text); }
+      .server-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 0.75rem;
+      }
+      .server-card {
+        padding: 1rem 1.2rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .server-card__name  { margin: 0; font-family: 'Cinzel', serif; font-size: 0.95rem; font-weight: 700; }
+      .server-card__type  { margin: 0.15rem 0 0; font-size: 0.75rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.15em; }
+      .server-card__badge {
+        flex-shrink: 0;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        font-family: 'Cinzel', serif;
+        letter-spacing: 0.08em;
+      }
+      .server-card__badge--online   { background: rgba(72,220,130,0.15); color: #6dffb2; border: 1px solid rgba(72,220,130,0.4); }
+      .server-card__badge--offline  { background: rgba(255,80,80,0.13);  color: #ff7b7b; border: 1px solid rgba(255,80,80,0.4); }
+      .server-card__badge--locked   { background: rgba(255,196,60,0.13); color: #ffd060; border: 1px solid rgba(255,196,60,0.4); }
+      .server-card__badge--checking { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+      .server-card__badge--unknown  { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
+      @media (max-width: 600px) {
+        .server-primary { padding: 1.5rem 1rem; }
+        .server-primary__name { font-size: 1.5rem; }
+        .official-strip { flex-direction: column; align-items: flex-start; }
+        .status-iframe { height: 400px; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link active" href="/server-status/">Status</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">The Realm Gate</p>
+        <h1 class="page-title">Server Status</h1>
+        <p class="page-subtitle">Live status for the Qeynos server. Data sourced from <a href="https://www.daybreakgames.com/status" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:underline;text-underline-offset:2px">daybreakgames.com/status</a>.</p>
+
+        <!-- ── Qeynos primary card ── -->
+        <div class="server-primary panel" id="qeynosCard" aria-live="polite" aria-label="Qeynos server status">
+          <div>
+            <p class="server-primary__type">EverQuest Legends · Primary Guild Server</p>
+            <h2 class="server-primary__name">Qeynos</h2>
+          </div>
+
+          <div id="qeynosStatus" class="status-badge status-badge--checking" role="status">
+            <span class="status-dot"></span>
+            <span id="qeynosStatusText">Checking…</span>
+          </div>
+
+          <div class="server-primary__meta" aria-live="polite">
+            <span>Population: <strong id="qeynosPop">—</strong></span>
+            <span>Last checked: <strong id="qeynosLastChecked">—</strong></span>
+          </div>
+        </div>
+
+        <!-- ── Refresh controls ── -->
+        <div class="refresh-row">
+          <p class="refresh-row__info">Auto-refreshes every <span id="countdownDisplay">60</span>s</p>
+          <button id="refreshBtn" class="btn-refresh" type="button" aria-label="Refresh server status now">
+            <span id="refreshIcon" aria-hidden="true">⟳</span>
+            Refresh Now
+          </button>
+        </div>
+
+        <!-- ── API fallback notice ── -->
+        <p class="status-notice" id="corsNotice">
+          Direct API access is restricted by the browser (cross-origin policy). The live status above is determined by reaching <strong>daybreakgames.com</strong>.
+          For full server details, see the embedded Daybreak status page below or
+          <a href="https://www.daybreakgames.com/status" target="_blank" rel="noopener noreferrer">open it directly ↗</a>.
+        </p>
+
+        <!-- ── Official source attribution ── -->
+        <div class="official-strip">
+          <span class="official-strip__label">
+            <span class="official-strip__sigil" aria-hidden="true">✦</span>
+            Source: Daybreak Game Company official server status
+          </span>
+          <a
+            href="https://www.daybreakgames.com/status"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open Daybreak Game Company server status page (opens in new tab)"
+          >daybreakgames.com/status ↗</a>
+        </div>
+
+        <!-- ── Other servers grid (populated by JS when Census API responds) ── -->
+        <section class="other-servers" id="otherServersSection" hidden aria-label="Other EverQuest Legends servers">
+          <h3 class="other-servers__title">All Realms</h3>
+          <div class="server-grid" id="serverGrid"></div>
+        </section>
+
+        <!-- ── Embedded Daybreak status page ── -->
+        <section class="embed-section" aria-label="Embedded Daybreak server status">
+          <h3 class="embed-section__title">Daybreak Game Company — Live Status</h3>
+          <div class="embed-wrap" id="embedWrap">
+            <div class="embed-wrap__loading" id="embedLoading" aria-hidden="true">
+              <span class="embed-wrap__loading-dot"></span>
+              Loading official status page…
+            </div>
+            <iframe
+              id="statusIframe"
+              class="status-iframe"
+              src="https://www.daybreakgames.com/status"
+              title="Daybreak Game Company Server Status — daybreakgames.com/status"
+              sandbox="allow-same-origin allow-scripts allow-popups"
+              loading="lazy"
+            ></iframe>
+            <div class="embed-blocked" id="embedBlocked">
+              <p>The Daybreak status page cannot be embedded in an iframe from this browser.</p>
+              <p><a href="https://www.daybreakgames.com/status" target="_blank" rel="noopener noreferrer">Open daybreakgames.com/status directly ↗</a></p>
+            </div>
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <div id="footerMember" class="site-footer__member" hidden>
+          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
+          <div>
+            <div id="footerMemberName" class="site-footer__member-name"></div>
+            <div id="footerMemberEmail" class="site-footer__member-email"></div>
+          </div>
+        </div>
+        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
+          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
+          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
+        </div>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+      </footer>
+    </div>
+
+    <script src="../scripts/site-decor.js"></script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      /* ── Footer member badge ── */
+      const footerMember        = document.getElementById('footerMember');
+      const footerMemberMenu    = document.getElementById('footerMemberMenu');
+      const footerMemberAvatar  = document.getElementById('footerMemberAvatar');
+      const footerMemberName    = document.getElementById('footerMemberName');
+      const footerMemberEmail   = document.getElementById('footerMemberEmail');
+      const footerAccountButton = document.getElementById('footerAccountButton');
+      const footerLogoutButton  = document.getElementById('footerLogoutButton');
+
+      function getCurrentMember() {
+        const stored = localStorage.getItem('theChosenCurrentMember');
+        if (stored) {
+          try { return JSON.parse(stored); } catch { return null; }
+        }
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
+          };
+          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
+          return member;
+        }
+        return null;
+      }
+
+      function renderMemberBadge(member) {
+        if (!member) {
+          footerMember.hidden     = true;
+          footerMemberMenu.hidden = true;
+          return;
+        }
+        footerMemberAvatar.src        = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt        = `${member.name || member.email} avatar`;
+        footerMemberName.textContent  = member.name  || member.email;
+        footerMemberEmail.textContent = member.email || 'Netlify member';
+        footerMember.hidden     = false;
+        footerMemberMenu.hidden = false;
+      }
+
+      footerAccountButton.addEventListener('click', () => { window.location.href = '/login/'; });
+      footerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) window.netlifyIdentity.logout();
+        localStorage.removeItem('theChosenCurrentMember');
+        renderMemberBadge(null);
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login',  () => renderMemberBadge(getCurrentMember()));
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem('theChosenCurrentMember');
+          renderMemberBadge(null);
+        });
+      }
+      renderMemberBadge(getCurrentMember());
+
+      /* ═══════════════════════════════════════════════════
+         Server Status — real-time fetch from Daybreak
+      ═══════════════════════════════════════════════════ */
+
+      // Timeout constants
+      const API_TIMEOUT_MS        = 7000; // Full Census API call — allow more time
+      const SITE_TIMEOUT_MS       = 4000; // Simple reachability check — should be faster
+      const IFRAME_LOAD_DELAY_MS  = 500;  // Wait for dynamic content before checking iframe block state
+      const REFRESH_INTERVAL_S    = 60;
+
+      // Allowed status values (prevents CSS injection)
+      const VALID_STATES = new Set(['online', 'offline', 'locked', 'checking', 'unknown']);
+
+      // Daybreak Census API — 's:example' is the standard public service ID documented by
+      // Daybreak for unauthenticated read access. Try EQ Legends namespaces first,
+      // then the classic EQ namespace as a reference.
+      const CENSUS_ENDPOINTS = [
+        'https://census.daybreakgames.com/s:example/get/eql:world?c:limit=100',
+        'https://census.daybreakgames.com/s:example/get/eq_legends:world?c:limit=100',
+        'https://census.daybreakgames.com/s:example/get/eq:world?c:limit=100',
+      ];
+      const DAYBREAK_ROOT   = 'https://www.daybreakgames.com/';
+      const OFFICIAL_STATUS = 'https://www.daybreakgames.com/status';
+
+      // DOM refs
+      const qeynosStatus      = document.getElementById('qeynosStatus');
+      const qeynosStatusText  = document.getElementById('qeynosStatusText');
+      const qeynosPop         = document.getElementById('qeynosPop');
+      const qeynosLastChecked = document.getElementById('qeynosLastChecked');
+      const refreshBtn        = document.getElementById('refreshBtn');
+      const refreshIcon       = document.getElementById('refreshIcon');
+      const countdownDisplay  = document.getElementById('countdownDisplay');
+      const corsNotice        = document.getElementById('corsNotice');
+      const otherSection      = document.getElementById('otherServersSection');
+      const serverGrid        = document.getElementById('serverGrid');
+      const statusIframe      = document.getElementById('statusIframe');
+      const embedLoading      = document.getElementById('embedLoading');
+      const embedBlocked      = document.getElementById('embedBlocked');
+
+      let countdownSeconds = REFRESH_INTERVAL_S;
+      let countdownTimer   = null;
+
+      /* ── Helpers ── */
+
+      function safeState(raw) {
+        const s = String(raw || '').toLowerCase().trim();
+        if (s === 'up'   || s.includes('online'))      return 'online';
+        if (s === 'down' || s.includes('offline'))     return 'offline';
+        if (s === 'locked')                            return 'locked';
+        return 'unknown';
+      }
+
+      const STATUS_LABELS = { online: 'Online', offline: 'Offline', locked: 'Locked', checking: 'Checking…', unknown: 'Unknown' };
+      const POP_LABELS    = { low: 'Low', medium: 'Medium', high: 'High', full: 'Full' };
+
+      function escHtml(str) {
+        return String(str)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;')
+          .replace(/'/g, '&#39;');
+      }
+
+      /* Apply a validated state to the Qeynos card */
+      function applyPrimaryStatus(state, pop) {
+        const safeS = VALID_STATES.has(state) ? state : 'unknown';
+        VALID_STATES.forEach(c => qeynosStatus.classList.remove(`status-badge--${c}`));
+        qeynosStatus.classList.add(`status-badge--${safeS}`);
+        qeynosStatusText.textContent    = STATUS_LABELS[safeS] || 'Unknown';
+        qeynosPop.textContent           = POP_LABELS[String(pop || '').toLowerCase()] || (pop ? String(pop) : '—');
+        qeynosLastChecked.textContent   = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+
+      /* Normalise a Census world entry */
+      function normaliseWorld(entry) {
+        const nameObj = entry.name || {};
+        const name    = (typeof nameObj === 'string' ? nameObj : nameObj.en || nameObj.fr || '') || entry.world_name || '';
+        const state   = safeState(entry.state || entry.status || '');
+        const pop     = (entry.population || entry.status_description || '').toLowerCase();
+        return { name, state, pop };
+      }
+
+      /* Find Qeynos in a Census response */
+      function findQeynos(data) {
+        const list = data.world_list || data.server_list || data.data || (Array.isArray(data) ? data : []);
+        return list.find(w => {
+          const n = normaliseWorld(w).name;
+          return n.toLowerCase().includes('qeynos');
+        });
+      }
+
+      /* Render other-servers grid from Census data */
+      function renderOtherServers(data) {
+        const list = data.world_list || data.server_list || data.data || (Array.isArray(data) ? data : []);
+        const others = list
+          .map(normaliseWorld)
+          .filter(s => !s.name.toLowerCase().includes('qeynos') && s.name);
+        if (!others.length) return;
+
+        serverGrid.innerHTML = '';
+        others.forEach(s => {
+          const badgeState = VALID_STATES.has(s.state) ? s.state : 'unknown';
+          const card = document.createElement('div');
+          card.className = 'server-card';
+          card.innerHTML =
+            '<div>' +
+              '<p class="server-card__name">'  + escHtml(s.name) + '</p>' +
+              '<p class="server-card__type">'  + escHtml(POP_LABELS[s.pop] || '') + '</p>' +
+            '</div>' +
+            '<span class="server-card__badge server-card__badge--' + badgeState + '">' +
+              escHtml(STATUS_LABELS[badgeState] || 'Unknown') +
+            '</span>';
+          serverGrid.appendChild(card);
+        });
+        otherSection.hidden = false;
+      }
+
+      /* Spin/stop the refresh icon */
+      function setSpinning(on) {
+        refreshBtn.disabled          = on;
+        refreshIcon.style.display    = 'inline-block';
+        refreshIcon.style.transition = on ? 'transform 0.6s linear' : '';
+        refreshIcon.style.transform  = on ? 'rotate(360deg)' : '';
+        if (!on) setTimeout(() => { refreshIcon.style.transform = ''; }, 50);
+      }
+
+      /* ── Main fetch routine ── */
+      async function fetchStatus() {
+        applyPrimaryStatus('checking', null);
+        setSpinning(true);
+        corsNotice.classList.remove('visible');
+
+        let apiSuccess = false;
+
+        // 1 — Try Daybreak Census API endpoints
+        for (const endpoint of CENSUS_ENDPOINTS) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), API_TIMEOUT_MS);
+            const res = await fetch(endpoint, {
+              signal: controller.signal,
+              headers: { Accept: 'application/json' }
+            });
+            clearTimeout(timer);
+
+            if (res.ok) {
+              let data;
+              try { data = await res.json(); } catch { continue; }
+
+              const qeynos = findQeynos(data);
+              if (qeynos) {
+                const s = normaliseWorld(qeynos);
+                applyPrimaryStatus(s.state, s.pop);
+                renderOtherServers(data);
+                apiSuccess = true;
+                break;
+              }
+            }
+          } catch {
+            // Try next endpoint
+          }
+        }
+
+        // 2 — Census unavailable; do a reachability check against Daybreak root
+        if (!apiSuccess) {
+          let daybreakReachable = false;
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), SITE_TIMEOUT_MS);
+            await fetch(DAYBREAK_ROOT, { mode: 'no-cors', signal: controller.signal });
+            clearTimeout(timer);
+            daybreakReachable = true;
+          } catch {
+            daybreakReachable = false;
+          }
+
+          applyPrimaryStatus(daybreakReachable ? 'online' : 'offline', null);
+          corsNotice.classList.add('visible');
+        }
+
+        setSpinning(false);
+        resetCountdown();
+      }
+
+      /* ── Countdown ── */
+      function resetCountdown() {
+        clearInterval(countdownTimer);
+        countdownSeconds = REFRESH_INTERVAL_S;
+        countdownDisplay.textContent = countdownSeconds;
+        countdownTimer = setInterval(() => {
+          countdownSeconds -= 1;
+          countdownDisplay.textContent = countdownSeconds;
+          if (countdownSeconds <= 0) {
+            clearInterval(countdownTimer);
+            fetchStatus();
+            reloadStatusIframe();
+          }
+        }, 1000);
+      }
+
+      /* ── Iframe reload helper ── */
+      function reloadStatusIframe() {
+        statusIframe.classList.remove('loaded');
+        embedLoading.style.display = 'flex';
+        statusIframe.src = `${OFFICIAL_STATUS}?_t=${Date.now()}`;
+      }
+
+      refreshBtn.addEventListener('click', () => {
+        clearInterval(countdownTimer);
+        fetchStatus();
+        reloadStatusIframe();
+      });
+
+      /* ── Iframe load / block detection ── */
+      statusIframe.addEventListener('load', () => {
+        embedLoading.style.display = 'none';
+        // Wait briefly for any dynamic content to render before checking whether the
+        // embed was blocked (X-Frame-Options / CSP). Cross-origin access throws;
+        // a same-origin but empty body also signals the embed was refused.
+        setTimeout(() => {
+          let blocked = false;
+          try {
+            const doc = statusIframe.contentDocument;
+            blocked = !!(doc && (doc.body === null || doc.body.innerHTML.trim() === ''));
+          } catch {
+            blocked = true;
+          }
+          if (blocked) {
+            statusIframe.style.display = 'none';
+            embedBlocked.style.display = 'block';
+            return;
+          }
+          statusIframe.classList.add('loaded');
+        }, IFRAME_LOAD_DELAY_MS);
+      });
+
+      statusIframe.addEventListener('error', () => {
+        statusIframe.style.display  = 'none';
+        embedLoading.style.display  = 'none';
+        embedBlocked.style.display  = 'block';
+      });
+
+      // Kick off on page load
+      fetchStatus();
+    </script>
+  </body>
+</html>

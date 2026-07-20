@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Lore of Norrath</title>
+    <meta
+      name="description"
+      content="The chronicles of Norrath: gods, dragons, races, cities, and the history of the world of EverQuest, organized by the ages of Norrath."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../styles.css" />
+    <style>
+      /* ── Lore page specific styles ── */
+      .lore-search-bar {
+        display: flex;
+        gap: 0.75rem;
+        margin: 1.5rem 0 0;
+        align-items: center;
+        flex-wrap: wrap;
+      }
+      .lore-search-bar__input {
+        flex: 1;
+        min-width: 220px;
+        padding: 0.75rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,0.3);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.95rem;
+      }
+      .lore-search-bar__input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .lore-search-bar__clear {
+        padding: 0.55rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.88rem;
+      }
+      .lore-search-bar__clear:hover { color: var(--text); }
+      .lore-match-count {
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-width: 100px;
+      }
+
+      .lore-toc {
+        margin: 1.5rem 0 2rem;
+        padding: 1.25rem 1.5rem;
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--panel);
+      }
+      .lore-toc__title {
+        margin: 0 0 0.75rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+      }
+      .lore-toc__list {
+        list-style: none;
+        padding: 0;
+        margin: 0;
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+        gap: 0.35rem 1rem;
+      }
+      .lore-toc__list a {
+        color: var(--muted);
+        font-size: 0.88rem;
+        text-decoration: none;
+        transition: color 0.15s;
+        display: flex;
+        align-items: center;
+        gap: 0.35rem;
+      }
+      .lore-toc__list a:hover { color: var(--accent); }
+      .lore-toc__list .era-label {
+        font-size: 0.72rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+        opacity: 0.7;
+      }
+      .lore-toc__list .toc-indent { padding-left: 1.1rem; }
+
+      .lore-era {
+        margin-top: 2.5rem;
+        scroll-margin-top: 90px;
+      }
+      .lore-era__header {
+        display: flex;
+        align-items: flex-start;
+        gap: 1.25rem;
+        margin-bottom: 1.5rem;
+        padding-bottom: 0.75rem;
+        border-bottom: 1px solid var(--border);
+      }
+      .lore-era__img {
+        width: 220px;
+        height: 130px;
+        object-fit: cover;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        flex-shrink: 0;
+      }
+      .lore-era__text { flex: 1; }
+      .lore-era__eyebrow {
+        margin: 0 0 0.3rem;
+        font-size: 0.78rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+      }
+      .lore-era__title {
+        margin: 0 0 0.55rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1.65rem;
+      }
+      .lore-era__desc {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 0.97rem;
+      }
+
+      .lore-section {
+        margin-top: 1.75rem;
+        scroll-margin-top: 90px;
+      }
+      .lore-section__title {
+        margin: 0 0 1rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1.2rem;
+        color: var(--text);
+        border-left: 3px solid var(--accent);
+        padding-left: 0.75rem;
+      }
+      .lore-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+        gap: 1rem;
+      }
+      .lore-card {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: var(--panel);
+        overflow: hidden;
+        scroll-margin-top: 90px;
+        transition: border-color 0.2s;
+      }
+      .lore-card:hover { border-color: var(--accent); }
+      .lore-card__img {
+        width: 100%;
+        height: 140px;
+        object-fit: cover;
+        object-position: center;
+        display: block;
+      }
+      .lore-card__body {
+        padding: 0.9rem 1rem 1rem;
+      }
+      .lore-card__tag {
+        display: inline-block;
+        margin-bottom: 0.35rem;
+        font-size: 0.7rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+      .lore-card__name {
+        margin: 0 0 0.4rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+      }
+      .lore-card__desc {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+      .lore-card__detail {
+        margin: 0.55rem 0 0;
+        font-size: 0.82rem;
+        color: var(--text);
+        opacity: 0.75;
+        line-height: 1.5;
+      }
+      .lore-card__align {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        margin-top: 0.45rem;
+        font-size: 0.75rem;
+        padding: 0.25rem 0.55rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+      }
+      .lore-card__align--good { border-color: rgba(100, 220, 100, 0.35); color: #a8f0a8; }
+      .lore-card__align--neutral { border-color: rgba(200, 180, 100, 0.35); color: #e8d880; }
+      .lore-card__align--evil { border-color: rgba(220, 80, 80, 0.35); color: #ff9090; }
+
+      .lore-timeline {
+        position: relative;
+        padding-left: 2rem;
+        margin-top: 1rem;
+      }
+      .lore-timeline::before {
+        content: '';
+        position: absolute;
+        left: 0.55rem;
+        top: 0;
+        bottom: 0;
+        width: 2px;
+        background: linear-gradient(to bottom, var(--accent), transparent);
+      }
+      .lore-timeline__entry {
+        position: relative;
+        margin-bottom: 1.5rem;
+        scroll-margin-top: 90px;
+      }
+      .lore-timeline__entry::before {
+        content: '✦';
+        position: absolute;
+        left: -1.65rem;
+        top: 0.1rem;
+        font-size: 0.65rem;
+        color: var(--accent);
+      }
+      .lore-timeline__period {
+        margin: 0 0 0.2rem;
+        font-size: 0.75rem;
+        color: var(--accent);
+        text-transform: uppercase;
+        letter-spacing: 0.18em;
+      }
+      .lore-timeline__event {
+        margin: 0 0 0.3rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+      }
+      .lore-timeline__detail {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+
+      .lore-entry--hidden { display: none; }
+      .lore-highlight {
+        background: rgba(255, 123, 123, 0.25);
+        border-radius: 3px;
+        padding: 0 2px;
+      }
+
+      @media (max-width: 700px) {
+        .lore-era__header { flex-direction: column; }
+        .lore-era__img { width: 100%; height: 160px; }
+        .lore-grid { grid-template-columns: 1fr; }
+        .lore-toc__list { grid-template-columns: 1fr 1fr; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link active" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">The Chronicles of Norrath</p>
+        <h1 class="page-title">Lore of Norrath</h1>
+        <p class="page-subtitle">The history of the world of EverQuest — its gods, dragons, races, and cities — told in the order the ages unfolded.</p>
+
+        <!-- Search bar -->
+        <div class="lore-search-bar">
+          <input
+            id="loreSearch"
+            class="lore-search-bar__input"
+            type="search"
+            placeholder="Search gods, dragons, races, cities, history…"
+            aria-label="Search lore"
+            autocomplete="off"
+          />
+          <button class="lore-search-bar__clear" type="button" onclick="clearLoreSearch()">Clear</button>
+          <span id="loreMatchCount" class="lore-match-count" aria-live="polite"></span>
+        </div>
+
+        <!-- Table of Contents -->
+        <nav class="lore-toc" aria-label="Lore contents">
+          <p class="lore-toc__title">Contents</p>
+          <ul class="lore-toc__list">
+            <li><a href="#age-beginnings">✦ The Age of Beginnings</a></li>
+            <li><a href="#age-scale">✦ The Age of Scale</a></li>
+            <li><a href="#age-elder">✦ The Elder Age</a></li>
+            <li><a href="#age-monuments">✦ The Age of Monuments</a></li>
+            <li><a href="#age-turmoil">✦ The Age of Turmoil</a></li>
+            <li><a href="#gods">✦ The Pantheon of Norrath</a></li>
+            <li class="toc-indent"><a href="#gods-good">· Gods of Light</a></li>
+            <li class="toc-indent"><a href="#gods-neutral">· Gods of Balance</a></li>
+            <li class="toc-indent"><a href="#gods-evil">· Gods of Darkness</a></li>
+            <li><a href="#dragons">✦ The Great Dragons</a></li>
+            <li><a href="#races">✦ The Races of Norrath</a></li>
+            <li class="toc-indent"><a href="#races-antonica">· Antonica &amp; Faydwer</a></li>
+            <li class="toc-indent"><a href="#races-odus">· Odus</a></li>
+            <li class="toc-indent"><a href="#races-kunark">· Kunark</a></li>
+            <li class="toc-indent"><a href="#races-luclin">· Luclin</a></li>
+            <li><a href="#cities">✦ The Cities of Norrath</a></li>
+            <li class="toc-indent"><a href="#cities-antonica">· Antonica</a></li>
+            <li class="toc-indent"><a href="#cities-faydwer">· Faydwer</a></li>
+            <li class="toc-indent"><a href="#cities-odus">· Odus</a></li>
+            <li class="toc-indent"><a href="#cities-kunark">· Kunark &amp; Beyond</a></li>
+            <li><a href="#timeline">✦ Full Chronology</a></li>
+          </ul>
+        </nav>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- ═══════════════════════════════════════════
+             AGE OF BEGINNINGS
+        ═══════════════════════════════════════════ -->
+        <section id="age-beginnings" class="lore-era" data-lore>
+          <div class="lore-era__header">
+            <img
+              class="lore-era__img"
+              src="https://images.unsplash.com/photo-1444703686981-a3abbc4d4fe3?auto=format&fit=crop&w=600&q=80"
+              alt="Starfield representing the void before creation"
+            />
+            <div class="lore-era__text">
+              <p class="lore-era__eyebrow">Era I · Before Recorded Time</p>
+              <h2 class="lore-era__title">The Age of Beginnings</h2>
+              <p class="lore-era__desc">
+                Before Norrath had name or form, there was only <strong>The Nameless</strong> — a consciousness without
+                shape, also known as The All-Father or The Faceless One. From The Nameless all things were born.
+                The Primal Gods emerged from this formless void: beings of immense power drawn to the newly-formed
+                world hanging in the heavens like a jewel. They quarreled over dominion before the first mortal
+                had ever drawn breath. The Nameless set no rules, only one certainty: power would be contested,
+                and Norrath would be its arena.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════
+             AGE OF SCALE
+        ═══════════════════════════════════════════ -->
+        <section id="age-scale" class="lore-era" data-lore>
+          <div class="lore-era__header">
+            <img
+              class="lore-era__img"
+              src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80"
+              alt="Frozen mountains representing the dragon continent of Velious"
+            />
+            <div class="lore-era__text">
+              <p class="lore-era__eyebrow">Era II · ~4500 Years Before the Current Age</p>
+              <h2 class="lore-era__title">The Age of Scale</h2>
+              <p class="lore-era__desc">
+                The great crystalline dragon <strong>Veeshan</strong>, mother of all dragonkind and keeper of the
+                northern sky, descended on the frozen continent later called Velious and raked it with her massive
+                claws. This act — the <em>Scar of Veeshan</em> — was her claim: Norrath belonged to the
+                dragons. The Ring of Scale formed, an ancient conclave governing dragon affairs. Mighty wyrms
+                spread across the continents: fire dragons to the volcanic reaches, ice dragons to the polar
+                north, sea serpents to the deeps. No mortal race yet walked the land — only the ancient,
+                immortal scaled ones ruled.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════
+             ELDER AGE
+        ═══════════════════════════════════════════ -->
+        <section id="age-elder" class="lore-era" data-lore>
+          <div class="lore-era__header">
+            <img
+              class="lore-era__img"
+              src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80"
+              alt="Ancient mystical forest representing the Elder Age"
+            />
+            <div class="lore-era__text">
+              <p class="lore-era__eyebrow">Era III · ~3500–2000 Years Before the Current Age</p>
+              <h2 class="lore-era__title">The Elder Age</h2>
+              <p class="lore-era__desc">
+                The Gods of Norrath descended from the Planes to shape mortal races in their own image and to
+                challenge the dragons' dominion. <strong>Brell Serilis</strong> burrowed into the earth and
+                seeded the deep places with dwarves, gnomes, and halflings. <strong>Tunare</strong> breathed
+                life into the forests and elves walked beneath the great boughs of Faydwer. <strong>Rallos
+                Zek</strong> forged the ogres and giants as weapons of war. <strong>Cazic-Thule</strong> filled
+                the swamps with trolls and lizardmen, servants of fear. <strong>Innoruuk</strong>, consumed with
+                hatred, kidnapped the elf-queen <em>Peregrine</em> and her mate and tortured them for
+                four hundred years, twisting their offspring into the dark elves — the Teir'Dal. The age
+                ended in conflict as Rallos Zek's armies marched upon the Planes themselves.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════
+             AGE OF MONUMENTS
+        ═══════════════════════════════════════════ -->
+        <section id="age-monuments" class="lore-era" data-lore>
+          <div class="lore-era__header">
+            <img
+              class="lore-era__img"
+              src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80"
+              alt="Ancient ruins representing the Age of Monuments"
+            />
+            <div class="lore-era__text">
+              <p class="lore-era__eyebrow">Era IV · ~2000–500 Years Before the Current Age</p>
+              <h2 class="lore-era__title">The Age of Monuments</h2>
+              <p class="lore-era__desc">
+                Mortal civilizations rose to great heights. The <strong>Iksar</strong> of Kunark built the
+                <em>Sebilisan Empire</em>, the grandest mortal kingdom Norrath had seen, stretching across the
+                entire continent of Kunark. The Iksar enslaved the Frogloks and waged war with the Ring of Scale.
+                On Antonica, the <strong>Combine Empire</strong> united many mortal races under one banner — an
+                age of art, magic, and monument-building. The Combine eventually collapsed into the fractured city
+                states recognized today. Rallos Zek's assault on the Planes of Power failed catastrophically;
+                the gods cursed the ogres with diminished intellect as punishment. The Erudites split from
+                humanity and sailed to the continent of Odus.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <!-- ═══════════════════════════════════════════
+             AGE OF TURMOIL
+        ═══════════════════════════════════════════ -->
+        <section id="age-turmoil" class="lore-era" data-lore>
+          <div class="lore-era__header">
+            <img
+              class="lore-era__img"
+              src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80"
+              alt="Dark fantasy scene representing the Age of Turmoil"
+            />
+            <div class="lore-era__text">
+              <p class="lore-era__eyebrow">Era V · The Current Age</p>
+              <h2 class="lore-era__title">The Age of Turmoil</h2>
+              <p class="lore-era__desc">
+                The present era is one of fragile balance. Qeynos and Freeport stand as twin pillars of human
+                civilization, often at odds. The dark elves scheme from Neriak. Adventurers rediscovered the
+                lost continent of Kunark, uncovering the Iksar ruins and awakening Trakanon. Velious, the
+                ancient home of dragonkind, was reached by sea. The Sleeper — <strong>Kerafyrm</strong>,
+                the imprisoned prismatic dragon — was awakened and escaped beyond the known planes. The moon
+                <strong>Luclin</strong> was reached and found to harbor entire civilizations. Then the <em>Planes
+                of Power</em> themselves were invaded, and the god <strong>Quarm</strong> was defeated at the
+                height of power. The Chosen guild walks in this age, writing its own chapters.
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- ═══════════════════════════════════════════
+             THE PANTHEON
+        ═══════════════════════════════════════════ -->
+        <section id="gods" class="lore-section" data-lore>
+          <h2 class="lore-section__title">The Pantheon of Norrath</h2>
+
+          <!-- Gods of Light -->
+          <div id="gods-good" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.25rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Gods of Light</h3>
+            <div class="lore-grid">
+
+              <article id="tunare" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80" alt="Ancient forest canopy — Tunare, the Mother of All" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Goddess</span>
+                  <h4 class="lore-card__name">Tunare — The Mother of All</h4>
+                  <p class="lore-card__desc">Goddess of nature, life, and growth. She created the elves — High Elves (Koada'Dal) and Wood Elves (Feir'Dal) — in her image and breathed awareness into the forests of Faydwer.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Nature, Life, Forests<br/><strong>Patron races:</strong> High Elves, Wood Elves<br/><strong>Realm:</strong> The Plane of Growth</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="mithaniel-marr" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1533154683836-84ea7a0bc310?auto=format&fit=crop&w=600&q=80" alt="Knight's hall of valor — Mithaniel Marr" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Mithaniel Marr — The Truthbringer</h4>
+                  <p class="lore-card__desc">God of valor, truth, and honor. He and his twin sister Erollisi were the children of Tarew Marr, blessed with mortal forms to walk Norrath. Patron of Paladins.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Valor, Truth, Honor<br/><strong>Patron races:</strong> Humans (Paladins)<br/><strong>Realm:</strong> The Plane of Valor</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="erollisi-marr" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1490750967868-88df5691cc06?auto=format&fit=crop&w=600&q=80" alt="Flowers and meadow — Erollisi Marr" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Goddess</span>
+                  <h4 class="lore-card__name">Erollisi Marr — The Queen of Love</h4>
+                  <p class="lore-card__desc">Twin sister of Mithaniel Marr. Goddess of love, compassion, and empathy. Patron of Rangers and Bards who carry her spirit into the world.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Love, Compassion<br/><strong>Patron races:</strong> Humans, Half Elves<br/><strong>Realm:</strong> The Plane of Love</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="rodcet-nife" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1441974231531-c6227db76b6e?auto=format&fit=crop&w=600&q=80" alt="Sunlit forest glade — Rodcet Nife" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Rodcet Nife — The Prime Healer</h4>
+                  <p class="lore-card__desc">God of health, healing, and the preservation of life. The nemesis of Bertoxxulous, the Plaguebringer. Patron of Clerics devoted to pure healing arts.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Healing, Health<br/><strong>Patron races:</strong> Humans<br/><strong>Realm:</strong> The Plane of Health</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="quellious" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1506905925346-21bda4d32df4?auto=format&fit=crop&w=600&q=80" alt="Tranquil mountain scene — Quellious" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Goddess</span>
+                  <h4 class="lore-card__name">Quellious — The Tranquil</h4>
+                  <p class="lore-card__desc">Goddess of peace and serenity, depicted as a young girl to represent the innocence of pure thought. Patron of Monks who seek harmony between mind and body.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Peace, Serenity, Harmony<br/><strong>Patron races:</strong> Humans (Monks)<br/><strong>Realm:</strong> The Plane of Tranquility</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="karana" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1504608524841-42584120d693?auto=format&fit=crop&w=600&q=80" alt="Storm clouds and lightning — Karana" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Karana — The Rainkeeper</h4>
+                  <p class="lore-card__desc">God of the storms, sky, and weather. He blesses farmers and sailors alike. His fists are the thunderclaps, his breath the wind. Patron of Barbarian Shamans.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Weather, Storms, Sky<br/><strong>Patron races:</strong> Barbarians, Humans<br/><strong>Realm:</strong> The Plane of Sky</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="bristlebane" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1516541196182-6bdb0516ed27?auto=format&fit=crop&w=600&q=80" alt="Colorful festivity — Bristlebane Fizzlethorpe" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Bristlebane Fizzlethorpe — The King of Thieves</h4>
+                  <p class="lore-card__desc">God of mischief, tricks, and luck. Patron of Halflings, Rogues, and all who value a good jest over grim solemnity. Known to tip the scales of fate with a wink.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Mischief, Luck, Tricks<br/><strong>Patron races:</strong> Halflings, Gnomes<br/><strong>Realm:</strong> The Plane of Mischief</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral–Good</span>
+                </div>
+              </article>
+
+            </div><!-- /gods-good -->
+          </div>
+
+          <!-- Gods of Balance -->
+          <div id="gods-neutral" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Gods of Balance</h3>
+            <div class="lore-grid">
+
+              <article id="brell-serilis" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1571772996211-2f02c9727629?auto=format&fit=crop&w=600&q=80" alt="Deep cave systems — Brell Serilis" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Brell Serilis — The Duke of Below</h4>
+                  <p class="lore-card__desc">God of the underworld, earth, and stone. He created dwarves, gnomes, halflings, and countless underground creatures by breathing life into clay and rock deep beneath Norrath.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Earth, Underground, Crafting<br/><strong>Patron races:</strong> Dwarves, Gnomes, Halflings<br/><strong>Realm:</strong> The Plane of Underfoot</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+              <article id="solusek-ro" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80" alt="Volcanic landscape — Solusek Ro" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Solusek Ro — The Burning Prince</h4>
+                  <p class="lore-card__desc">God of fire and arcane magic. Son of Fennin Ro, lord of the Plane of Fire. He raised the Serpent Spine mountains to block the sun from Tunare's elves — an act that created the great deserts of Norrath.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Fire, Magic<br/><strong>Patron races:</strong> Dark Elves, Gnomes (Wizards)<br/><strong>Realm:</strong> The Plane of Sun</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+              <article id="the-tribunal" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1555993539-1732b0258235?auto=format&fit=crop&w=600&q=80" alt="Ancient stone temple of judgment — The Tribunal" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Pantheon</span>
+                  <h4 class="lore-card__name">The Tribunal — The Six Hammers</h4>
+                  <p class="lore-card__desc">Six impassive god-judges who maintain the balance of justice in Norrath. They do not act in mortal affairs except to weigh deeds and pass judgment. Patron of Barbarian warriors who seek fair law.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Justice, Law, Balance<br/><strong>Patron races:</strong> Barbarians<br/><strong>Realm:</strong> The Plane of Justice</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+              <article id="prexus" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1505118380757-91f5f5632de0?auto=format&fit=crop&w=600&q=80" alt="Deep ocean — Prexus" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Prexus — The Oceanlord</h4>
+                  <p class="lore-card__desc">God of the oceans, seas, and all waters. He gave life to the Kedge — ancient, powerful underwater beings — and claims the vast ocean depths as his domain. Patron of sailors and aquatic races.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Oceans, Water, Seas<br/><strong>Patron races:</strong> Kedge<br/><strong>Realm:</strong> The Plane of Water</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Gods of Darkness -->
+          <div id="gods-evil" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Gods of Darkness</h3>
+            <div class="lore-grid">
+
+              <article id="innoruuk" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1504192010706-dd7f569ee2be?auto=format&fit=crop&w=600&q=80" alt="Dark shadowy forest — Innoruuk" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Innoruuk — The Prince of Hate</h4>
+                  <p class="lore-card__desc">God of hatred, malice, and corruption. He kidnapped the elf-queen Peregrine and her consort, subjecting them to four centuries of torture until their twisted offspring became the first Teir'Dal — the dark elves.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Hatred, Malice, Corruption<br/><strong>Patron races:</strong> Dark Elves (Teir'Dal)<br/><strong>Realm:</strong> The Plane of Hate</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="rallos-zek" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1525498128493-380d1990a112?auto=format&fit=crop&w=600&q=80" alt="War-torn battlefield — Rallos Zek" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Rallos Zek — The Warlord</h4>
+                  <p class="lore-card__desc">God of war, combat, and destruction. He created the ogres and giants as instruments of conquest. His armies once dared assault the Planes of the Gods themselves — and failed. The gods cursed his ogre children with stupidity for their hubris.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> War, Combat, Conquest<br/><strong>Patron races:</strong> Ogres, Giants, Orcs<br/><strong>Realm:</strong> The Plane of War</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="cazic-thule" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&w=600&q=80" alt="Dark misty swamp — Cazic-Thule" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Cazic-Thule — The Faceless</h4>
+                  <p class="lore-card__desc">God of fear, terror, and anxiety. He filled the dark swamps and jungle ruins of Norrath with his servants — trolls, lizardmen, and the undead. His temples are places of sacrifice and dread.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Fear, Terror, Death<br/><strong>Patron races:</strong> Trolls, Lizardmen<br/><strong>Realm:</strong> The Plane of Fear</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="bertoxxulous" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=600&q=80" alt="Toxic swamp — Bertoxxulous" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">God</span>
+                  <h4 class="lore-card__name">Bertoxxulous — The Plaguebringer</h4>
+                  <p class="lore-card__desc">God of disease, decay, and pestilence. The eternal enemy of Rodcet Nife. His followers among the Erudites formed the heretical Paineel faction that broke from Erudin.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Disease, Decay, Plague<br/><strong>Patron races:</strong> Erudites (heretics), Undead<br/><strong>Realm:</strong> The Plane of Disease</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="saryrn" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1520034475321-cbe63696469a?auto=format&fit=crop&w=600&q=80" alt="Dark thorned wilderness — Saryrn" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Goddess</span>
+                  <h4 class="lore-card__name">Saryrn — The Mistress of Pain</h4>
+                  <p class="lore-card__desc">Goddess of torment and suffering. Said to be one of the most powerful denizens of the Plane of Torment, she delights in the harvest of anguish from mortal souls. Consort of Bertoxxulous.</p>
+                  <p class="lore-card__detail"><strong>Domain:</strong> Torment, Suffering, Pain<br/><strong>Patron races:</strong> None (worshipped by cultists)<br/><strong>Realm:</strong> The Plane of Torment</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+            </div>
+          </div>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- ═══════════════════════════════════════════
+             DRAGONS
+        ═══════════════════════════════════════════ -->
+        <section id="dragons" class="lore-section" data-lore>
+          <h2 class="lore-section__title">The Great Dragons of Norrath</h2>
+          <div class="lore-grid">
+
+            <article id="veeshan" class="lore-card" data-lore>
+              <img class="lore-card__img" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80" alt="Frozen mountain range — Veeshan" />
+              <div class="lore-card__body">
+                <span class="lore-card__tag">Ancient Dragon · Goddess</span>
+                <h4 class="lore-card__name">Veeshan — The Crystalline Dragon</h4>
+                <p class="lore-card__desc">Mother of all dragonkind and mistress of the northern sky. She scratched the continent of Velious with her massive claws during the Age of Scale, marking Norrath as dragon territory.</p>
+                <p class="lore-card__detail"><strong>Type:</strong> Crystal / Sky Dragon<br/><strong>Domain:</strong> Velious, Plane of Sky<br/><strong>Status:</strong> Divine — rarely manifests</p>
+              </div>
+            </article>
+
+            <article id="kerafyrm" class="lore-card" data-lore>
+              <img class="lore-card__img" src="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=600&q=80" alt="Prismatic crystal formation — Kerafyrm the Sleeper" />
+              <div class="lore-card__body">
+                <span class="lore-card__tag">Prismatic Dragon · Imprisoned</span>
+                <h4 class="lore-card__name">Kerafyrm — The Sleeper</h4>
+                <p class="lore-card__desc">The only offspring of two pure dragon bloodlines — half chromatic, half white — Kerafyrm was the most powerful being ever created on Norrath. His power was deemed too great; the Ring of Scale and the gods conspired to imprison him in the Sleeper's Tomb on Velious.</p>
+                <p class="lore-card__detail"><strong>Type:</strong> Prismatic (unique)<br/><strong>Domain:</strong> Sleeper's Tomb, Velious<br/><strong>Status:</strong> Awakened by adventurers; escaped beyond the planes</p>
+              </div>
+            </article>
+
+            <article id="trakanon" class="lore-card" data-lore>
+              <img class="lore-card__img" src="https://images.unsplash.com/photo-1574263867128-a3d5c1b1deae?auto=format&fit=crop&w=600&q=80" alt="Jungle ruins — Trakanon" />
+              <div class="lore-card__body">
+                <span class="lore-card__tag">Ancient Dragon · Undead</span>
+                <h4 class="lore-card__name">Trakanon — The Ancient One</h4>
+                <p class="lore-card__desc">One of Norrath's oldest and most feared dragons. The ancient Iksar poisoner who now haunts the ruins of Sebilis in undead form. Once a powerful member of the Ring of Scale, his venom slew many Iksar emperors.</p>
+                <p class="lore-card__detail"><strong>Type:</strong> Poison / Undead Dragon<br/><strong>Domain:</strong> Sebilis, Kunark<br/><strong>Status:</strong> Undead — lurks in the old Iksar capital</p>
+              </div>
+            </article>
+
+            <article id="lord-nagafen" class="lore-card" data-lore>
+              <img class="lore-card__img" src="https://images.unsplash.com/photo-1464822759023-fed622ff2c3b?auto=format&fit=crop&w=600&q=80" alt="Volcanic eruption — Lord Nagafen" />
+              <div class="lore-card__body">
+                <span class="lore-card__tag">Fire Dragon · Imprisoned</span>
+                <h4 class="lore-card__name">Lord Nagafen — The Firebreathing Lord</h4>
+                <p class="lore-card__desc">A mighty fire dragon imprisoned deep within Solusek's Eye (Nagafen's Lair) as punishment for his liaison with the ice dragon Lady Vox — a taboo union that could have produced an uncontrollable hybrid dragon.</p>
+                <p class="lore-card__detail"><strong>Type:</strong> Fire Dragon<br/><strong>Domain:</strong> Nagafen's Lair, Lavastorm<br/><strong>Status:</strong> Imprisoned — sought by adventurers for his hoard</p>
+              </div>
+            </article>
+
+            <article id="lady-vox" class="lore-card" data-lore>
+              <img class="lore-card__img" src="https://images.unsplash.com/photo-1457269449834-928af64c684d?auto=format&fit=crop&w=600&q=80" alt="Frozen glacier cave — Lady Vox" />
+              <div class="lore-card__body">
+                <span class="lore-card__tag">Ice Dragon · Imprisoned</span>
+                <h4 class="lore-card__name">Lady Vox — The Icefang</h4>
+                <p class="lore-card__desc">A powerful white dragon imprisoned in the Permafrost Caverns of Everfrost as punishment for her forbidden relationship with Lord Nagafen. Her lair is a palace of ice and treasure deep beneath the frozen wastes.</p>
+                <p class="lore-card__detail"><strong>Type:</strong> Ice / White Dragon<br/><strong>Domain:</strong> Permafrost Caverns, Everfrost<br/><strong>Status:</strong> Imprisoned — surrounded by undead guardians</p>
+              </div>
+            </article>
+
+            <article id="ring-of-scale" class="lore-card" data-lore>
+              <img class="lore-card__img" src="https://images.unsplash.com/photo-1526256262350-7da7584cf5eb?auto=format&fit=crop&w=600&q=80" alt="Ancient stone scales — Ring of Scale" />
+              <div class="lore-card__body">
+                <span class="lore-card__tag">Dragon Conclave</span>
+                <h4 class="lore-card__name">The Ring of Scale</h4>
+                <p class="lore-card__desc">The ancient governing body of dragonkind, created under Veeshan's mandate to maintain order among the scaled races. Based in Kunark, the Ring of Scale wars with mortals and maintains the laws of the dragon society.</p>
+                <p class="lore-card__detail"><strong>Type:</strong> Organization<br/><strong>Domain:</strong> Kunark (Veeshan's Peak)<br/><strong>Status:</strong> Active — still governs surviving dragons</p>
+              </div>
+            </article>
+
+          </div>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- ═══════════════════════════════════════════
+             RACES
+        ═══════════════════════════════════════════ -->
+        <section id="races" class="lore-section" data-lore>
+          <h2 class="lore-section__title">The Races of Norrath</h2>
+
+          <!-- Antonica & Faydwer -->
+          <div id="races-antonica" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.25rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Antonica &amp; Faydwer</h3>
+            <div class="lore-grid">
+
+              <article id="race-human" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1585543805890-6051f7829f98?auto=format&fit=crop&w=600&q=80" alt="Stone castle fortress — Humans of Norrath" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Humans</h4>
+                  <p class="lore-card__desc">The most adaptable race of Norrath, found across all continents. Humans built the twin cities of Qeynos and Freeport and once formed the Combine Empire that united much of the world.</p>
+                  <p class="lore-card__detail"><strong>Home cities:</strong> Qeynos, Freeport<br/><strong>Patron deity:</strong> Various<br/><strong>Available classes:</strong> All</p>
+                </div>
+              </article>
+
+              <article id="race-high-elf" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80" alt="Luminous ancient forest — High Elves" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">High Elves (Koada'Dal)</h4>
+                  <p class="lore-card__desc">The eldest and most magically gifted of Tunare's elven children. They dwell in the alabaster city of Felwithe in Faydwer, dedicated to scholarship, arcane mastery, and the service of Tunare.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Felwithe, Faydwer<br/><strong>Patron deity:</strong> Tunare<br/><strong>Lifespan:</strong> Centuries to millennia</p>
+                </div>
+              </article>
+
+              <article id="race-wood-elf" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=600&q=80" alt="Tall ancient tree canopy — Wood Elves" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Wood Elves (Feir'Dal)</h4>
+                  <p class="lore-card__desc">Nature-bound elves who dwell in the great tree city of Kelethin, built among the canopy of Greater Faydark. Masters of archery and woodcraft, deeply bonded to the forests of Faydwer.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Kelethin, Greater Faydark<br/><strong>Patron deity:</strong> Tunare<br/><strong>Available classes:</strong> Ranger, Druid, Warrior, Bard</p>
+                </div>
+              </article>
+
+              <article id="race-dark-elf" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1563089145-599997674d42?auto=format&fit=crop&w=600&q=80" alt="Dark underground crystal cavern — Dark Elves" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Dark Elves (Teir'Dal)</h4>
+                  <p class="lore-card__desc">Born of Innoruuk's hatred and the torture of captured elven royalty. The Teir'Dal dwell in the underground city of Neriak, three separate districts carved into solid rock. Masters of shadow magic and deceit.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Neriak, Antonica<br/><strong>Patron deity:</strong> Innoruuk<br/><strong>Available classes:</strong> Necromancer, Enchanter, Shadow Knight, Rogue</p>
+                </div>
+              </article>
+
+              <article id="race-dwarf" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1571772996211-2f02c9727629?auto=format&fit=crop&w=600&q=80" alt="Rocky mountain mines — Dwarves" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Dwarves</h4>
+                  <p class="lore-card__desc">Created by Brell Serilis from the stone of the deep earth, dwarves are stout, resilient craftsmen and warriors. They dwell in the great underground city of Kaladim in the Butcherblock Mountains of Faydwer.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Kaladim, Faydwer<br/><strong>Patron deity:</strong> Brell Serilis<br/><strong>Available classes:</strong> Warrior, Cleric, Paladin, Rogue</p>
+                </div>
+              </article>
+
+              <article id="race-gnome" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80" alt="Brass clockwork gears — Gnomes" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Gnomes</h4>
+                  <p class="lore-card__desc">The ingenious inventors of Norrath, created by Brell Serilis from spark and stone. They built the city of Ak'Anon in Faydwer, a marvel of clockwork machinery where tinkering is both art and religion.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Ak'Anon, Faydwer<br/><strong>Patron deity:</strong> Brell Serilis<br/><strong>Available classes:</strong> Wizard, Magician, Necromancer, Cleric</p>
+                </div>
+              </article>
+
+              <article id="race-halfling" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1499678329028-101435549a4e?auto=format&fit=crop&w=600&q=80" alt="Peaceful rolling countryside — Halflings" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Halflings</h4>
+                  <p class="lore-card__desc">Small, nimble, and cheerful folk created by Brell Serilis. They make their home in the peaceful Rivervale, nestled in the Misty Thicket. Renowned for quick fingers and quicker feet.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Rivervale, Antonica<br/><strong>Patron deity:</strong> Bristlebane Fizzlethorpe<br/><strong>Available classes:</strong> Druid, Rogue, Warrior, Cleric</p>
+                </div>
+              </article>
+
+              <article id="race-barbarian" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=600&q=80" alt="Frozen northern landscape — Barbarians" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Barbarians</h4>
+                  <p class="lore-card__desc">Large, fierce humans descended from a northern bloodline. They dwell in the frozen city of Halas in Everfrost Peaks, surviving through strength, martial prowess, and shamanistic tradition.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Halas, Everfrost Peaks<br/><strong>Patron deity:</strong> The Tribunal, Karana<br/><strong>Available classes:</strong> Warrior, Shaman, Rogue</p>
+                </div>
+              </article>
+
+              <article id="race-troll" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1539398151539-61c39c2f527e?auto=format&fit=crop&w=600&q=80" alt="Dark swamp at twilight — Trolls" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Trolls</h4>
+                  <p class="lore-card__desc">Created by Cazic-Thule to spread fear through the swamps. Trolls are powerful, regenerative creatures with low cunning but tremendous strength. They dwell in the festering city of Grobb in Innothule Swamp.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Grobb, Innothule Swamp<br/><strong>Patron deity:</strong> Cazic-Thule<br/><strong>Available classes:</strong> Warrior, Shadow Knight, Shaman</p>
+                </div>
+              </article>
+
+              <article id="race-ogre" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1525498128493-380d1990a112?auto=format&fit=crop&w=600&q=80" alt="Crude stone fortress — Ogres" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Ogres</h4>
+                  <p class="lore-card__desc">Once powerful, intelligent warriors of Rallos Zek, the ogres were cursed with drastically diminished intellect after their march on the Planes of the Gods failed. Now they are hulking but dim, dwelling in Oggok.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Oggok<br/><strong>Patron deity:</strong> Rallos Zek<br/><strong>Available classes:</strong> Warrior, Shadow Knight, Shaman</p>
+                </div>
+              </article>
+
+              <article id="race-half-elf" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1476514525535-07fb3b4ae5f1?auto=format&fit=crop&w=600&q=80" alt="Twilight forest path — Half Elves" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Half Elves</h4>
+                  <p class="lore-card__desc">The offspring of humans and elves, half elves inherit some traits from each parent but are fully accepted by neither culture. They are versatile wanderers found in cities across Antonica and Faydwer.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Qeynos, Freeport, Kelethin<br/><strong>Patron deity:</strong> Varies<br/><strong>Available classes:</strong> Paladin, Ranger, Bard, Rogue</p>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Odus -->
+          <div id="races-odus" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Odus</h3>
+            <div class="lore-grid">
+
+              <article id="race-erudite" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1521587760476-6c12a4b040da?auto=format&fit=crop&w=600&q=80" alt="Ancient library shelves — Erudites" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Erudites</h4>
+                  <p class="lore-card__desc">A human offshoot who sailed to the continent of Odus and developed extraordinary magical intellect over generations. The Erudites built the library city of Erudin, a center of arcane learning — until heretical factions split off to found the dark city of Paineel.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Erudin (good) / Paineel (evil)<br/><strong>Patron deity:</strong> Quellious (good), Bertoxxulous (evil)<br/><strong>Available classes:</strong> Wizard, Enchanter, Cleric, Necromancer</p>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Kunark -->
+          <div id="races-kunark" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Kunark</h3>
+            <div class="lore-grid">
+
+              <article id="race-iksar" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1574263867128-a3d5c1b1deae?auto=format&fit=crop&w=600&q=80" alt="Overgrown jungle ruins — Iksar Empire" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Iksar</h4>
+                  <p class="lore-card__desc">A proud reptilian race that built the Sebilisan Empire, the greatest mortal civilization Norrath has known. Defeated by the Ring of Scale after millennia of war, the Iksar survive in the ruins of their former glory, dwelling in Cabilis.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Cabilis, Kunark<br/><strong>Patron deity:</strong> Cazic-Thule<br/><strong>Available classes:</strong> Warrior, Monk, Shadow Knight, Necromancer, Shaman</p>
+                </div>
+              </article>
+
+              <article id="race-froglok" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1559128010-7c1ad6e1b6a5?auto=format&fit=crop&w=600&q=80" alt="Swamp waters and lilies — Frogloks" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Race</span>
+                  <h4 class="lore-card__name">Frogloks</h4>
+                  <p class="lore-card__desc">Frog-like humanoids long enslaved by the Iksar. After the empire's fall they founded their own settlements. Frogloks are blessed by Mithaniel Marr and later seized Grobb from the trolls, renaming it Gukta.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Gukta (formerly Grobb)<br/><strong>Patron deity:</strong> Mithaniel Marr<br/><strong>Available classes:</strong> Paladin, Warrior, Cleric, Shaman</p>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Luclin -->
+          <div id="races-luclin" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Luclin (The Moon)</h3>
+            <div class="lore-grid">
+
+              <article id="race-vah-shir" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1509023464722-18d996393ca8?auto=format&fit=crop&w=600&q=80" alt="Desert moon landscape — Vah Shir" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">Playable Race</span>
+                  <h4 class="lore-card__name">Vah Shir</h4>
+                  <p class="lore-card__desc">A feline race stranded on the moon of Luclin after a magical catastrophe banished them from Norrath. They built the city of Shar Vahl and developed their own distinct culture of honor and the hunt.</p>
+                  <p class="lore-card__detail"><strong>Home city:</strong> Shar Vahl, Luclin<br/><strong>Patron deity:</strong> Luclin (the goddess)<br/><strong>Available classes:</strong> Warrior, Bard, Rogue, Shaman, Beastlord</p>
+                </div>
+              </article>
+
+            </div>
+          </div>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- ═══════════════════════════════════════════
+             CITIES
+        ═══════════════════════════════════════════ -->
+        <section id="cities" class="lore-section" data-lore>
+          <h2 class="lore-section__title">The Cities of Norrath</h2>
+
+          <!-- Antonica cities -->
+          <div id="cities-antonica" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.25rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Antonica</h3>
+            <div class="lore-grid">
+
+              <article id="qeynos" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1585543805890-6051f7829f98?auto=format&fit=crop&w=600&q=80" alt="Stone castle battlements — Qeynos" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Antonica</span>
+                  <h4 class="lore-card__name">Qeynos — The City of Justice</h4>
+                  <p class="lore-card__desc">The premiere good-aligned human city of Norrath, set on the western coast of Antonica. Home to the Knights of Thunder and ruled by the Antonius Bayle dynasty. Qeynos represents order, law, and the light against the encroaching evil of the continent.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good<br/><strong>Notable ruler:</strong> Antonius Bayle IV<br/><strong>Districts:</strong> North and South Qeynos, Qeynos Hills</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="freeport" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1564507592333-c60657eea523?auto=format&fit=crop&w=600&q=80" alt="Stone fortress citadel — Freeport" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Antonica</span>
+                  <h4 class="lore-card__name">Freeport — The City of Trade</h4>
+                  <p class="lore-card__desc">The largest city in Norrath, situated on the eastern coast of Antonica at the mouth of the Serpent River. A city of commerce and corruption in equal measure, where the Freeport Militia maintains brutal order and the Freeport Merchants grow rich from trade with all factions.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Neutral / Evil (under Sir Lucan D'Lere)<br/><strong>Notable ruler:</strong> Sir Lucan D'Lere<br/><strong>Districts:</strong> East, West, North Freeport; The Commonlands</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+              <article id="neriak" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1504192010706-dd7f569ee2be?auto=format&fit=crop&w=600&q=80" alt="Dark underground passages — Neriak" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Antonica (Underground)</span>
+                  <h4 class="lore-card__name">Neriak — City of Hate</h4>
+                  <p class="lore-card__desc">The underground city of the Teir'Dal, carved deep beneath the Nektulos Forest. Divided into three gates — Neriak Foreign Quarter, Commons, and Third Gate — each reflecting the rigid social hierarchy of dark elven society under Innoruuk's shadow.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Evil<br/><strong>Notable ruler:</strong> King Naythox Thex<br/><strong>Districts:</strong> Foreign Quarter, Commons, Third Gate</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="halas" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1457269449834-928af64c684d?auto=format&fit=crop&w=600&q=80" alt="Frozen northern settlement — Halas" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Everfrost Peaks</span>
+                  <h4 class="lore-card__name">Halas — The Barbarian Stronghold</h4>
+                  <p class="lore-card__desc">A fortified village of the Northmen deep in the Everfrost Peaks. Halas is an isolated community of fierce warriors and shamans who survive the brutal cold through strength of will. Only essential traders venture this far north.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Neutral / Good<br/><strong>Notable guilds:</strong> Warriors of the North, Shaman of Justice<br/><strong>Region:</strong> Everfrost Peaks</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+              <article id="rivervale" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1499678329028-101435549a4e?auto=format&fit=crop&w=600&q=80" alt="Rolling green countryside — Rivervale" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Misty Thicket</span>
+                  <h4 class="lore-card__name">Rivervale — The Halfling Homeland</h4>
+                  <p class="lore-card__desc">A peaceful community of halflings nestled in the Misty Thicket, pressed against the great wall that holds back the danger of the Plains of Karana. Life in Rivervale revolves around harvests, cooking, and the occasional theft.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good<br/><strong>Notable guilds:</strong> The Guardians of the Vale, Priests of Mischief<br/><strong>Region:</strong> Misty Thicket</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="grobb" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1539398151539-61c39c2f527e?auto=format&fit=crop&w=600&q=80" alt="Murky swamp — Grobb / Gukta" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Innothule Swamp</span>
+                  <h4 class="lore-card__name">Grobb / Gukta — The Swamp Stronghold</h4>
+                  <p class="lore-card__desc">Originally Grobb, the brutal troll city in Innothule Swamp, it was later conquered by the Frogloks and renamed Gukta — an Outpost of Marr. The transition is a pivotal moment in Norrathian history: good overcoming fear.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Evil (Grobb) → Good (Gukta)<br/><strong>Patron deity:</strong> Cazic-Thule → Mithaniel Marr<br/><strong>Region:</strong> Innothule Swamp</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Contested</span>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Faydwer cities -->
+          <div id="cities-faydwer" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Faydwer</h3>
+            <div class="lore-grid">
+
+              <article id="kelethin" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1448630360428-65456885c650?auto=format&fit=crop&w=600&q=80" alt="Tree canopy platforms — Kelethin" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Greater Faydark</span>
+                  <h4 class="lore-card__name">Kelethin — City of the Trees</h4>
+                  <p class="lore-card__desc">The Wood Elf city built among the towering boughs of the great trees of Greater Faydark. Kelethin is a series of interconnected platforms high above the forest floor, defended by Faydark's Champions against the orcs below.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good<br/><strong>Notable guilds:</strong> Faydark's Champions, Scouts of Tunare<br/><strong>Region:</strong> Greater Faydark</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="felwithe" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=600&q=80" alt="Gleaming white stone architecture — Felwithe" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Greater Faydark</span>
+                  <h4 class="lore-card__name">Felwithe — City of the High Elves</h4>
+                  <p class="lore-card__desc">The alabaster city of the Koada'Dal, a masterwork of elven architecture nestled in the southern reaches of Greater Faydark. Felwithe is home to the great wizard and cleric guilds of the High Elves and the palace of the Elven King.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good<br/><strong>Notable guilds:</strong> Clerics of Tunare, Felwithe Mages<br/><strong>Region:</strong> Greater Faydark</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="kaladim" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1571772996211-2f02c9727629?auto=format&fit=crop&w=600&q=80" alt="Deep stone cavern halls — Kaladim" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Butcherblock Mountains</span>
+                  <h4 class="lore-card__name">Kaladim — The Dwarven Citadel</h4>
+                  <p class="lore-card__desc">The great underground dwarven city, hewn from the living rock of the Butcherblock Mountains. Kaladim is divided into North and South Kaladim, with vast forges, alehouses, and the treasury of King Kazon Stormhammer.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good<br/><strong>Notable ruler:</strong> King Kazon Stormhammer<br/><strong>Region:</strong> Butcherblock Mountains</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="ak-anon" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1518709268805-4e9042af9f23?auto=format&fit=crop&w=600&q=80" alt="Intricate brass gears — Ak'Anon" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Steamfont Mountains</span>
+                  <h4 class="lore-card__name">Ak'Anon — City of Clockwork Wonders</h4>
+                  <p class="lore-card__desc">The gnomish city-state in the Steamfont Mountains, a marvel of engineering where clockwork automatons serve as guards and servants. The Gem Choppers mining guild and the Eldritch Collective mages both call it home — as does the sinister Clan Runnyeye.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Neutral (mixed factions)<br/><strong>Notable guilds:</strong> Gem Choppers, Eldritch Collective<br/><strong>Region:</strong> Steamfont Mountains</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Odus cities -->
+          <div id="cities-odus" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Odus</h3>
+            <div class="lore-grid">
+
+              <article id="erudin" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1473177027534-53d906e9abcf?auto=format&fit=crop&w=600&q=80" alt="Ancient scrolls and tomes — Erudin" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Odus</span>
+                  <h4 class="lore-card__name">Erudin — The High City of Learning</h4>
+                  <p class="lore-card__desc">The gleaming Erudite city of Odus, a center of magical scholarship unrivaled in Norrath. The High Council governs here and jealously protects the vast libraries of arcane knowledge from lesser-minded races and heretics alike.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good / Neutral<br/><strong>Notable guilds:</strong> Gatecallers, Crimson Hands<br/><strong>Region:</strong> Odus</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+              <article id="paineel" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1535223289827-42f1e9919769?auto=format&fit=crop&w=600&q=80" alt="Dark precipice over chasm — Paineel" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Odus (The Hole)</span>
+                  <h4 class="lore-card__name">Paineel — City of the Heretics</h4>
+                  <p class="lore-card__desc">Built at the edge of a catastrophic magical rift known as "The Hole," Paineel is the city of Erudite heretics who worship Bertoxxulous. They were expelled from Erudin for practicing forbidden magic and necromancy.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Evil<br/><strong>Notable guilds:</strong> Craftkeepers, Crimson Hands<br/><strong>Region:</strong> Odus, above The Hole</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+            </div>
+          </div>
+
+          <!-- Kunark & Beyond cities -->
+          <div id="cities-kunark" data-lore style="scroll-margin-top:90px">
+            <h3 style="font-family:'Cinzel',serif;font-size:1.05rem;margin:1.75rem 0 0.75rem;color:var(--muted);text-transform:uppercase;letter-spacing:0.18em;">Kunark &amp; Beyond</h3>
+            <div class="lore-grid">
+
+              <article id="cabilis" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1574263867128-a3d5c1b1deae?auto=format&fit=crop&w=600&q=80" alt="Ancient tropical ruins — Cabilis" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Kunark</span>
+                  <h4 class="lore-card__name">Cabilis — The Last Iksar City</h4>
+                  <p class="lore-card__desc">The surviving remnant of Iksar civilization, split between East and West Cabilis on the Field of Bone. Cabilis preserves the traditions of the old Sebilisan Empire — including Necromancy, martial arts, and rigid caste hierarchy.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Evil<br/><strong>Notable guilds:</strong> Legion of Cabilis, Swiftail Caste<br/><strong>Region:</strong> Kunark</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="shar-vahl" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1509023464722-18d996393ca8?auto=format&fit=crop&w=600&q=80" alt="Moonlit desert settlement — Shar Vahl" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Luclin (Moon)</span>
+                  <h4 class="lore-card__name">Shar Vahl — City of the Vah Shir</h4>
+                  <p class="lore-card__desc">The great walled city of the Vah Shir on the moon of Luclin, built after their exile from Norrath. Shar Vahl is a city of honor, music, and the hunt, presided over by the Sajrin — the ruling monarch of the Vah Shir.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Neutral / Good<br/><strong>Notable guilds:</strong> The Hunters of Shar Vahl, Spiritists<br/><strong>Region:</strong> Luclin — Shadeweaver's Thicket</p>
+                  <span class="lore-card__align lore-card__align--neutral">⬡ Neutral</span>
+                </div>
+              </article>
+
+              <article id="kael-drakkal" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80" alt="Frozen fortress in mountains — Kael Drakkal" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Velious</span>
+                  <h4 class="lore-card__name">Kael Drakkal — City of Giants</h4>
+                  <p class="lore-card__desc">The massive citadel of the Kromzek giants on the frozen continent of Velious. It is carved into the icy mountains and ruled by King Tormax. The giants worship Rallos Zek and are perpetually at war with the dragons of Velious.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Evil<br/><strong>Notable ruler:</strong> King Tormax<br/><strong>Region:</strong> Velious — Western Wastes</p>
+                  <span class="lore-card__align lore-card__align--evil">⬡ Evil</span>
+                </div>
+              </article>
+
+              <article id="thurgadin" class="lore-card" data-lore>
+                <img class="lore-card__img" src="https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=600&q=80" alt="Icy mountain stronghold — Thurgadin" />
+                <div class="lore-card__body">
+                  <span class="lore-card__tag">City · Velious</span>
+                  <h4 class="lore-card__name">Thurgadin — City of the Cold-Dwarves</h4>
+                  <p class="lore-card__desc">The dwarven city on the frozen continent of Velious, built by Coldain — the Velious branch of the dwarven race separated from Faydwer. They wage an endless war against the Kromzek giants and maintain an uneasy truce with the dragons of the Claws of Veeshan.</p>
+                  <p class="lore-card__detail"><strong>Alignment:</strong> Good<br/><strong>Notable ruler:</strong> King Dain Frostreaver IV<br/><strong>Region:</strong> Velious — Great Divide</p>
+                  <span class="lore-card__align lore-card__align--good">⬡ Good</span>
+                </div>
+              </article>
+
+            </div>
+          </div>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- ═══════════════════════════════════════════
+             FULL CHRONOLOGY
+        ═══════════════════════════════════════════ -->
+        <section id="timeline" class="lore-section" data-lore>
+          <h2 class="lore-section__title">Full Chronology of Norrath</h2>
+          <p style="color:var(--muted);margin:0 0 1.25rem;font-size:0.93rem;">All dates given relative to the <em>Reckoning of Combine</em> (RC), the standard calendar adopted by scholars of Norrath. Negative values are years <strong>Before Combine</strong> (BC). Positive values are <strong>After Combine</strong> (AC).</p>
+
+          <div class="lore-timeline">
+
+            <div id="tl-nameless" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">Before Time (Primordial)</p>
+              <h4 class="lore-timeline__event">The Nameless Creates Existence</h4>
+              <p class="lore-timeline__detail">The consciousness without form — The Nameless — wills the universe into existence. Energy and matter coalesce; primal forces emerge. The first gods draw their substance from this act.</p>
+            </div>
+
+            <div id="tl-veeshan-arrives" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~4500 BC</p>
+              <h4 class="lore-timeline__event">Veeshan Claims Norrath — The Scar of Scale</h4>
+              <p class="lore-timeline__detail">The crystalline dragon-goddess Veeshan descends from the heavens and drags her claws across the frozen continent of Velious, leaving three enormous scars. This act declares Norrath as dragon territory. The Ring of Scale is formed and the Age of Scale begins.</p>
+            </div>
+
+            <div id="tl-dragons-rule" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~4500–3500 BC</p>
+              <h4 class="lore-timeline__event">The Age of Scale — Dragons Rule Norrath</h4>
+              <p class="lore-timeline__detail">Dragonkind spreads across all continents. Fire dragons claim the volcanic regions; ice dragons the polar north; sea serpents the deep oceans. No mortal race yet exists. Trakanon and other great wyrms establish their domains in what will become Kunark.</p>
+            </div>
+
+            <div id="tl-gods-descend" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~3500 BC</p>
+              <h4 class="lore-timeline__event">The Gods Descend — The Elder Age Begins</h4>
+              <p class="lore-timeline__detail">The primal gods descend from the Planes to Norrath and begin shaping mortal races. Brell Serilis seeds the underground with dwarves, gnomes, and halflings. Tunare breathes life into the first elves. Rallos Zek forges the ogres and giants. Cazic-Thule creates the trolls. Prexus gives life to the Kedge. The Elder Age begins.</p>
+            </div>
+
+            <div id="tl-elves-created" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~3200 BC</p>
+              <h4 class="lore-timeline__event">Tunare Creates the Elven Races</h4>
+              <p class="lore-timeline__detail">Tunare, Mother of All, shapes the first High Elves (Koada'Dal) from the light of the moon and the living wood of the great forests. Later, she breathes a second gift — the Wood Elves (Feir'Dal), more in tune with the wild. Both are given Faydwer as their home.</p>
+            </div>
+
+            <div id="tl-innoruuk-creates-dark-elves" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~2900 BC</p>
+              <h4 class="lore-timeline__event">Innoruuk Twists the Elves — Birth of the Teir'Dal</h4>
+              <p class="lore-timeline__detail">Filled with hatred for Tunare's creation, Innoruuk kidnaps the High Elf king and queen — Peregrine and her consort — and subjects them to 400 years of torture in the Plane of Hate. Their degraded, corrupted offspring become the first Teir'Dal (dark elves), shaped entirely by hatred. They are cast back onto Norrath to spread that hatred.</p>
+            </div>
+
+            <div id="tl-rallos-assault" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~2000 BC</p>
+              <h4 class="lore-timeline__event">Rallos Zek's Army Assaults the Planes</h4>
+              <p class="lore-timeline__detail">Rallos Zek, drunk on the military power of his ogre and giant creations, launches an assault on the Planes of the Gods. The assault fails. In punishment, the assembled gods curse the ogre race with drastically reduced intelligence — ensuring they can never again be used as tools of conquest. The giants are similarly weakened.</p>
+            </div>
+
+            <div id="tl-iksar-empire" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~1800–700 BC</p>
+              <h4 class="lore-timeline__event">Rise and Fall of the Sebilisan Empire</h4>
+              <p class="lore-timeline__detail">The Iksar of Kunark rise to dominance, building the Sebilisan Empire — the greatest mortal civilization in Norrathian history. They enslave the Frogloks and other races, build the great city of Sebilis, and wage continuous war with the Ring of Scale. Trakanon and other elder dragons ultimately break the empire, leaving Kunark a continent of ruins and survival.</p>
+            </div>
+
+            <div id="tl-erudite-exodus" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~1200 BC</p>
+              <h4 class="lore-timeline__event">The Erudite Exodus — Founding of Erudin</h4>
+              <p class="lore-timeline__detail">A group of magically gifted humans, dissatisfied with the political limitations of Qeynos and Freeport, sail to the continent of Odus. Over generations their magical studies transform them into a physically distinct race — the Erudites — taller, with enlarged craniums, utterly devoted to arcane knowledge. They build the great city of Erudin.</p>
+            </div>
+
+            <div id="tl-paineel" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~700 BC</p>
+              <h4 class="lore-timeline__event">The Heretic War — Founding of Paineel</h4>
+              <p class="lore-timeline__detail">A faction of Erudites practicing necromancy and worshipping Bertoxxulous is expelled from Erudin. After a devastating civil war that tears a rift in the ground (The Hole), the heretics retreat to the edge of the abyss and found Paineel — city of the damned.</p>
+            </div>
+
+            <div id="tl-combine-empire" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~600–200 BC</p>
+              <h4 class="lore-timeline__event">The Combine Empire</h4>
+              <p class="lore-timeline__detail">An ambitious union of mortal races under one banner, the Combine Empire builds great monuments and achieves diplomatic feats thought impossible. At its height the Combine stretches across much of Antonica. Its collapse fractures into the independent city-states of the modern era: Qeynos, Freeport, and others.</p>
+            </div>
+
+            <div id="tl-velious-discovered" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~Year 0 AC (Approx.)</p>
+              <h4 class="lore-timeline__event">The First Age of Adventure — EverQuest Begins</h4>
+              <p class="lore-timeline__detail">The current age. Adventurers from every race and class emerge, venturing into the dungeons and ruins of Norrath. The barriers between continents begin to fall as sailors reach Kunark. The ancient world opens again.</p>
+            </div>
+
+            <div id="tl-kunark" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~Year 2 AC</p>
+              <h4 class="lore-timeline__event">The Ruins of Kunark — Lost Continent Rediscovered</h4>
+              <p class="lore-timeline__detail">Adventurers cross the great ocean and rediscover Kunark, the lost continent. The Iksar Empire's ruins are explored; Trakanon is awakened in undead form beneath Sebilis; the Ring of Scale mounts defenses. The Iksar race, long isolated, encounters outsiders for the first time in millennia.</p>
+            </div>
+
+            <div id="tl-velious" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~Year 4 AC</p>
+              <h4 class="lore-timeline__event">The Scars of Velious — Dragon Homeland Reached</h4>
+              <p class="lore-timeline__detail">Ships reach Velious — the frozen continent scratched by Veeshan. Three factions contend for supremacy: the Coldain dwarves, the Kromzek giants of Kael Drakkal, and the dragons of the Claws of Veeshan. The Sleeper's Tomb is found — and eventually, the imprisoned Kerafyrm is woken.</p>
+            </div>
+
+            <div id="tl-luclin" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~Year 6 AC</p>
+              <h4 class="lore-timeline__event">Shadows of Luclin — The Moon Reached</h4>
+              <p class="lore-timeline__detail">Arcane teleportation spires make travel to the moon of Luclin possible. Entire civilizations are found there: the Vah Shir in Shar Vahl; the Shissar ruins; and the vast underground realm of Ssraeshza Temple. The moon has its own ecosystem, politics, and horrors.</p>
+            </div>
+
+            <div id="tl-planes-of-power" class="lore-timeline__entry" data-lore>
+              <p class="lore-timeline__period">~Year 8 AC</p>
+              <h4 class="lore-timeline__event">Planes of Power — The Gods' Realms Invaded</h4>
+              <p class="lore-timeline__detail">Mortals gain the power to assault the divine planes directly. Heroes storm the Plane of Fear, the Plane of Hate, the Plane of Growth, the Plane of War and others. At last they reach the Plane of Time, where the god Quarm — the four-headed nightmare — is defeated, and balance is restored. It is the greatest mortal achievement in Norrathian history.</p>
+            </div>
+
+          </div>
+        </section>
+
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen &mdash; EverQuest Legends &mdash; Norrath Lore Compendium</p>
+        <p><a class="site-footer__support" href="/">Back to Hall</a></p>
+      </footer>
+    </div>
+
+    <script>
+      (function () {
+        const input = document.getElementById('loreSearch');
+        const countEl = document.getElementById('loreMatchCount');
+
+        // All elements eligible for search/highlight
+        const cards = Array.from(document.querySelectorAll('.lore-card[data-lore]'));
+        const eras = Array.from(document.querySelectorAll('.lore-era[data-lore]'));
+        const timelineEntries = Array.from(document.querySelectorAll('.lore-timeline__entry[data-lore]'));
+        const allSearchable = [...cards, ...eras, ...timelineEntries];
+
+        function getTextContent(el) {
+          return el.textContent || '';
+        }
+
+        function clearHighlights(el) {
+          // Remove all mark elements
+          el.querySelectorAll('.lore-highlight').forEach(mark => {
+            const parent = mark.parentNode;
+            parent.replaceChild(document.createTextNode(mark.textContent), mark);
+            parent.normalize();
+          });
+        }
+
+        function highlightText(el, query) {
+          if (!query) return;
+          const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT, null, false);
+          const nodes = [];
+          while (walker.nextNode()) nodes.push(walker.currentNode);
+          const re = new RegExp('(' + query.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + ')', 'gi');
+          nodes.forEach(node => {
+            if (!re.test(node.nodeValue)) return;
+            re.lastIndex = 0;
+            const frag = document.createDocumentFragment();
+            let last = 0, match;
+            while ((match = re.exec(node.nodeValue)) !== null) {
+              frag.appendChild(document.createTextNode(node.nodeValue.slice(last, match.index)));
+              const mark = document.createElement('mark');
+              mark.className = 'lore-highlight';
+              mark.textContent = match[1];
+              frag.appendChild(mark);
+              last = re.lastIndex;
+            }
+            frag.appendChild(document.createTextNode(node.nodeValue.slice(last)));
+            node.parentNode.replaceChild(frag, node);
+          });
+        }
+
+        function runSearch() {
+          const q = input.value.trim().toLowerCase();
+
+          allSearchable.forEach(el => {
+            clearHighlights(el);
+            if (!q) {
+              el.style.opacity = '';
+              el.classList.remove('lore-entry--hidden');
+            }
+          });
+
+          if (!q) {
+            countEl.textContent = '';
+            return;
+          }
+
+          let matchCount = 0;
+          allSearchable.forEach(el => {
+            const text = getTextContent(el).toLowerCase();
+            if (text.includes(q)) {
+              el.style.opacity = '1';
+              el.classList.remove('lore-entry--hidden');
+              highlightText(el, input.value.trim());
+              matchCount++;
+            } else {
+              el.style.opacity = '0.22';
+            }
+          });
+
+          countEl.textContent = matchCount > 0
+            ? matchCount + ' match' + (matchCount !== 1 ? 'es' : '')
+            : 'No matches';
+        }
+
+        input.addEventListener('input', runSearch);
+
+        window.clearLoreSearch = function () {
+          input.value = '';
+          runSearch();
+          input.focus();
+        };
+
+        // Smooth scroll for TOC links
+        document.querySelectorAll('.lore-toc__list a[href^="#"]').forEach(a => {
+          a.addEventListener('click', function (e) {
+            e.preventDefault();
+            const target = document.querySelector(this.getAttribute('href'));
+            if (target) {
+              target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+              // Clear highlights and focus search
+              history.replaceState(null, '', this.getAttribute('href'));
+            }
+          });
+        });
+      })();
+    </script>
+    <script src="../scripts/site-decor.js"></script>
+  </body>
+</html>
