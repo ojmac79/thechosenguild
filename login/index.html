@@ -40,37 +40,18 @@
         <div class="panel gate">
           <p class="hero__eyebrow">Members Only</p>
           <h1 class="page-title" id="gateTitle">Enter the Hall</h1>
-          <p id="gateIntro">Create a fresh account or sign in to enter the hall. Member records are reset here so each new account starts clean.</p>
-
-          <div class="tab-row" role="tablist" aria-label="Member access mode">
-            <button class="tab-btn active" type="button" data-mode="login" aria-pressed="true">Log In</button>
-            <button class="tab-btn" type="button" data-mode="join" aria-pressed="false">Join</button>
-          </div>
+          <p id="gateIntro">Use your Netlify Identity account to enter the hall. Sign in or create an account from here.</p>
 
           <div id="authMessage" class="auth-message" aria-live="polite"></div>
 
-          <form id="authForm" novalidate>
-            <div class="field" id="nameField" hidden>
-              <label for="memberName">Member Name</label>
-              <input id="memberName" name="memberName" type="text" placeholder="Your name in the guild" />
-            </div>
-            <div class="field">
-              <label for="email">Email</label>
-              <input id="email" name="email" type="email" placeholder="you@example.com" required />
-            </div>
-            <div class="field">
-              <label for="password">Password</label>
-              <input id="password" name="password" type="password" placeholder="••••••••" required />
-            </div>
-            <div class="field" id="confirmField" hidden>
-              <label for="confirmPassword">Confirm Password</label>
-              <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repeat your password" />
-            </div>
-            <div class="auth-actions">
-              <button class="btn-primary" id="authSubmit" type="submit">Log In</button>
-              <a class="auth-link" href="/">Return to Hall</a>
-            </div>
-          </form>
+          <div class="auth-actions">
+            <button class="btn-primary" id="loginButton" type="button">Log In with Netlify</button>
+            <button class="btn-torch" id="signupButton" type="button">Create Account</button>
+          </div>
+          <div class="auth-actions">
+            <button class="btn-torch" id="logoutButton" type="button" hidden>Log Out</button>
+            <a class="auth-link" href="/">Return to Hall</a>
+          </div>
         </div>
       </main>
 
@@ -80,26 +61,15 @@
       </footer>
     </div>
 
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const STORAGE_KEYS = {
-        members: 'theChosenMembers',
-        current: 'theChosenCurrentMember'
-      };
-
-      const form = document.getElementById('authForm');
+      const STORAGE_KEY = 'theChosenCurrentMember';
       const messageBox = document.getElementById('authMessage');
       const gateTitle = document.getElementById('gateTitle');
       const gateIntro = document.getElementById('gateIntro');
-      const submitButton = document.getElementById('authSubmit');
-      const tabButtons = document.querySelectorAll('.tab-btn');
-      const nameField = document.getElementById('nameField');
-      const confirmField = document.getElementById('confirmField');
-      const memberNameInput = document.getElementById('memberName');
-      const emailInput = document.getElementById('email');
-      const passwordInput = document.getElementById('password');
-      const confirmPasswordInput = document.getElementById('confirmPassword');
-
-      let mode = 'login';
+      const loginButton = document.getElementById('loginButton');
+      const signupButton = document.getElementById('signupButton');
+      const logoutButton = document.getElementById('logoutButton');
 
       function clearMessage() {
         messageBox.textContent = '';
@@ -111,150 +81,65 @@
         messageBox.className = `auth-message auth-message--${type}`;
       }
 
-      function readMembers() {
-        try {
-          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEYS.members) || '[]');
-          return Array.isArray(parsed) ? parsed : [];
-        } catch (error) {
-          return [];
-        }
+      function saveCurrentMember(user) {
+        const member = {
+          id: user.id || user.email,
+          name: user.user_metadata?.full_name || user.email.split('@')[0],
+          email: user.email
+        };
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(member));
+        return member;
       }
 
-      function writeMembers(members) {
-        localStorage.setItem(STORAGE_KEYS.members, JSON.stringify(members));
+      function clearCurrentMember() {
+        localStorage.removeItem(STORAGE_KEY);
       }
 
-      function saveCurrentMember(member) {
-        localStorage.setItem(STORAGE_KEYS.current, JSON.stringify(member));
-      }
-
-      function getCurrentMember() {
-        try {
-          return JSON.parse(localStorage.getItem(STORAGE_KEYS.current) || 'null');
-        } catch (error) {
-          return null;
-        }
-      }
-
-      function resetMemberDirectory() {
-        localStorage.removeItem(STORAGE_KEYS.members);
-        localStorage.removeItem(STORAGE_KEYS.current);
-      }
-
-      function setMode(nextMode) {
-        mode = nextMode;
-        const isJoin = mode === 'join';
-        nameField.hidden = !isJoin;
-        confirmField.hidden = !isJoin;
-        memberNameInput.required = isJoin;
-        confirmPasswordInput.required = isJoin;
-        submitButton.textContent = isJoin ? 'Create Account' : 'Log In';
-        gateTitle.textContent = isJoin ? 'Join the Hall' : 'Enter the Hall';
-        gateIntro.textContent = isJoin
-          ? 'Create a fresh account and claim your place among The Chosen.'
-          : 'Sign in to enter the hall. Fresh accounts can reuse an existing email address.';
-
-        tabButtons.forEach((button) => {
-          const active = button.dataset.mode === mode;
-          button.classList.toggle('active', active);
-          button.setAttribute('aria-pressed', String(active));
-        });
-
+      function updateView(user) {
         clearMessage();
-      }
-
-      function redirectToHall() {
-        window.setTimeout(() => {
-          window.location.href = '/';
-        }, 900);
-      }
-
-      function authenticateMember(email, password) {
-        const members = readMembers();
-        for (let index = members.length - 1; index >= 0; index -= 1) {
-          const member = members[index];
-          if (member.email.toLowerCase() === email.toLowerCase() && member.password === password) {
-            return member;
-          }
-        }
-        return null;
-      }
-
-      form.addEventListener('submit', (event) => {
-        event.preventDefault();
-
-        const email = emailInput.value.trim().toLowerCase();
-        const password = passwordInput.value;
-
-        if (!email || !password) {
-          showMessage('Please enter both your email and password.', 'error');
+        if (!user) {
+          gateTitle.textContent = 'Enter the Hall';
+          gateIntro.textContent = 'Use your Netlify Identity account to enter the hall. Sign in or create an account from here.';
+          loginButton.hidden = false;
+          signupButton.hidden = false;
+          logoutButton.hidden = true;
           return;
         }
 
-        if (mode === 'join') {
-          const memberName = memberNameInput.value.trim();
-          const confirmPassword = confirmPasswordInput.value;
-
-          if (!memberName) {
-            showMessage('Please enter your member name.', 'error');
-            return;
-          }
-
-          if (password.length < 6) {
-            showMessage('Choose a password with at least 6 characters.', 'error');
-            return;
-          }
-
-          if (password !== confirmPassword) {
-            showMessage('Passwords do not match. Please try again.', 'error');
-            return;
-          }
-
-          const members = readMembers();
-          const newMember = {
-            id: `member-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-            name: memberName,
-            email,
-            password
-          };
-
-          members.push(newMember);
-          writeMembers(members);
-          saveCurrentMember(newMember);
-          showMessage(`Welcome, ${newMember.name}. Your new account is ready.`, 'success');
-          redirectToHall();
-          return;
-        }
-
-        const member = authenticateMember(email, password);
-
-        if (!member) {
-          showMessage('No matching member account was found. Create a fresh account to enter the hall.', 'error');
-          return;
-        }
-
-        saveCurrentMember(member);
-        showMessage(`Welcome back, ${member.name}. The gate is opening.`, 'success');
-        redirectToHall();
-      });
-
-      tabButtons.forEach((button) => {
-        button.addEventListener('click', () => {
-          setMode(button.dataset.mode);
-        });
-      });
-
-      resetMemberDirectory();
-      const currentMember = getCurrentMember();
-      if (currentMember) {
-        showMessage(`Welcome back, ${currentMember.name}.`, 'success');
-        submitButton.textContent = 'Continue';
-        submitButton.disabled = true;
+        const member = saveCurrentMember(user);
         gateTitle.textContent = 'The Gate Is Open';
-        gateIntro.textContent = 'Your member session is already active. You can return to the hall.';
+        gateIntro.textContent = `Welcome back, ${member.name}. Your Netlify session is active.`;
+        loginButton.hidden = true;
+        signupButton.hidden = true;
+        logoutButton.hidden = false;
+        showMessage(`Signed in as ${member.email}.`, 'success');
+      }
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('init', updateView);
+        window.netlifyIdentity.on('login', (user) => {
+          updateView(user);
+          window.setTimeout(() => {
+            window.location.href = '/';
+          }, 800);
+        });
+        window.netlifyIdentity.on('logout', () => {
+          clearCurrentMember();
+          updateView(null);
+        });
+
+        loginButton.addEventListener('click', () => {
+          window.netlifyIdentity.open('login');
+        });
+        signupButton.addEventListener('click', () => {
+          window.netlifyIdentity.open('signup');
+        });
+        logoutButton.addEventListener('click', () => {
+          window.netlifyIdentity.logout();
+        });
       } else {
-        setMode('login');
-        showMessage('Previous member records were cleared. Create a fresh account to continue.', 'info');
+        showMessage('Netlify Identity is not available on this page.', 'error');
       }
     </script>
   </body>

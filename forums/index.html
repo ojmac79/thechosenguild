@@ -95,6 +95,7 @@
       </footer>
     </div>
 
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const publicThreads = [];
       const memberThreads = [];
@@ -142,6 +143,30 @@
         renderThreads();
       }
 
+      function getCurrentMember() {
+        const stored = localStorage.getItem('theChosenCurrentMember');
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch (error) {
+            return null;
+          }
+        }
+
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email
+          };
+          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
+          return member;
+        }
+
+        return null;
+      }
+
       function renderThreads() {
         publicThreadList.innerHTML = publicThreads.map((thread) => `
           <article class="panel forum-thread">
@@ -167,7 +192,7 @@
           </article>
         `).join('');
 
-        const currentMember = JSON.parse(localStorage.getItem('theChosenCurrentMember') || 'null');
+        const currentMember = getCurrentMember();
         if (currentMember) {
           memberGate.hidden = true;
           memberThreadList.hidden = false;
@@ -198,12 +223,12 @@
         }
       }
 
-      localStorage.removeItem('theChosenMembers');
-      localStorage.removeItem('theChosenCurrentMember');
-
       publicForm.addEventListener('submit', handlePublicPost);
 
       window.addEventListener('storage', renderThreads);
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+      }
       renderThreads();
     </script>
   </body>

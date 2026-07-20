@@ -82,6 +82,7 @@
       </footer>
     </div>
 
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const RESOURCE_STORAGE_KEY = 'theChosenResources';
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
@@ -89,14 +90,6 @@
       const resourceNotice = document.getElementById('resourceNotice');
 
       const defaultResources = [];
-
-      function readCurrentMember() {
-        try {
-          return JSON.parse(localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY) || 'null');
-        } catch (error) {
-          return null;
-        }
-      }
 
       function readResources() {
         try {
@@ -115,9 +108,29 @@
         localStorage.setItem(RESOURCE_STORAGE_KEY, JSON.stringify(resources));
       }
 
-      localStorage.removeItem('theChosenMembers');
-      localStorage.removeItem('theChosenCurrentMember');
-      localStorage.removeItem('theChosenResources');
+      function readCurrentMember() {
+        const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch (error) {
+            return null;
+          }
+        }
+
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email
+          };
+          localStorage.setItem(CURRENT_MEMBER_STORAGE_KEY, JSON.stringify(member));
+          return member;
+        }
+
+        return null;
+      }
 
       function renderResources() {
         const currentMember = readCurrentMember();
@@ -178,6 +191,9 @@
         renderResources();
       });
 
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+      }
       renderResources();
     </script>
   </body>

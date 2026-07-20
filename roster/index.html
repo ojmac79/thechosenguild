@@ -65,34 +65,6 @@
           <button class="btn-torch" type="button" id="rosterEditToggle">Enable Editing</button>
         </div>
 
-        <script>
-          const rosterTable = document.getElementById('rosterTable');
-          const editToggle = document.getElementById('rosterEditToggle');
-          let editingEnabled = false;
-
-          function setEditing(enabled) {
-            editingEnabled = enabled;
-            rosterTable.querySelectorAll('input').forEach((input) => {
-              input.readOnly = !enabled;
-              input.classList.toggle('is-editable', enabled);
-            });
-            editToggle.textContent = enabled ? 'Editing Enabled' : 'Enable Editing';
-            editToggle.classList.toggle('is-active', enabled);
-          }
-
-          editToggle.addEventListener('click', () => {
-            const currentMember = JSON.parse(localStorage.getItem('theChosenCurrentMember') || 'null');
-            if (!currentMember) {
-              window.location.href = '/login/';
-              return;
-            }
-            setEditing(true);
-          });
-
-          localStorage.removeItem('theChosenMembers');
-          localStorage.removeItem('theChosenCurrentMember');
-          setEditing(false);
-        </script>
       </main>
 
       <footer class="site-footer">
@@ -100,5 +72,60 @@
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
+
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      const rosterTable = document.getElementById('rosterTable');
+      const editToggle = document.getElementById('rosterEditToggle');
+      let editingEnabled = false;
+
+      function setEditing(enabled) {
+        editingEnabled = enabled;
+        rosterTable.querySelectorAll('input').forEach((input) => {
+          input.readOnly = !enabled;
+          input.classList.toggle('is-editable', enabled);
+        });
+        editToggle.textContent = enabled ? 'Editing Enabled' : 'Enable Editing';
+        editToggle.classList.toggle('is-active', enabled);
+      }
+
+      function getCurrentMember() {
+        const stored = localStorage.getItem('theChosenCurrentMember');
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch (error) {
+            return null;
+          }
+        }
+
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email
+          };
+          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
+          return member;
+        }
+
+        return null;
+      }
+
+      editToggle.addEventListener('click', () => {
+        const currentMember = getCurrentMember();
+        if (!currentMember) {
+          window.location.href = '/login/';
+          return;
+        }
+        setEditing(true);
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+      }
+      setEditing(false);
+    </script>
   </body>
 </html>
