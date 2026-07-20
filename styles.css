@@ -37,6 +37,39 @@ a { color: inherit; text-decoration: none; }
   min-height: 100vh;
   display: flex;
   flex-direction: column;
+  position: relative;
+  z-index: 1;
+}
+
+.floating-relics {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+
+.floating-relic {
+  position: absolute;
+  width: 38px;
+  height: 38px;
+  opacity: 0.24;
+  filter: drop-shadow(0 0 8px rgba(255, 123, 123, 0.32));
+  user-select: none;
+}
+
+.floating-relic--staff {
+  filter: drop-shadow(0 0 10px rgba(158, 220, 255, 0.45)) saturate(1.2);
+  opacity: 0.28;
+}
+
+.floating-relic--sword,
+.floating-relic--axe {
+  filter: drop-shadow(0 0 8px rgba(255, 180, 128, 0.3)) saturate(0.95);
+}
+
+.floating-relic--dagger {
+  filter: drop-shadow(0 0 7px rgba(197, 146, 255, 0.3)) saturate(1.05);
 }
 
 .site-header {
