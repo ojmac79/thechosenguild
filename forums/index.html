@@ -433,7 +433,7 @@
             <span class="ft-head__badge">Open to all</span>
           </div>
 
-          <form class="ft-compose" id="publicForm" novalidate>
+          <form class="ft-compose" id="publicForm">
             <p class="ft-compose__heading">New Thread</p>
             <label class="ft-compose__label">
               Title
@@ -463,7 +463,7 @@
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
 
-          <form class="ft-compose" id="memberForm" hidden novalidate>
+          <form class="ft-compose" id="memberForm" hidden>
             <p class="ft-compose__heading">New Members-Only Thread</p>
             <label class="ft-compose__label">
               Title
@@ -1027,7 +1027,7 @@
             '<div class="mgmt-block">' +
               '<h3 class="mgmt-block__title">Site Members (' + users.length + ')</h3>' +
               '<p class="mgmt-note">Toggle role chips to grant or revoke access.' +
-                ' Changes apply on the member\'s next sign-in.</p>' +
+                ' Changes take effect immediately; the member may need to sign out and back in to refresh their session.</p>' +
               '<div class="mgmt-user-list" id="mgmtUserList">' +
                 users.map(renderMgmtUser).join('') +
               '</div>' +
@@ -1105,7 +1105,11 @@
           .catch(function (err) {
             chipEl.disabled    = false;
             chipEl.textContent = 'Error';
-            window.alert('Could not update role: ' + err.message);
+            var errNote = document.createElement('p');
+            errNote.className = 'mgmt-note mgmt-note--error';
+            errNote.textContent = 'Could not update role: ' + err.message;
+            chipEl.closest('.mgmt-user__actions').appendChild(errNote);
+            window.setTimeout(function () { if (errNote.parentNode) errNote.parentNode.removeChild(errNote); }, 4000);
           });
       }
 
