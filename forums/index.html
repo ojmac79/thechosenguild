@@ -292,7 +292,7 @@
         if (!validCategoryIds.length) {
           return null;
         }
-        const fallbackCategory = validCategoryIds[0] || '';
+        const fallbackCategory = validCategoryIds[0];
         const categoryId = validCategoryIds.includes(thread.categoryId) ? thread.categoryId : fallbackCategory;
 
         return {
@@ -300,7 +300,7 @@
           categoryId,
           title,
           body,
-          authorName: String(thread.authorName || 'Guild Visitor'),
+          authorName: String(thread.authorName || 'Guest Adventurer'),
           authorEmail: String(thread.authorEmail || ''),
           authorAvatar: String(thread.authorAvatar || ''),
           createdAt: Number(thread.createdAt) || Date.now(),
@@ -495,7 +495,7 @@
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
-          const categoryName = categoryMap.get(thread.categoryId)?.name || 'Uncategorized';
+          const categoryName = categoryMap.get(thread.categoryId)?.name || forumState[spaceKey].categories[0].name;
           const postedOn = new Date(thread.createdAt).toLocaleString();
           meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn}`;
 
@@ -856,7 +856,9 @@
 
       window.addEventListener('storage', (event) => {
         if (event.key === STORAGE_KEY || event.key === MEMBER_STORAGE_KEY) {
-          Object.assign(forumState, readState());
+          const latestState = readState();
+          forumState.public = latestState.public;
+          forumState.private = latestState.private;
           render();
         }
       });
