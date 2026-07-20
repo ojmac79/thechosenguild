@@ -450,9 +450,10 @@
       ═══════════════════════════════════════════════════ */
 
       // Timeout constants
-      const API_TIMEOUT_MS  = 7000;
-      const SITE_TIMEOUT_MS = 6000;
-      const REFRESH_INTERVAL_S = 60;
+      const API_TIMEOUT_MS        = 7000; // Full Census API call — allow more time
+      const SITE_TIMEOUT_MS       = 4000; // Simple reachability check — should be faster
+      const IFRAME_LOAD_DELAY_MS  = 500;  // Wait for dynamic content before checking iframe block state
+      const REFRESH_INTERVAL_S    = 60;
 
       // Allowed status values (prevents CSS injection)
       const VALID_STATES = new Set(['online', 'offline', 'locked', 'checking', 'unknown']);
@@ -678,7 +679,7 @@
             return;
           }
           statusIframe.classList.add('loaded');
-        }, 500);
+        }, IFRAME_LOAD_DELAY_MS);
       });
 
       statusIframe.addEventListener('error', () => {
