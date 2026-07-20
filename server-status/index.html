@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Server Status</title>
+    <meta
+      name="description"
+      content="Live EverQuest Legends server status for the Qeynos server and all active realms."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      /* ── Server Status page ── */
+      .status-hero {
+        text-align: center;
+        padding: 2rem 0 1.5rem;
+      }
+
+      /* Primary server card */
+      .server-primary {
+        margin: 1.5rem 0;
+        padding: 2rem;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        background: var(--panel);
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1rem;
+        text-align: center;
+      }
+      .server-primary__name {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 2rem;
+        color: #fff;
+        letter-spacing: 0.06em;
+      }
+      .server-primary__type {
+        margin: 0;
+        font-size: 0.8rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.2em;
+      }
+
+      /* Status badge */
+      .status-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.6rem;
+        padding: 0.55rem 1.2rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        font-family: 'Cinzel', serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+        letter-spacing: 0.1em;
+        transition: border-color 0.4s, background 0.4s;
+      }
+      .status-dot {
+        width: 11px;
+        height: 11px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        transition: background 0.4s, box-shadow 0.4s;
+      }
+
+      /* Online */
+      .status-badge--online {
+        border-color: rgba(72, 220, 130, 0.55);
+        background: rgba(72, 220, 130, 0.1);
+        color: #6dffb2;
+      }
+      .status-badge--online .status-dot {
+        background: #48dc82;
+        box-shadow: 0 0 8px rgba(72, 220, 130, 0.85);
+        animation: pulseDot 2.2s ease-in-out infinite;
+      }
+
+      /* Offline */
+      .status-badge--offline {
+        border-color: rgba(255, 80, 80, 0.5);
+        background: rgba(255, 80, 80, 0.1);
+        color: #ff7b7b;
+      }
+      .status-badge--offline .status-dot {
+        background: #ff5050;
+        box-shadow: 0 0 6px rgba(255, 80, 80, 0.7);
+      }
+
+      /* Maintenance */
+      .status-badge--maintenance {
+        border-color: rgba(255, 196, 60, 0.5);
+        background: rgba(255, 196, 60, 0.1);
+        color: #ffd060;
+      }
+      .status-badge--maintenance .status-dot {
+        background: #ffc43c;
+        box-shadow: 0 0 6px rgba(255, 196, 60, 0.7);
+        animation: pulseDot 1.4s ease-in-out infinite;
+      }
+
+      /* Checking */
+      .status-badge--checking {
+        border-color: var(--border);
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+      }
+      .status-badge--checking .status-dot {
+        background: var(--muted);
+        animation: pulseDot 0.9s ease-in-out infinite;
+      }
+
+      /* Unknown */
+      .status-badge--unknown {
+        border-color: var(--border);
+        color: var(--muted);
+      }
+      .status-badge--unknown .status-dot {
+        background: var(--muted);
+      }
+
+      @keyframes pulseDot {
+        0%, 100% { opacity: 1; transform: scale(1); }
+        50%       { opacity: 0.4; transform: scale(0.75); }
+      }
+
+      .server-primary__meta {
+        display: flex;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+        justify-content: center;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .server-primary__meta span strong {
+        color: var(--text);
+      }
+
+      /* Refresh row */
+      .refresh-row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        margin: 1.25rem 0 0.5rem;
+      }
+      .refresh-row__info {
+        font-size: 0.82rem;
+        color: var(--muted);
+      }
+      .refresh-row__info span {
+        color: var(--text);
+        font-weight: 700;
+      }
+      .btn-refresh {
+        padding: 0.5rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--text);
+        font: inherit;
+        font-size: 0.8rem;
+        cursor: pointer;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        transition: background 0.2s;
+      }
+      .btn-refresh:hover { background: rgba(255, 255, 255, 0.07); }
+      .btn-refresh:disabled { opacity: 0.4; cursor: default; }
+      .btn-refresh__icon { font-size: 0.9rem; }
+
+      /* Official source strip */
+      .official-strip {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 1rem;
+        flex-wrap: wrap;
+        padding: 1rem 1.25rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: rgba(255, 255, 255, 0.03);
+        margin-top: 1.5rem;
+        font-size: 0.88rem;
+        color: var(--muted);
+      }
+      .official-strip__label {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+      }
+      .official-strip__sigil { color: var(--accent); font-size: 1rem; }
+      .official-strip a {
+        color: var(--accent);
+        text-decoration: underline;
+        text-underline-offset: 2px;
+        font-weight: 600;
+        font-size: 0.85rem;
+      }
+      .official-strip a:hover { color: var(--text); }
+
+      /* Other servers grid */
+      .other-servers {
+        margin-top: 2.5rem;
+      }
+      .other-servers__title {
+        margin: 0 0 1rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1.25rem;
+        color: var(--text);
+      }
+      .server-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
+        gap: 0.75rem;
+      }
+      .server-card {
+        padding: 1rem 1.2rem;
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+      }
+      .server-card__name {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 0.95rem;
+        font-weight: 700;
+      }
+      .server-card__type {
+        margin: 0.15rem 0 0;
+        font-size: 0.75rem;
+        color: var(--muted);
+        text-transform: uppercase;
+        letter-spacing: 0.15em;
+      }
+      .server-card__badge {
+        flex-shrink: 0;
+        padding: 0.3rem 0.7rem;
+        border-radius: 999px;
+        font-size: 0.72rem;
+        font-weight: 700;
+        font-family: 'Cinzel', serif;
+        letter-spacing: 0.08em;
+      }
+      .server-card__badge--online    { background: rgba(72,220,130,0.15); color: #6dffb2; border: 1px solid rgba(72,220,130,0.4); }
+      .server-card__badge--offline   { background: rgba(255,80,80,0.13); color: #ff7b7b; border: 1px solid rgba(255,80,80,0.4); }
+      .server-card__badge--maintenance { background: rgba(255,196,60,0.13); color: #ffd060; border: 1px solid rgba(255,196,60,0.4); }
+      .server-card__badge--checking  { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+      .server-card__badge--unknown   { background: transparent; color: var(--muted); border: 1px solid var(--border); }
+
+      /* Error / notice panel */
+      .status-notice {
+        margin-top: 0.75rem;
+        padding: 0.7rem 1rem;
+        border-radius: 12px;
+        border: 1px solid rgba(255,196,60,0.35);
+        background: rgba(255,196,60,0.07);
+        font-size: 0.82rem;
+        color: var(--muted);
+        text-align: center;
+        display: none;
+      }
+      .status-notice.visible { display: block; }
+
+      @media (max-width: 600px) {
+        .server-primary { padding: 1.5rem 1rem; }
+        .server-primary__name { font-size: 1.5rem; }
+        .official-strip { flex-direction: column; align-items: flex-start; }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link active" href="/server-status/">Status</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">The Realm Gate</p>
+        <h1 class="page-title">Server Status</h1>
+        <p class="page-subtitle">Live status for EverQuest Legends realms. Data sourced directly from the official EverQuest Legends site.</p>
+
+        <!-- ── Qeynos — primary server ── -->
+        <div class="server-primary panel" id="qeynosCard" aria-live="polite" aria-label="Qeynos server status">
+          <div>
+            <p class="server-primary__type">Primary Guild Server</p>
+            <h2 class="server-primary__name">Qeynos</h2>
+          </div>
+
+          <div id="qeynosStatus" class="status-badge status-badge--checking" role="status">
+            <span class="status-dot"></span>
+            <span id="qeynosStatusText">Checking…</span>
+          </div>
+
+          <div class="server-primary__meta" id="qeynosMeta" aria-live="polite">
+            <span><strong id="qeynosPlayers">—</strong> Players Online</span>
+            <span>Last checked: <strong id="qeynosLastChecked">—</strong></span>
+          </div>
+        </div>
+
+        <!-- ── Refresh controls ── -->
+        <div class="refresh-row">
+          <p class="refresh-row__info" id="refreshInfo">Auto-refreshes every <span id="countdownDisplay">60</span>s</p>
+          <button id="refreshBtn" class="btn-refresh" type="button" aria-label="Refresh server status now">
+            <span class="btn-refresh__icon" id="refreshIcon" aria-hidden="true">⟳</span>
+            Refresh Now
+          </button>
+        </div>
+
+        <!-- ── CORS / API notice ── -->
+        <p class="status-notice" id="corsNotice">
+          Live API data unavailable from this browser (cross-origin restriction). Status is checked by reaching the official EverQuest Legends site.
+          <a href="https://www.everquestlegends.com/server-status" target="_blank" rel="noopener noreferrer">View the official server status page ↗</a>
+        </p>
+
+        <!-- ── Official source ── -->
+        <div class="official-strip">
+          <span class="official-strip__label">
+            <span class="official-strip__sigil" aria-hidden="true">✦</span>
+            Status data from the official EverQuest Legends site
+          </span>
+          <a
+            href="https://www.everquestlegends.com/server-status"
+            target="_blank"
+            rel="noopener noreferrer"
+            aria-label="Open official EverQuest Legends server status page (opens in new tab)"
+          >View Official Status ↗</a>
+        </div>
+
+        <!-- ── Other servers (populated by JS if API returns them) ── -->
+        <section class="other-servers" id="otherServersSection" hidden aria-label="Other EverQuest Legends servers">
+          <h3 class="other-servers__title">All Realms</h3>
+          <div class="server-grid" id="serverGrid"></div>
+        </section>
+
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <div id="footerMember" class="site-footer__member" hidden>
+          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
+          <div>
+            <div id="footerMemberName" class="site-footer__member-name"></div>
+            <div id="footerMemberEmail" class="site-footer__member-email"></div>
+          </div>
+        </div>
+        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
+          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
+          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
+        </div>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+      </footer>
+    </div>
+
+    <script src="../scripts/site-decor.js"></script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      /* ── Footer member badge ── */
+      const footerMember      = document.getElementById('footerMember');
+      const footerMemberMenu  = document.getElementById('footerMemberMenu');
+      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
+      const footerMemberName  = document.getElementById('footerMemberName');
+      const footerMemberEmail = document.getElementById('footerMemberEmail');
+      const footerAccountButton = document.getElementById('footerAccountButton');
+      const footerLogoutButton  = document.getElementById('footerLogoutButton');
+
+      function getCurrentMember() {
+        const stored = localStorage.getItem('theChosenCurrentMember');
+        if (stored) {
+          try { return JSON.parse(stored); } catch { return null; }
+        }
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
+          };
+          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
+          return member;
+        }
+        return null;
+      }
+
+      function renderMemberBadge(member) {
+        if (!member) {
+          footerMember.hidden = true;
+          footerMemberMenu.hidden = true;
+          return;
+        }
+        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt = `${member.name || member.email} avatar`;
+        footerMemberName.textContent  = member.name  || member.email;
+        footerMemberEmail.textContent = member.email || 'Netlify member';
+        footerMember.hidden     = false;
+        footerMemberMenu.hidden = false;
+      }
+
+      footerAccountButton.addEventListener('click', () => { window.location.href = '/login/'; });
+      footerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) window.netlifyIdentity.logout();
+        localStorage.removeItem('theChosenCurrentMember');
+        renderMemberBadge(null);
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login',  () => renderMemberBadge(getCurrentMember()));
+        window.netlifyIdentity.on('logout', () => { localStorage.removeItem('theChosenCurrentMember'); renderMemberBadge(null); });
+      }
+      renderMemberBadge(getCurrentMember());
+
+      /* ───────────────────────────────────────────────
+         Server Status — real-time fetch logic
+      ─────────────────────────────────────────────── */
+
+      // Official EverQuest Legends status endpoints (try in order)
+      const STATUS_ENDPOINTS = [
+        'https://www.everquestlegends.com/api/server-status',
+        'https://www.everquestlegends.com/api/servers',
+        'https://api.everquestlegends.com/server-status',
+        'https://api.everquestlegends.com/servers',
+      ];
+      const OFFICIAL_PAGE = 'https://www.everquestlegends.com/server-status';
+      const SITE_ROOT     = 'https://www.everquestlegends.com/';
+
+      const REFRESH_INTERVAL_S = 60;
+
+      // DOM refs
+      const qeynosStatus     = document.getElementById('qeynosStatus');
+      const qeynosStatusText = document.getElementById('qeynosStatusText');
+      const qeynosPlayers    = document.getElementById('qeynosPlayers');
+      const qeynosLastChecked = document.getElementById('qeynosLastChecked');
+      const refreshBtn       = document.getElementById('refreshBtn');
+      const refreshIcon      = document.getElementById('refreshIcon');
+      const countdownDisplay = document.getElementById('countdownDisplay');
+      const corsNotice       = document.getElementById('corsNotice');
+      const otherSection     = document.getElementById('otherServersSection');
+      const serverGrid       = document.getElementById('serverGrid');
+
+      let countdownSeconds = REFRESH_INTERVAL_S;
+      let countdownTimer   = null;
+
+      /* Apply a status state to the primary card */
+      function applyPrimaryStatus(state, text, players) {
+        const classes = ['checking', 'online', 'offline', 'maintenance', 'unknown'];
+        classes.forEach(c => qeynosStatus.classList.remove(`status-badge--${c}`));
+        qeynosStatus.classList.add(`status-badge--${state}`);
+        qeynosStatusText.textContent = text;
+        qeynosPlayers.textContent    = (players !== null && players !== undefined) ? players.toLocaleString() : '—';
+        qeynosLastChecked.textContent = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      }
+
+      /* Normalise a server entry from API into { name, status, players } */
+      function normaliseEntry(entry) {
+        const name   = entry.name || entry.serverName || entry.server || '';
+        const raw    = (entry.status || entry.state || '').toLowerCase();
+        const status = raw.includes('online') || raw === 'up'
+          ? 'online'
+          : raw.includes('maintenance') || raw.includes('down for')
+            ? 'maintenance'
+            : raw.includes('offline') || raw === 'down'
+              ? 'offline'
+              : 'unknown';
+        const players = (entry.players ?? entry.playerCount ?? entry.online ?? null);
+        return { name, status, players };
+      }
+
+      /* Find the Qeynos server entry inside API response */
+      function findQeynos(data) {
+        const list = Array.isArray(data)
+          ? data
+          : data.servers || data.data || data.results || [];
+        return list.find(s => (s.name || s.serverName || s.server || '').toLowerCase().includes('qeynos'));
+      }
+
+      /* Render other-server grid */
+      function renderOtherServers(data) {
+        const list = Array.isArray(data)
+          ? data
+          : data.servers || data.data || data.results || [];
+        const others = list.filter(s => !(s.name || s.serverName || s.server || '').toLowerCase().includes('qeynos'));
+        if (!others.length) return;
+
+        serverGrid.innerHTML = '';
+        others.forEach(raw => {
+          const s = normaliseEntry(raw);
+          const card = document.createElement('div');
+          card.className = 'server-card';
+          card.innerHTML = `
+            <div>
+              <p class="server-card__name">${escHtml(s.name)}</p>
+              <p class="server-card__type">${escHtml(raw.type || raw.ruleset || raw.serverType || '')}</p>
+            </div>
+            <span class="server-card__badge server-card__badge--${s.status}">${statusLabel(s.status)}</span>
+          `;
+          serverGrid.appendChild(card);
+        });
+        otherSection.hidden = false;
+      }
+
+      function statusLabel(state) {
+        return { online: 'Online', offline: 'Offline', maintenance: 'Maintenance', unknown: 'Unknown', checking: '…' }[state] || 'Unknown';
+      }
+
+      function escHtml(str) {
+        return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+      }
+
+      /* Spin the refresh icon while checking */
+      function setSpinning(on) {
+        refreshIcon.style.transition = on ? 'transform 0.5s linear' : '';
+        refreshIcon.style.transform  = on ? 'rotate(360deg)' : '';
+        refreshBtn.disabled = on;
+        if (!on) { refreshIcon.style.transform = ''; }
+      }
+
+      /* Main status fetch routine */
+      async function fetchStatus() {
+        applyPrimaryStatus('checking', 'Checking…', null);
+        setSpinning(true);
+        corsNotice.classList.remove('visible');
+
+        let apiSuccess = false;
+
+        // 1 — Try JSON API endpoints
+        for (const endpoint of STATUS_ENDPOINTS) {
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 7000);
+            const res = await fetch(endpoint, {
+              signal: controller.signal,
+              headers: { Accept: 'application/json' }
+            });
+            clearTimeout(timer);
+
+            if (res.ok) {
+              let data;
+              try { data = await res.json(); } catch { break; }
+              const qeynos = findQeynos(data);
+              if (qeynos) {
+                const s = normaliseEntry(qeynos);
+                applyPrimaryStatus(s.status, statusLabel(s.status), s.players);
+                renderOtherServers(data);
+                apiSuccess = true;
+                break;
+              }
+            }
+          } catch {
+            // Try next endpoint
+          }
+        }
+
+        // 2 — API unreachable or no Qeynos entry found; do a reachability check
+        if (!apiSuccess) {
+          let siteReachable = false;
+          try {
+            const controller = new AbortController();
+            const timer = setTimeout(() => controller.abort(), 6000);
+            await fetch(SITE_ROOT, { mode: 'no-cors', signal: controller.signal });
+            clearTimeout(timer);
+            siteReachable = true;
+          } catch {
+            siteReachable = false;
+          }
+
+          if (siteReachable) {
+            applyPrimaryStatus('online', 'Online', null);
+          } else {
+            applyPrimaryStatus('offline', 'Offline', null);
+          }
+          corsNotice.classList.add('visible');
+        }
+
+        setSpinning(false);
+        resetCountdown();
+      }
+
+      /* Countdown timer */
+      function resetCountdown() {
+        clearInterval(countdownTimer);
+        countdownSeconds = REFRESH_INTERVAL_S;
+        countdownDisplay.textContent = countdownSeconds;
+        countdownTimer = setInterval(() => {
+          countdownSeconds -= 1;
+          countdownDisplay.textContent = countdownSeconds;
+          if (countdownSeconds <= 0) {
+            clearInterval(countdownTimer);
+            fetchStatus();
+          }
+        }, 1000);
+      }
+
+      refreshBtn.addEventListener('click', () => {
+        clearInterval(countdownTimer);
+        fetchStatus();
+      });
+
+      // Kick off initial check
+      fetchStatus();
+    </script>
+  </body>
+</html>
