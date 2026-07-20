@@ -1,7 +1,7 @@
 window.THE_CHOSEN_FORUM_CONFIG = Object.freeze({
   roleConfig: Object.freeze({
-    ownerEmails: Object.freeze(['ojmac79@gmail.com']),
+    ownerEmails: Object.freeze([]),
     moderatorEmails: Object.freeze([]),
-    memberEmails: Object.freeze(['ojmac79@gmail.com'])
+    memberEmails: Object.freeze([])
   })
 });

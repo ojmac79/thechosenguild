@@ -150,22 +150,28 @@
     <script>
       const STORAGE_KEY = 'theChosenForumStateV2';
       const MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      function normalizeEmail(value) {
+        return String(value || '').trim().toLowerCase();
+      }
+
+      function normalizeEmailList(value) {
+        if (!Array.isArray(value)) {
+          return [];
+        }
+        return value.map(normalizeEmail).filter(Boolean);
+      }
+
       const rawForumConfig = window.THE_CHOSEN_FORUM_CONFIG || {};
       const rawRoleConfig = rawForumConfig.roleConfig || {};
       const roleConfig = {
-        ownerEmails: Array.isArray(rawRoleConfig.ownerEmails) ? rawRoleConfig.ownerEmails : ['ojmac79@gmail.com'],
-        moderatorEmails: Array.isArray(rawRoleConfig.moderatorEmails) ? rawRoleConfig.moderatorEmails : [],
-        memberEmails: Array.isArray(rawRoleConfig.memberEmails) ? rawRoleConfig.memberEmails : ['ojmac79@gmail.com']
+        ownerEmails: normalizeEmailList(rawRoleConfig.ownerEmails),
+        moderatorEmails: normalizeEmailList(rawRoleConfig.moderatorEmails),
+        memberEmails: normalizeEmailList(rawRoleConfig.memberEmails)
       };
-
       const uiState = {
         publicFilter: 'all',
         privateFilter: 'all'
       };
-
-      function normalizeEmail(value) {
-        return String(value || '').trim().toLowerCase();
-      }
 
       function getCurrentMember() {
         const stored = localStorage.getItem(MEMBER_STORAGE_KEY);
@@ -203,10 +209,10 @@
         if (!email) {
           return 'guest';
         }
-        if (roleConfig.ownerEmails.map(normalizeEmail).includes(email)) {
+        if (roleConfig.ownerEmails.includes(email)) {
           return 'owner';
         }
-        if (roleConfig.moderatorEmails.map(normalizeEmail).includes(email)) {
+        if (roleConfig.moderatorEmails.includes(email)) {
           return 'moderator';
         }
         return 'member';
@@ -219,8 +225,11 @@
         if (role === 'owner' || role === 'moderator') {
           return true;
         }
+        if (!roleConfig.memberEmails.length) {
+          return true;
+        }
         const email = normalizeEmail(member.email);
-        return roleConfig.memberEmails.map(normalizeEmail).includes(email);
+        return roleConfig.memberEmails.includes(email);
       }
 
       function canModerate(role) {
