@@ -39,67 +39,91 @@
       </header>
 
       <main class="page">
-        <p class="hero__eyebrow">The Hall of Debate</p>
+        <p class="hero__eyebrow">Guild Communications</p>
         <h1 class="page-title">Guild Forums</h1>
         <p class="page-subtitle">
-          A place for strategy notes, raid plans, and spirited guild lore.
+          Compact category-based forums with public and members-only spaces.
         </p>
 
-        <div class="thumbnail-strip" aria-label="EverQuest imagery">
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
-          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
-        </div>
+        <section class="forum2-space" id="publicSpace" aria-label="Public forum">
+          <div class="forum2-space__header">
+            <h2 class="forum2-space__title">Public Forum</h2>
+            <span class="forum-badge">Open to everyone</span>
+          </div>
+          <p class="forum2-note" id="publicAuthNote"></p>
 
-        <section class="forum-section" aria-label="Public forum posts">
-          <div class="forum-section__header">
-            <h2 class="forum-section__title">Public Discussion</h2>
-            <span class="forum-badge">Open to all</span>
+          <div class="panel forum2-manager" id="publicCategoryManager" hidden>
+            <h3 class="forum2-manager__title">Manage Public Categories</h3>
+            <form class="forum2-inline-form" id="publicCategoryForm">
+              <input type="text" id="publicCategoryName" placeholder="Category name" required />
+              <input type="text" id="publicCategoryDescription" placeholder="Short description" required />
+              <button class="btn-primary" type="submit">Add Category</button>
+            </form>
+            <div id="publicCategoryList" class="forum2-manager__list"></div>
           </div>
 
-          <form class="panel forum-form forum-form--compact" id="publicForm">
+          <form class="panel forum2-form" id="publicThreadForm">
             <label class="resource-field">
-              <span>Post Title</span>
-              <input id="publicTitle" type="text" placeholder="Share a thought or update" required />
+              <span>Category</span>
+              <select id="publicThreadCategory" required></select>
+            </label>
+            <label class="resource-field">
+              <span>Thread title</span>
+              <input type="text" id="publicThreadTitle" placeholder="Start a discussion" required />
             </label>
             <label class="resource-field">
               <span>Message</span>
-              <textarea id="publicMessage" rows="3" placeholder="Write something for the public forum..." required></textarea>
+              <textarea id="publicThreadBody" rows="3" placeholder="Write your post" required></textarea>
             </label>
-            <button class="btn-primary" type="submit">Post Publicly</button>
+            <button class="btn-primary" type="submit">Post to Public Forum</button>
           </form>
 
+          <div class="forum2-filters" id="publicFilters"></div>
           <div class="forum-thread-list" id="publicThreadList"></div>
         </section>
 
-        <section class="forum-section forum-section--member" aria-label="Members-only forum area">
-          <div class="forum-section__header">
-            <h2 class="forum-section__title">Members Only</h2>
-            <span class="forum-badge forum-badge--member">Requires Netlify account</span>
+        <section class="forum2-space" id="privateSpace" aria-label="Private members-only forum">
+          <div class="forum2-space__header">
+            <h2 class="forum2-space__title">Private Members Forum</h2>
+            <span class="forum-badge forum-badge--member">Members only</span>
           </div>
-
-          <div class="panel forum-gate" id="memberGate">
-            <p class="forum-gate__text">Sign in with your Netlify account to unlock the private council chamber and post members-only threads.</p>
+          <div class="panel forum-gate" id="privateGate">
+            <p class="forum-gate__text">
+              Private categories require a Netlify account with member access.
+            </p>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
 
-          <form class="panel forum-form forum-form--compact" id="memberForm" hidden>
+          <p class="forum2-note" id="privateAuthNote"></p>
+
+          <div class="panel forum2-manager" id="privateCategoryManager" hidden>
+            <h3 class="forum2-manager__title">Manage Private Categories</h3>
+            <form class="forum2-inline-form" id="privateCategoryForm">
+              <input type="text" id="privateCategoryName" placeholder="Category name" required />
+              <input type="text" id="privateCategoryDescription" placeholder="Short description" required />
+              <button class="btn-primary" type="submit">Add Category</button>
+            </form>
+            <div id="privateCategoryList" class="forum2-manager__list"></div>
+          </div>
+
+          <form class="panel forum2-form" id="privateThreadForm" hidden>
             <label class="resource-field">
-              <span>Members-Only Thread Title</span>
-              <input id="memberTitle" type="text" placeholder="Council planning or strategy note" required />
+              <span>Category</span>
+              <select id="privateThreadCategory" required></select>
+            </label>
+            <label class="resource-field">
+              <span>Thread title</span>
+              <input type="text" id="privateThreadTitle" placeholder="Officer and member planning" required />
             </label>
             <label class="resource-field">
               <span>Message</span>
-              <textarea id="memberMessage" rows="3" placeholder="Share a private update for the guild officers..." required></textarea>
+              <textarea id="privateThreadBody" rows="3" placeholder="Write your private post" required></textarea>
             </label>
-            <label class="resource-field">
-              <span>Member Photo (optional)</span>
-              <input id="memberPhoto" type="file" accept="image/*" />
-            </label>
-            <button class="btn-primary" type="submit">Post for Members</button>
+            <button class="btn-primary" type="submit">Post to Private Forum</button>
           </form>
 
-          <div class="forum-thread-list" id="memberThreadList" hidden></div>
+          <div class="forum2-filters" id="privateFilters" hidden></div>
+          <div class="forum-thread-list" id="privateThreadList" hidden></div>
         </section>
       </main>
 
@@ -123,100 +147,184 @@
     <script src="../../scripts/site-decor.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const PUBLIC_THREADS_STORAGE_KEY = 'theChosenPublicThreads';
-      const MEMBER_THREADS_STORAGE_KEY = 'theChosenMemberThreads';
-      const publicThreads = readPublicThreads();
-      const memberThreads = readMemberThreads();
-      let activeReplyComposer = null;
+      const STORAGE_KEY = 'theChosenForumStateV2';
+      const MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const roleConfig = {
+        ownerEmails: ['ojmac79@gmail.com'],
+        moderatorEmails: [],
+        memberEmails: ['ojmac79@gmail.com']
+      };
 
-      const publicForm = document.getElementById('publicForm');
-      const publicTitleInput = document.getElementById('publicTitle');
-      const publicMessageInput = document.getElementById('publicMessage');
-      const publicThreadList = document.getElementById('publicThreadList');
-      const memberGate = document.getElementById('memberGate');
-      const memberThreadList = document.getElementById('memberThreadList');
-      const memberForm = document.getElementById('memberForm');
-      const thumbnailOptions = [
-        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
-        { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
-        { url: 'https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=1200&q=80', alt: 'Sunlit fantasy valley' },
-        { url: 'https://images.unsplash.com/photo-1464822759844-d150c6fb2c57?auto=format&fit=crop&w=1200&q=80', alt: 'Epic misty peaks' },
-        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Giant canyon vista' },
-        { url: 'https://images.unsplash.com/photo-1506744038136-46273834b3fb?auto=format&fit=crop&w=1200&q=80', alt: 'Stormy sky over distant ridges' },
-        { url: 'https://images.unsplash.com/photo-1473448912268-2022ce9509d8?auto=format&fit=crop&w=1200&q=80', alt: 'Moonlit lake and cliffs' },
-        { url: 'https://images.unsplash.com/photo-1454496522488-7a8e488e8606?auto=format&fit=crop&w=1200&q=80', alt: 'Dawn over dramatic hills' },
-        { url: 'https://images.unsplash.com/photo-1500375592092-40eb2168fd21?auto=format&fit=crop&w=1200&q=80', alt: 'Cloud-kissed ancient ruins' },
-        { url: 'https://images.unsplash.com/photo-1511497584788-876760111969?auto=format&fit=crop&w=1200&q=80', alt: 'Lush green forest path' },
-        { url: 'https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1200&q=80', alt: 'Wild mountain pass' },
-        { url: 'https://images.unsplash.com/photo-1522093007474-d86e9bf7ba6f?auto=format&fit=crop&w=1200&q=80', alt: 'Cobalt sky over rolling hills' },
-        { url: 'https://images.unsplash.com/photo-1501786223405-6d024d7c3b8d?auto=format&fit=crop&w=1200&q=80', alt: 'Sunset over rocky cliffs' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Snowy peaks and pine forest' },
-        { url: 'https://images.unsplash.com/photo-1448375240586-882707db888b?auto=format&fit=crop&w=1200&q=80', alt: 'Deep evergreen woodland' },
-        { url: 'https://images.unsplash.com/photo-1426604966848-d7adac402bff?auto=format&fit=crop&w=1200&q=80', alt: 'Misty lake and pine trees' },
-        { url: 'https://images.unsplash.com/photo-1465146344425-f00d5f5c8f07?auto=format&fit=crop&w=1200&q=80', alt: 'Wide desert horizon' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Rugged alpine ridge' },
-        { url: 'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?auto=format&fit=crop&w=1200&q=80', alt: 'Golden desert plains' },
-        { url: 'https://images.unsplash.com/photo-1470770841072-f978cf4d019e?auto=format&fit=crop&w=1200&q=80', alt: 'Twilight over calm waters' },
-        { url: 'https://images.unsplash.com/photo-1507525428034-b723cf961d3e?auto=format&fit=crop&w=1200&q=80', alt: 'Ocean cliffs and sea mist' },
-        { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Dramatic mountain skyline' },
-        { url: 'https://images.unsplash.com/photo-1482192596544-9eb780fc7f66?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient stone ruins in the wild' },
-        { url: 'https://images.unsplash.com/photo-1500534314209-a25ddb2bd429?auto=format&fit=crop&w=1200&q=80', alt: 'Highland pass under storm clouds' },
-        { url: 'https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=1200&q=80', alt: 'Grand canyon-like gorge' }
-      ];
-      const memberTitleInput = document.getElementById('memberTitle');
-      const memberMessageInput = document.getElementById('memberMessage');
-      const memberPhotoInput = document.getElementById('memberPhoto');
+      const uiState = {
+        publicFilter: 'all',
+        privateFilter: 'all'
+      };
 
-      function randomizeThumbnailCards() {
-        const cards = Array.from(document.querySelectorAll('.thumbnail-card img'));
-        if (!cards.length) {
-          return;
-        }
-
-        const shuffled = thumbnailOptions
-          .map((image) => ({ image, sort: Math.random() }))
-          .sort((a, b) => a.sort - b.sort)
-          .map((entry) => entry.image);
-
-        cards.forEach((img, index) => {
-          const image = shuffled[index % shuffled.length];
-          img.src = image.url;
-          img.alt = image.alt;
-        });
+      function normalizeEmail(value) {
+        return String(value || '').trim().toLowerCase();
       }
 
-      function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = () => resolve(reader.result);
-          reader.onerror = reject;
-          reader.readAsDataURL(file);
-        });
-      }
-
-      async function handlePublicPost(event) {
-        event.preventDefault();
-        const title = publicTitleInput.value.trim();
-        const message = publicMessageInput.value.trim();
-        if (!title || !message) {
-          return;
+      function getCurrentMember() {
+        const stored = localStorage.getItem(MEMBER_STORAGE_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.email) {
+              return parsed;
+            }
+          } catch (error) {
+            // Ignore broken storage state.
+          }
         }
 
-        const currentMember = getCurrentMember();
-        publicThreads.unshift({
-          id: buildEntryId('public'),
+        const identityUser = window.netlifyIdentity && window.netlifyIdentity.currentUser
+          ? window.netlifyIdentity.currentUser()
+          : null;
+
+        if (!identityUser || !identityUser.email) {
+          return null;
+        }
+
+        const member = {
+          id: identityUser.id || identityUser.email,
+          name: identityUser.user_metadata?.full_name || identityUser.email.split('@')[0],
+          email: identityUser.email,
+          avatar: identityUser.user_metadata?.avatar_url || identityUser.avatar_url || ''
+        };
+        localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(member));
+        return member;
+      }
+
+      function getRole(member) {
+        const email = normalizeEmail(member && member.email);
+        if (!email) {
+          return 'guest';
+        }
+        if (roleConfig.ownerEmails.map(normalizeEmail).includes(email)) {
+          return 'owner';
+        }
+        if (roleConfig.moderatorEmails.map(normalizeEmail).includes(email)) {
+          return 'moderator';
+        }
+        return 'member';
+      }
+
+      function hasMemberAccess(member, role) {
+        if (!member) {
+          return false;
+        }
+        if (role === 'owner' || role === 'moderator') {
+          return true;
+        }
+        const email = normalizeEmail(member.email);
+        return roleConfig.memberEmails.map(normalizeEmail).includes(email);
+      }
+
+      function canModerate(role) {
+        return role === 'owner' || role === 'moderator';
+      }
+
+      function buildId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return `${prefix}-${window.crypto.randomUUID()}`;
+        }
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
+      function defaultState() {
+        return {
+          public: {
+            categories: [
+              { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
+              { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
+            ],
+            threads: []
+          },
+          private: {
+            categories: [
+              { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
+              { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
+            ],
+            threads: []
+          }
+        };
+      }
+
+      function normalizeCategory(category, fallbackPrefix) {
+        if (!category || typeof category !== 'object') {
+          return null;
+        }
+        const name = String(category.name || '').trim();
+        const description = String(category.description || '').trim();
+        if (!name || !description) {
+          return null;
+        }
+        return {
+          id: typeof category.id === 'string' && category.id ? category.id : buildId(fallbackPrefix),
+          name,
+          description
+        };
+      }
+
+      function normalizeThread(thread, categories, fallbackPrefix) {
+        if (!thread || typeof thread !== 'object') {
+          return null;
+        }
+        const title = String(thread.title || '').trim();
+        const body = String(thread.body || '').trim();
+        if (!title || !body) {
+          return null;
+        }
+        const validCategoryIds = categories.map((category) => category.id);
+        const fallbackCategory = validCategoryIds[0] || '';
+        const categoryId = validCategoryIds.includes(thread.categoryId) ? thread.categoryId : fallbackCategory;
+
+        return {
+          id: typeof thread.id === 'string' && thread.id ? thread.id : buildId(fallbackPrefix),
+          categoryId,
           title,
-          author: currentMember ? currentMember.name : 'Guest Adventurer',
-          avatar: currentMember ? currentMember.avatar || '' : '',
-          body: message,
-          replies: []
-        });
-        writePublicThreads(publicThreads);
-        activeReplyComposer = null;
-
-        publicForm.reset();
-        renderThreads();
+          body,
+          authorName: String(thread.authorName || 'Guild Visitor'),
+          authorEmail: String(thread.authorEmail || ''),
+          authorAvatar: String(thread.authorAvatar || ''),
+          createdAt: Number(thread.createdAt) || Date.now(),
+          isPinned: Boolean(thread.isPinned),
+          isLocked: Boolean(thread.isLocked)
+        };
       }
+
+      function readState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+          if (!parsed || typeof parsed !== 'object') {
+            return defaultState();
+          }
+
+          const normalized = defaultState();
+          ['public', 'private'].forEach((spaceKey) => {
+            const sourceSpace = parsed[spaceKey] || {};
+            const fallbackPrefix = spaceKey === 'public' ? 'pub-cat' : 'priv-cat';
+            const categories = Array.isArray(sourceSpace.categories)
+              ? sourceSpace.categories.map((category) => normalizeCategory(category, fallbackPrefix)).filter(Boolean)
+              : [];
+            normalized[spaceKey].categories = categories.length ? categories : normalized[spaceKey].categories;
+            normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
+              ? sourceSpace.threads
+                  .map((thread) => normalizeThread(thread, normalized[spaceKey].categories, `${spaceKey}-thread`))
+                  .filter(Boolean)
+              : [];
+          });
+          return normalized;
+        } catch (error) {
+          return defaultState();
+        }
+      }
+
+      function writeState(state) {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+      }
+
+      const forumState = readState();
 
       const footerMember = document.getElementById('footerMember');
       const footerMemberMenu = document.getElementById('footerMemberMenu');
@@ -226,291 +334,6 @@
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
 
-      function getCurrentMember() {
-        const stored = localStorage.getItem('theChosenCurrentMember');
-        if (stored) {
-          try {
-            return JSON.parse(stored);
-          } catch (error) {
-            return null;
-          }
-        }
-
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          const user = window.netlifyIdentity.currentUser();
-          const member = {
-            id: user.id || user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email,
-            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-          };
-          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
-          return member;
-        }
-
-        return null;
-      }
-
-      function readMemberThreads() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(MEMBER_THREADS_STORAGE_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored.map(normalizeMemberThread).filter(Boolean);
-          }
-        } catch (error) {
-          // Fall back to an empty list.
-        }
-
-        return [];
-      }
-
-      function writeMemberThreads(threads) {
-        localStorage.setItem(MEMBER_THREADS_STORAGE_KEY, JSON.stringify(threads));
-      }
-
-      function readPublicThreads() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(PUBLIC_THREADS_STORAGE_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored.map(normalizePublicThread).filter(Boolean);
-          }
-        } catch (error) {
-          // Fall back to an empty list.
-        }
-
-        return [];
-      }
-
-      function writePublicThreads(threads) {
-        localStorage.setItem(PUBLIC_THREADS_STORAGE_KEY, JSON.stringify(threads));
-      }
-
-      function buildEntryId(prefix) {
-        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-          return `${prefix}-${window.crypto.randomUUID()}`;
-        }
-        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-      }
-
-      function normalizePublicThread(thread) {
-        if (!thread || typeof thread !== 'object') {
-          return null;
-        }
-        return {
-          id: typeof thread.id === 'string' ? thread.id : buildEntryId('public'),
-          title: typeof thread.title === 'string' ? thread.title : '',
-          author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guest Adventurer',
-          avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
-          body: typeof thread.body === 'string' ? thread.body : '',
-          replies: normalizeReplies(thread.replies)
-        };
-      }
-
-      function normalizeMemberThread(thread) {
-        if (!thread || typeof thread !== 'object') {
-          return null;
-        }
-        return {
-          id: typeof thread.id === 'string' ? thread.id : buildEntryId('member'),
-          title: typeof thread.title === 'string' ? thread.title : '',
-          author: typeof thread.author === 'string' && thread.author ? thread.author : 'Guild Member',
-          avatar: typeof thread.avatar === 'string' ? thread.avatar : '',
-          body: typeof thread.body === 'string' ? thread.body : '',
-          photo: typeof thread.photo === 'string' ? thread.photo : '',
-          replies: normalizeReplies(thread.replies)
-        };
-      }
-
-      function normalizeReplies(replies) {
-        if (!Array.isArray(replies)) {
-          return [];
-        }
-        return replies
-          .map((reply) => {
-            if (!reply || typeof reply !== 'object') {
-              return null;
-            }
-            return {
-              id: typeof reply.id === 'string' ? reply.id : buildEntryId('reply'),
-              author: typeof reply.author === 'string' && reply.author ? reply.author : 'Guest Adventurer',
-              avatar: typeof reply.avatar === 'string' ? reply.avatar : '',
-              body: typeof reply.body === 'string' ? reply.body : '',
-              replies: normalizeReplies(reply.replies)
-            };
-          })
-          .filter(Boolean);
-      }
-
-      function escapeHtml(value) {
-        return String(value || '')
-          .replace(/&/g, '&amp;')
-          .replace(/</g, '&lt;')
-          .replace(/>/g, '&gt;')
-          .replace(/"/g, '&quot;')
-          .replace(/'/g, '&#39;');
-      }
-
-      function getMemberName(member) {
-        return (member && (member.name || member.email)) || 'Guest Adventurer';
-      }
-
-      function getMemberAvatar(member, authorName) {
-        if (member && member.avatar) {
-          return member.avatar;
-        }
-        return `https://ui-avatars.com/api/?name=${encodeURIComponent(authorName || 'Guild Member')}&background=ff7b7b&color=14070b`;
-      }
-
-      function appendNestedReply(replies, parentId, reply) {
-        for (let index = 0; index < replies.length; index += 1) {
-          const candidate = replies[index];
-          if (candidate.id === parentId) {
-            candidate.replies = Array.isArray(candidate.replies) ? candidate.replies : [];
-            candidate.replies.unshift(reply);
-            return true;
-          }
-          if (appendNestedReply(candidate.replies || [], parentId, reply)) {
-            return true;
-          }
-        }
-        return false;
-      }
-
-      function addReplyToThread(threads, threadId, parentId, reply) {
-        for (let index = 0; index < threads.length; index += 1) {
-          const thread = threads[index];
-          if (thread.id !== threadId) {
-            continue;
-          }
-          thread.replies = Array.isArray(thread.replies) ? thread.replies : [];
-          if (parentId === thread.id) {
-            thread.replies.unshift(reply);
-            return true;
-          }
-          return appendNestedReply(thread.replies, parentId, reply);
-        }
-        return false;
-      }
-
-      function syncStoredPublicThreads() {
-        const latestThreads = readPublicThreads();
-        publicThreads.splice(0, publicThreads.length, ...latestThreads);
-      }
-
-      function syncStoredMemberThreads() {
-        const latestThreads = readMemberThreads();
-        memberThreads.splice(0, memberThreads.length, ...latestThreads);
-      }
-
-      function renderReplyComposer(threadId, parentId, scope) {
-        if (
-          !activeReplyComposer
-          || activeReplyComposer.threadId !== threadId
-          || activeReplyComposer.parentId !== parentId
-          || activeReplyComposer.scope !== scope
-        ) {
-          return '';
-        }
-
-        return `
-          <form class="forum-reply-form" data-thread-reply-form="true" data-thread-id="${escapeHtml(threadId)}" data-parent-id="${escapeHtml(parentId)}" data-reply-scope="${escapeHtml(scope)}">
-            <label class="resource-field">
-              <span>Your Reply</span>
-              <textarea class="forum-reply-form__input" rows="2" placeholder="Write your reply..." required></textarea>
-            </label>
-            <div class="forum-reply-form__actions">
-              <button class="btn-primary" type="submit">Reply</button>
-              <button class="resource-item__delete" type="button" data-cancel-reply="true">Cancel</button>
-            </div>
-          </form>
-        `;
-      }
-
-      function renderReplyNode(reply, threadId, scope) {
-        const author = escapeHtml(reply.author || 'Guest Adventurer');
-        const body = escapeHtml(reply.body || '');
-        const avatar = escapeHtml(reply.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
-        const replyId = escapeHtml(reply.id);
-
-        return `
-          <div class="forum-thread__reply">
-            <div class="forum-thread__reply-header">
-              <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
-              <p class="forum-thread__reply-author">${author}</p>
-            </div>
-            <p class="forum-thread__reply-body">${body}</p>
-            <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${replyId}" data-thread-id="${escapeHtml(threadId)}" data-reply-scope="${escapeHtml(scope)}">Reply</button>
-            </div>
-            ${renderReplyComposer(threadId, reply.id, scope)}
-            ${(Array.isArray(reply.replies) && reply.replies.length)
-              ? `<div class="forum-thread__reply-children">${reply.replies.map((nestedReply) => renderReplyNode(nestedReply, threadId, scope)).join('')}</div>`
-              : ''}
-          </div>
-        `;
-      }
-
-      function renderPublicThread(thread) {
-        const author = escapeHtml(thread.author || 'Guest Adventurer');
-        const avatar = escapeHtml(thread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
-        const threadId = escapeHtml(thread.id);
-
-        return `
-          <article class="panel forum-thread">
-            <div class="forum-thread__header">
-              <div>
-                <h3 class="forum-thread__title">${escapeHtml(thread.title)}</h3>
-                <div class="forum-thread__author">
-                  <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
-                  <span class="forum-thread__author-name">${author}</span>
-                </div>
-              </div>
-              <span class="forum-badge">Public</span>
-            </div>
-            <div class="forum-thread__content">
-              <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
-            </div>
-            <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}" data-reply-scope="public">Reply</button>
-            </div>
-            ${renderReplyComposer(thread.id, thread.id, 'public')}
-            <div class="forum-thread__replies">
-              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id, 'public')).join('')}
-            </div>
-          </article>
-        `;
-      }
-
-      function renderMemberThread(thread) {
-        const author = escapeHtml(thread.author || 'Guild Member');
-        const avatar = escapeHtml(thread.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(thread.author || 'Guild Member')}&background=ff7b7b&color=14070b`);
-        const threadId = escapeHtml(thread.id);
-
-        return `
-          <article class="panel forum-thread forum-thread--member">
-            <div class="forum-thread__header">
-              <div>
-                <h3 class="forum-thread__title">${escapeHtml(thread.title)}</h3>
-                <div class="forum-thread__author">
-                  <img class="forum-thread__author-avatar" src="${avatar}" alt="${author} avatar" />
-                  <span class="forum-thread__author-name">${author}</span>
-                </div>
-              </div>
-              <span class="forum-badge forum-badge--member">Members</span>
-            </div>
-            ${thread.photo ? `<img class="forum-thread__photo" src="${escapeHtml(thread.photo)}" alt="Member upload" />` : ''}
-            <p class="forum-thread__body">${escapeHtml(thread.body)}</p>
-            <div class="forum-thread__actions">
-              <button class="resource-item__edit" type="button" data-reply-target="${threadId}" data-thread-id="${threadId}" data-reply-scope="member">Reply</button>
-            </div>
-            ${renderReplyComposer(thread.id, thread.id, 'member')}
-            <div class="forum-thread__replies">
-              ${(Array.isArray(thread.replies) ? thread.replies : []).map((reply) => renderReplyNode(reply, thread.id, 'member')).join('')}
-            </div>
-          </article>
-        `;
-      }
-
       function renderMemberBadge(member) {
         if (!member) {
           footerMember.hidden = true;
@@ -518,171 +341,520 @@
           return;
         }
 
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
-        footerMemberAvatar.alt = `${member.name || member.email} avatar`;
-        footerMemberName.textContent = member.name || member.email;
+        const displayName = member.name || member.email || 'Guild Member';
+        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt = `${displayName} avatar`;
+        footerMemberName.textContent = displayName;
         footerMemberEmail.textContent = member.email || 'Netlify member';
         footerMember.hidden = false;
         footerMemberMenu.hidden = false;
       }
 
-      function renderThreads() {
-        syncStoredPublicThreads();
-        syncStoredMemberThreads();
-        const currentMember = getCurrentMember();
-        renderMemberBadge(currentMember);
+      function categoryById(spaceKey, categoryId) {
+        return forumState[spaceKey].categories.find((category) => category.id === categoryId) || null;
+      }
 
-        if (!publicThreads.length) {
-          publicThreadList.innerHTML = '<article class="panel forum-thread"><p class="empty-state">No public posts yet. Start the first thread.</p></article>';
-        } else {
-          publicThreadList.innerHTML = publicThreads.map((thread) => renderPublicThread(thread)).join('');
-        }
-
-        if (currentMember) {
-          memberGate.hidden = true;
-          memberForm.hidden = false;
-          memberThreadList.hidden = false;
-          if (!memberThreads.length) {
-            memberThreadList.innerHTML = '<article class="panel forum-thread forum-thread--member"><p class="empty-state">No members-only posts yet. Share the first council update.</p></article>';
-          } else {
-            memberThreadList.innerHTML = memberThreads.map((thread) => renderMemberThread(thread)).join('');
-          }
-        } else {
-          memberGate.hidden = false;
-          memberForm.hidden = true;
-          memberThreadList.hidden = true;
-          memberThreadList.innerHTML = '';
+      function setSelectOptions(selectElement, categories) {
+        const existingValue = selectElement.value;
+        selectElement.innerHTML = '';
+        categories.forEach((category) => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          selectElement.appendChild(option);
+        });
+        const hasExisting = categories.some((category) => category.id === existingValue);
+        if (hasExisting) {
+          selectElement.value = existingValue;
         }
       }
 
-      async function handleMemberPost(event) {
+      function renderCategoryFilters(spaceKey, categories) {
+        const container = document.getElementById(`${spaceKey}Filters`);
+        container.innerHTML = '';
+
+        const filterButtons = [{ id: 'all', name: 'All Categories', description: '' }, ...categories];
+        const selected = uiState[`${spaceKey}Filter`];
+
+        filterButtons.forEach((category) => {
+          const button = document.createElement('button');
+          button.type = 'button';
+          button.className = `forum2-filter-btn${selected === category.id ? ' active' : ''}`;
+          button.dataset.filterId = category.id;
+          button.dataset.space = spaceKey;
+          button.textContent = category.name;
+          if (category.description) {
+            button.title = category.description;
+          }
+          container.appendChild(button);
+        });
+      }
+
+      function renderCategoryManager(spaceKey, isModerator) {
+        const manager = document.getElementById(`${spaceKey}CategoryManager`);
+        const list = document.getElementById(`${spaceKey}CategoryList`);
+        manager.hidden = !isModerator;
+
+        if (!isModerator) {
+          return;
+        }
+
+        list.innerHTML = '';
+        forumState[spaceKey].categories.forEach((category) => {
+          const row = document.createElement('div');
+          row.className = 'forum2-manager__item';
+
+          const summary = document.createElement('p');
+          summary.className = 'forum2-manager__summary';
+          summary.textContent = `${category.name} — ${category.description}`;
+
+          const actions = document.createElement('div');
+          actions.className = 'forum-thread__actions';
+
+          const renameButton = document.createElement('button');
+          renameButton.className = 'resource-item__edit';
+          renameButton.type = 'button';
+          renameButton.textContent = 'Rename';
+          renameButton.dataset.action = 'rename-category';
+          renameButton.dataset.space = spaceKey;
+          renameButton.dataset.categoryId = category.id;
+
+          const deleteButton = document.createElement('button');
+          deleteButton.className = 'resource-item__delete';
+          deleteButton.type = 'button';
+          deleteButton.textContent = 'Delete';
+          deleteButton.dataset.action = 'delete-category';
+          deleteButton.dataset.space = spaceKey;
+          deleteButton.dataset.categoryId = category.id;
+
+          actions.appendChild(renameButton);
+          actions.appendChild(deleteButton);
+          row.appendChild(summary);
+          row.appendChild(actions);
+          list.appendChild(row);
+        });
+      }
+
+      function sortThreads(threads) {
+        return [...threads].sort((a, b) => {
+          if (a.isPinned !== b.isPinned) {
+            return a.isPinned ? -1 : 1;
+          }
+          return b.createdAt - a.createdAt;
+        });
+      }
+
+      function renderThreads(spaceKey, role) {
+        const container = document.getElementById(`${spaceKey}ThreadList`);
+        const selectedFilter = uiState[`${spaceKey}Filter`];
+        const categoryMap = new Map(forumState[spaceKey].categories.map((category) => [category.id, category]));
+
+        const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
+          return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
+        });
+
+        container.innerHTML = '';
+        if (!threads.length) {
+          const empty = document.createElement('article');
+          empty.className = 'panel forum-thread';
+          const message = document.createElement('p');
+          message.className = 'empty-state';
+          message.textContent = 'No threads yet in this view.';
+          empty.appendChild(message);
+          container.appendChild(empty);
+          return;
+        }
+
+        threads.forEach((thread) => {
+          const article = document.createElement('article');
+          article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+
+          const header = document.createElement('div');
+          header.className = 'forum-thread__header';
+
+          const titleWrap = document.createElement('div');
+          const title = document.createElement('h3');
+          title.className = 'forum-thread__title';
+          title.textContent = thread.title;
+
+          const meta = document.createElement('p');
+          meta.className = 'forum-thread__meta';
+          const categoryName = categoryMap.get(thread.categoryId)?.name || 'Uncategorized';
+          const postedOn = new Date(thread.createdAt).toLocaleString();
+          meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn}`;
+
+          titleWrap.appendChild(title);
+          titleWrap.appendChild(meta);
+
+          const badgeWrap = document.createElement('div');
+          badgeWrap.className = 'forum2-thread-badges';
+
+          const spaceBadge = document.createElement('span');
+          spaceBadge.className = `forum-badge${spaceKey === 'private' ? ' forum-badge--member' : ''}`;
+          spaceBadge.textContent = spaceKey === 'private' ? 'Members' : 'Public';
+          badgeWrap.appendChild(spaceBadge);
+
+          if (thread.isPinned) {
+            const pinned = document.createElement('span');
+            pinned.className = 'forum-badge';
+            pinned.textContent = 'Pinned';
+            badgeWrap.appendChild(pinned);
+          }
+
+          if (thread.isLocked) {
+            const locked = document.createElement('span');
+            locked.className = 'forum-badge';
+            locked.textContent = 'Locked';
+            badgeWrap.appendChild(locked);
+          }
+
+          header.appendChild(titleWrap);
+          header.appendChild(badgeWrap);
+
+          const body = document.createElement('p');
+          body.className = 'forum-thread__body';
+          body.textContent = thread.body;
+
+          article.appendChild(header);
+          article.appendChild(body);
+
+          if (canModerate(role)) {
+            const actions = document.createElement('div');
+            actions.className = 'forum-thread__actions';
+
+            const pinButton = document.createElement('button');
+            pinButton.type = 'button';
+            pinButton.className = 'resource-item__edit';
+            pinButton.textContent = thread.isPinned ? 'Unpin' : 'Pin';
+            pinButton.dataset.action = 'toggle-pin';
+            pinButton.dataset.space = spaceKey;
+            pinButton.dataset.threadId = thread.id;
+
+            const lockButton = document.createElement('button');
+            lockButton.type = 'button';
+            lockButton.className = 'resource-item__edit';
+            lockButton.textContent = thread.isLocked ? 'Unlock' : 'Lock';
+            lockButton.dataset.action = 'toggle-lock';
+            lockButton.dataset.space = spaceKey;
+            lockButton.dataset.threadId = thread.id;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'resource-item__delete';
+            deleteButton.textContent = 'Delete';
+            deleteButton.dataset.action = 'delete-thread';
+            deleteButton.dataset.space = spaceKey;
+            deleteButton.dataset.threadId = thread.id;
+
+            actions.appendChild(pinButton);
+            actions.appendChild(lockButton);
+            actions.appendChild(deleteButton);
+            article.appendChild(actions);
+          }
+
+          container.appendChild(article);
+        });
+      }
+
+      function updateAuthNotes(member, role, privateAccess) {
+        const publicNote = document.getElementById('publicAuthNote');
+        const privateNote = document.getElementById('privateAuthNote');
+
+        if (!member) {
+          publicNote.textContent = 'Sign in with Netlify Identity to create public posts.';
+          privateNote.textContent = 'Sign in and request member access to post in private categories.';
+          return;
+        }
+
+        const roleText = role.charAt(0).toUpperCase() + role.slice(1);
+        publicNote.textContent = `Signed in as ${member.email}. Role: ${roleText}.`;
+        privateNote.textContent = privateAccess
+          ? 'Private posting enabled for your account.'
+          : 'Your account can view public forums but does not have private member posting access.';
+      }
+
+      function render() {
+        const member = getCurrentMember();
+        const role = getRole(member);
+        const moderator = canModerate(role);
+        const privateAccess = hasMemberAccess(member, role);
+
+        renderMemberBadge(member);
+        updateAuthNotes(member, role, privateAccess);
+
+        const publicThreadCategory = document.getElementById('publicThreadCategory');
+        const privateThreadCategory = document.getElementById('privateThreadCategory');
+
+        setSelectOptions(publicThreadCategory, forumState.public.categories);
+        setSelectOptions(privateThreadCategory, forumState.private.categories);
+
+        const publicForm = document.getElementById('publicThreadForm');
+        const privateForm = document.getElementById('privateThreadForm');
+        publicForm.querySelector('button[type="submit"]').disabled = !member;
+        privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
+
+        const privateGate = document.getElementById('privateGate');
+        const privateFilters = document.getElementById('privateFilters');
+        const privateList = document.getElementById('privateThreadList');
+
+        privateGate.hidden = privateAccess;
+        privateForm.hidden = !privateAccess;
+        privateFilters.hidden = !privateAccess;
+        privateList.hidden = !privateAccess;
+
+        renderCategoryManager('public', moderator);
+        renderCategoryManager('private', moderator && privateAccess);
+
+        renderCategoryFilters('public', forumState.public.categories);
+        renderThreads('public', role);
+
+        if (privateAccess) {
+          renderCategoryFilters('private', forumState.private.categories);
+          renderThreads('private', role);
+        }
+      }
+
+      function addCategory(spaceKey, name, description) {
+        const trimmedName = String(name || '').trim();
+        const trimmedDescription = String(description || '').trim();
+        if (!trimmedName || !trimmedDescription) {
+          return;
+        }
+
+        forumState[spaceKey].categories.push({
+          id: buildId(`${spaceKey}-cat`),
+          name: trimmedName,
+          description: trimmedDescription
+        });
+        writeState(forumState);
+      }
+
+      function renameCategory(spaceKey, categoryId) {
+        const category = categoryById(spaceKey, categoryId);
+        if (!category) {
+          return;
+        }
+        const nextName = window.prompt('Rename category', category.name);
+        if (!nextName) {
+          return;
+        }
+        const nextDescription = window.prompt('Update description', category.description);
+        if (!nextDescription) {
+          return;
+        }
+        category.name = nextName.trim();
+        category.description = nextDescription.trim();
+        writeState(forumState);
+      }
+
+      function deleteCategory(spaceKey, categoryId) {
+        const categories = forumState[spaceKey].categories;
+        if (categories.length <= 1) {
+          window.alert('At least one category is required.');
+          return;
+        }
+
+        const nextCategories = categories.filter((category) => category.id !== categoryId);
+        if (nextCategories.length === categories.length) {
+          return;
+        }
+
+        const fallbackCategoryId = nextCategories[0].id;
+        forumState[spaceKey].threads = forumState[spaceKey].threads.map((thread) => {
+          if (thread.categoryId === categoryId) {
+            return { ...thread, categoryId: fallbackCategoryId };
+          }
+          return thread;
+        });
+        forumState[spaceKey].categories = nextCategories;
+
+        if (uiState[`${spaceKey}Filter`] === categoryId) {
+          uiState[`${spaceKey}Filter`] = 'all';
+        }
+
+        writeState(forumState);
+      }
+
+      function addThread(spaceKey, member, title, body, categoryId) {
+        const categories = forumState[spaceKey].categories;
+        const validCategoryId = categories.some((category) => category.id === categoryId)
+          ? categoryId
+          : categories[0].id;
+
+        forumState[spaceKey].threads.push({
+          id: buildId(`${spaceKey}-thread`),
+          categoryId: validCategoryId,
+          title: String(title || '').trim(),
+          body: String(body || '').trim(),
+          authorName: member.name || member.email,
+          authorEmail: member.email,
+          authorAvatar: member.avatar || '',
+          createdAt: Date.now(),
+          isPinned: false,
+          isLocked: false
+        });
+        writeState(forumState);
+      }
+
+      function updateThread(spaceKey, threadId, updater) {
+        const index = forumState[spaceKey].threads.findIndex((thread) => thread.id === threadId);
+        if (index < 0) {
+          return;
+        }
+        forumState[spaceKey].threads[index] = updater(forumState[spaceKey].threads[index]);
+        writeState(forumState);
+      }
+
+      function deleteThread(spaceKey, threadId) {
+        forumState[spaceKey].threads = forumState[spaceKey].threads.filter((thread) => thread.id !== threadId);
+        writeState(forumState);
+      }
+
+      document.getElementById('publicThreadForm').addEventListener('submit', (event) => {
         event.preventDefault();
-        const currentMember = getCurrentMember();
-        if (!currentMember) {
+        const member = getCurrentMember();
+        if (!member) {
           window.location.href = '/login/';
           return;
         }
 
-        const title = memberTitleInput.value.trim();
-        const body = memberMessageInput.value.trim();
-        if (!title || !body) {
-          return;
-        }
+        const titleInput = document.getElementById('publicThreadTitle');
+        const bodyInput = document.getElementById('publicThreadBody');
+        const categorySelect = document.getElementById('publicThreadCategory');
 
-        let photoData = '';
-        if (memberPhotoInput.files[0]) {
-          photoData = await readFileAsDataUrl(memberPhotoInput.files[0]);
-        }
+        addThread('public', member, titleInput.value, bodyInput.value, categorySelect.value);
+        event.target.reset();
+        render();
+      });
 
-        memberThreads.unshift({
-          id: `member-${Date.now()}`,
-          title,
-          author: currentMember.name,
-          avatar: currentMember.avatar || '',
-          body,
-          photo: photoData,
-          replies: []
-        });
-        writeMemberThreads(memberThreads);
-        activeReplyComposer = null;
-        memberForm.reset();
-        renderThreads();
-      }
-
-      publicForm.addEventListener('submit', handlePublicPost);
-      memberForm.addEventListener('submit', handleMemberPost);
-
-      function handleThreadListClick(event) {
-        const replyButton = event.target.closest('[data-reply-target]');
-        if (replyButton) {
-          const scope = replyButton.getAttribute('data-reply-scope') || 'public';
-          const threadId = replyButton.getAttribute('data-thread-id');
-          const parentId = replyButton.getAttribute('data-reply-target');
-          const isSameTarget = activeReplyComposer
-            && activeReplyComposer.scope === scope
-            && activeReplyComposer.threadId === threadId
-            && activeReplyComposer.parentId === parentId;
-          activeReplyComposer = isSameTarget ? null : { scope, threadId, parentId };
-          renderThreads();
-          return;
-        }
-
-        const cancelButton = event.target.closest('[data-cancel-reply]');
-        if (cancelButton) {
-          activeReplyComposer = null;
-          renderThreads();
-        }
-      }
-
-      function handleThreadListSubmit(event) {
-        const replyForm = event.target.closest('[data-thread-reply-form]');
-        if (!replyForm) {
-          return;
-        }
+      document.getElementById('privateThreadForm').addEventListener('submit', (event) => {
         event.preventDefault();
-
-        const scope = replyForm.getAttribute('data-reply-scope') || 'public';
-        const threadId = replyForm.getAttribute('data-thread-id');
-        const parentId = replyForm.getAttribute('data-parent-id');
-        const textarea = replyForm.querySelector('.forum-reply-form__input');
-        const body = textarea ? textarea.value.trim() : '';
-        if (!body) {
-          return;
-        }
-
         const member = getCurrentMember();
-        const author = getMemberName(member);
-        const reply = {
-          id: buildEntryId('reply'),
-          author,
-          avatar: getMemberAvatar(member, author),
-          body,
-          replies: []
-        };
-
-        const threads = scope === 'member' ? memberThreads : publicThreads;
-        const inserted = addReplyToThread(threads, threadId, parentId, reply);
-        if (!inserted) {
+        const role = getRole(member);
+        if (!hasMemberAccess(member, role)) {
+          window.location.href = '/login/';
           return;
         }
 
-        if (scope === 'member') {
-          writeMemberThreads(memberThreads);
-        } else {
-          writePublicThreads(publicThreads);
-        }
-        activeReplyComposer = null;
-        renderThreads();
-      }
+        const titleInput = document.getElementById('privateThreadTitle');
+        const bodyInput = document.getElementById('privateThreadBody');
+        const categorySelect = document.getElementById('privateThreadCategory');
 
-      publicThreadList.addEventListener('click', handleThreadListClick);
-      memberThreadList.addEventListener('click', handleThreadListClick);
-      publicThreadList.addEventListener('submit', handleThreadListSubmit);
-      memberThreadList.addEventListener('submit', handleThreadListSubmit);
+        addThread('private', member, titleInput.value, bodyInput.value, categorySelect.value);
+        event.target.reset();
+        render();
+      });
+
+      ['public', 'private'].forEach((spaceKey) => {
+        const categoryForm = document.getElementById(`${spaceKey}CategoryForm`);
+        categoryForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const role = getRole(getCurrentMember());
+          if (!canModerate(role)) {
+            return;
+          }
+
+          const nameInput = document.getElementById(`${spaceKey}CategoryName`);
+          const descriptionInput = document.getElementById(`${spaceKey}CategoryDescription`);
+          addCategory(spaceKey, nameInput.value, descriptionInput.value);
+          event.target.reset();
+          render();
+        });
+
+        document.getElementById(`${spaceKey}Filters`).addEventListener('click', (event) => {
+          const button = event.target.closest('[data-filter-id]');
+          if (!button) {
+            return;
+          }
+          uiState[`${spaceKey}Filter`] = button.dataset.filterId || 'all';
+          render();
+        });
+
+        document.getElementById(`${spaceKey}CategoryList`).addEventListener('click', (event) => {
+          const button = event.target.closest('[data-action]');
+          if (!button) {
+            return;
+          }
+
+          const role = getRole(getCurrentMember());
+          if (!canModerate(role)) {
+            return;
+          }
+
+          const action = button.dataset.action;
+          const categoryId = button.dataset.categoryId;
+          if (!categoryId) {
+            return;
+          }
+
+          if (action === 'rename-category') {
+            renameCategory(spaceKey, categoryId);
+          }
+          if (action === 'delete-category') {
+            deleteCategory(spaceKey, categoryId);
+          }
+          render();
+        });
+
+        document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', (event) => {
+          const button = event.target.closest('[data-action]');
+          if (!button) {
+            return;
+          }
+
+          const role = getRole(getCurrentMember());
+          if (!canModerate(role)) {
+            return;
+          }
+
+          const action = button.dataset.action;
+          const threadId = button.dataset.threadId;
+          if (!threadId) {
+            return;
+          }
+
+          if (action === 'toggle-pin') {
+            updateThread(spaceKey, threadId, (thread) => ({ ...thread, isPinned: !thread.isPinned }));
+          }
+          if (action === 'toggle-lock') {
+            updateThread(spaceKey, threadId, (thread) => ({ ...thread, isLocked: !thread.isLocked }));
+          }
+          if (action === 'delete-thread') {
+            deleteThread(spaceKey, threadId);
+          }
+          render();
+        });
+      });
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
       });
+
       footerLogoutButton.addEventListener('click', () => {
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem('theChosenCurrentMember');
-        renderMemberBadge(null);
-        renderThreads();
+        localStorage.removeItem(MEMBER_STORAGE_KEY);
+        render();
       });
 
-      window.addEventListener('storage', renderThreads);
+      window.addEventListener('storage', (event) => {
+        if (event.key === STORAGE_KEY || event.key === MEMBER_STORAGE_KEY) {
+          Object.assign(forumState, readState());
+          render();
+        }
+      });
+
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderThreads());
+        window.netlifyIdentity.on('login', () => render());
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem('theChosenCurrentMember');
-          renderMemberBadge(null);
-          renderThreads();
+          localStorage.removeItem(MEMBER_STORAGE_KEY);
+          render();
         });
       }
-      renderThreads();
+
+      render();
     </script>
   </body>
 </html>
