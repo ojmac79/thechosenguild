@@ -31,11 +31,17 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <div id="headerMember" class="site-header__member" hidden>
-              <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
-              <div>
-                <div id="headerMemberName" class="site-header__member-name"></div>
-                <div id="headerMemberEmail" class="site-header__member-email"></div>
+            <div id="headerMemberWrap" class="site-header__member-wrap" hidden>
+              <button id="headerMember" class="site-header__member" type="button" aria-expanded="false">
+                <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
+                <div>
+                  <div id="headerMemberName" class="site-header__member-name"></div>
+                  <div id="headerMemberEmail" class="site-header__member-email"></div>
+                </div>
+              </button>
+              <div id="headerMemberMenu" class="site-header__member-menu" hidden>
+                <button class="site-header__menu-button" type="button" id="headerAccountButton">Account Settings</button>
+                <button class="site-header__menu-button" type="button" id="headerLogoutButton">Log Out</button>
               </div>
             </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -102,10 +108,14 @@
 
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
+      const headerMemberWrap = document.getElementById('headerMemberWrap');
       const headerMember = document.getElementById('headerMember');
+      const headerMemberMenu = document.getElementById('headerMemberMenu');
       const headerMemberAvatar = document.getElementById('headerMemberAvatar');
       const headerMemberName = document.getElementById('headerMemberName');
       const headerMemberEmail = document.getElementById('headerMemberEmail');
+      const headerAccountButton = document.getElementById('headerAccountButton');
+      const headerLogoutButton = document.getElementById('headerLogoutButton');
 
       function getCurrentMember() {
         const stored = localStorage.getItem('theChosenCurrentMember');
@@ -134,7 +144,8 @@
 
       function renderMemberBadge(member) {
         if (!member) {
-          headerMember.hidden = true;
+          headerMemberWrap.hidden = true;
+          headerMemberMenu.hidden = true;
           return;
         }
 
@@ -142,13 +153,40 @@
         headerMemberAvatar.alt = `${member.name || member.email} avatar`;
         headerMemberName.textContent = member.name || member.email;
         headerMemberEmail.textContent = member.email || 'Netlify member';
-        headerMember.hidden = false;
+        headerMemberWrap.hidden = false;
       }
+
+      function toggleMemberMenu(force) {
+        const nextState = typeof force === 'boolean' ? force : headerMemberMenu.hidden;
+        headerMemberMenu.hidden = !nextState;
+        headerMember.setAttribute('aria-expanded', String(nextState));
+      }
+
+      headerMember.addEventListener('click', () => toggleMemberMenu());
+      headerAccountButton.addEventListener('click', () => {
+        window.location.href = '/login/';
+      });
+      headerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.logout();
+        }
+        localStorage.removeItem('theChosenCurrentMember');
+        renderMemberBadge(null);
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!headerMemberWrap.contains(event.target)) {
+          toggleMemberMenu(false);
+        }
+      });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => renderMemberBadge(getCurrentMember()));
-        window.netlifyIdentity.on('logout', () => renderMemberBadge(null));
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem('theChosenCurrentMember');
+          renderMemberBadge(null);
+        });
       }
       renderMemberBadge(getCurrentMember());
     </script>

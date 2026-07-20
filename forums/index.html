@@ -31,11 +31,17 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <div id="headerMember" class="site-header__member" hidden>
-              <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
-              <div>
-                <div id="headerMemberName" class="site-header__member-name"></div>
-                <div id="headerMemberEmail" class="site-header__member-email"></div>
+            <div id="headerMemberWrap" class="site-header__member-wrap" hidden>
+              <button id="headerMember" class="site-header__member" type="button" aria-expanded="false">
+                <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
+                <div>
+                  <div id="headerMemberName" class="site-header__member-name"></div>
+                  <div id="headerMemberEmail" class="site-header__member-email"></div>
+                </div>
+              </button>
+              <div id="headerMemberMenu" class="site-header__member-menu" hidden>
+                <button class="site-header__menu-button" type="button" id="headerAccountButton">Account Settings</button>
+                <button class="site-header__menu-button" type="button" id="headerLogoutButton">Log Out</button>
               </div>
             </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -71,10 +77,6 @@
               <span>Message</span>
               <textarea id="publicMessage" rows="4" placeholder="Write something for the public forum..." required></textarea>
             </label>
-            <label class="resource-field">
-              <span>Member Photo (optional)</span>
-              <input id="publicPhoto" type="file" accept="image/*" />
-            </label>
             <button class="btn-primary" type="submit">Post Publicly</button>
           </form>
 
@@ -100,6 +102,10 @@
             <label class="resource-field">
               <span>Message</span>
               <textarea id="memberMessage" rows="4" placeholder="Share a private update for the guild officers..." required></textarea>
+            </label>
+            <label class="resource-field">
+              <span>Member Photo (optional)</span>
+              <input id="memberPhoto" type="file" accept="image/*" />
             </label>
             <button class="btn-primary" type="submit">Post for Members</button>
           </form>
@@ -129,6 +135,7 @@
       const memberForm = document.getElementById('memberForm');
       const memberTitleInput = document.getElementById('memberTitle');
       const memberMessageInput = document.getElementById('memberMessage');
+      const memberPhotoInput = document.getElementById('memberPhoto');
 
       function readFileAsDataUrl(file) {
         return new Promise((resolve, reject) => {
@@ -143,14 +150,8 @@
         event.preventDefault();
         const title = document.getElementById('publicTitle').value.trim();
         const message = document.getElementById('publicMessage').value.trim();
-        const photoFile = document.getElementById('publicPhoto').files[0];
         if (!title || !message) {
           return;
-        }
-
-        let photoData = '';
-        if (photoFile) {
-          photoData = await readFileAsDataUrl(photoFile);
         }
 
         const currentMember = getCurrentMember();
@@ -160,7 +161,6 @@
           author: currentMember ? currentMember.name : 'Guest',
           avatar: currentMember ? currentMember.avatar || '' : '',
           body: message,
-          photo: photoData,
           replies: []
         });
 
@@ -168,10 +168,14 @@
         renderThreads();
       }
 
+      const headerMemberWrap = document.getElementById('headerMemberWrap');
       const headerMember = document.getElementById('headerMember');
+      const headerMemberMenu = document.getElementById('headerMemberMenu');
       const headerMemberAvatar = document.getElementById('headerMemberAvatar');
       const headerMemberName = document.getElementById('headerMemberName');
       const headerMemberEmail = document.getElementById('headerMemberEmail');
+      const headerAccountButton = document.getElementById('headerAccountButton');
+      const headerLogoutButton = document.getElementById('headerLogoutButton');
 
       function getCurrentMember() {
         const stored = localStorage.getItem('theChosenCurrentMember');
@@ -217,7 +221,8 @@
 
       function renderMemberBadge(member) {
         if (!member) {
-          headerMember.hidden = true;
+          headerMemberWrap.hidden = true;
+          headerMemberMenu.hidden = true;
           return;
         }
 
@@ -225,7 +230,13 @@
         headerMemberAvatar.alt = `${member.name || member.email} avatar`;
         headerMemberName.textContent = member.name || member.email;
         headerMemberEmail.textContent = member.email || 'Netlify member';
-        headerMember.hidden = false;
+        headerMemberWrap.hidden = false;
+      }
+
+      function toggleMemberMenu(force) {
+        const nextState = typeof force === 'boolean' ? force : headerMemberMenu.hidden;
+        headerMemberMenu.hidden = !nextState;
+        headerMember.setAttribute('aria-expanded', String(nextState));
       }
 
       function renderThreads() {
@@ -275,6 +286,7 @@
                 </div>
                 <span class="forum-badge forum-badge--member">Members</span>
               </div>
+              ${thread.photo ? `<img class="forum-thread__photo" src="${thread.photo}" alt="Member upload" />` : ''}
               <p class="forum-thread__body">${thread.body}</p>
             </article>
           `).join('');
@@ -300,12 +312,18 @@
           return;
         }
 
+        let photoData = '';
+        if (memberPhotoInput.files[0]) {
+          photoData = await readFileAsDataUrl(memberPhotoInput.files[0]);
+        }
+
         memberThreads.unshift({
           id: `member-${Date.now()}`,
           title,
           author: currentMember.name,
           avatar: currentMember.avatar || '',
-          body
+          body,
+          photo: photoData
         });
         writeMemberThreads(memberThreads);
         memberForm.reset();
@@ -315,11 +333,34 @@
       publicForm.addEventListener('submit', handlePublicPost);
       memberForm.addEventListener('submit', handleMemberPost);
 
+      headerMember.addEventListener('click', () => toggleMemberMenu());
+      headerAccountButton.addEventListener('click', () => {
+        window.location.href = '/login/';
+      });
+      headerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.logout();
+        }
+        localStorage.removeItem('theChosenCurrentMember');
+        renderMemberBadge(null);
+        renderThreads();
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!headerMemberWrap.contains(event.target)) {
+          toggleMemberMenu(false);
+        }
+      });
+
       window.addEventListener('storage', renderThreads);
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => renderThreads());
-        window.netlifyIdentity.on('logout', () => renderThreads());
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem('theChosenCurrentMember');
+          renderMemberBadge(null);
+          renderThreads();
+        });
       }
       renderThreads();
     </script>

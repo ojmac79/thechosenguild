@@ -31,11 +31,17 @@
             <a class="site-nav__link active" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
-            <div id="headerMember" class="site-header__member" hidden>
-              <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
-              <div>
-                <div id="headerMemberName" class="site-header__member-name"></div>
-                <div id="headerMemberEmail" class="site-header__member-email"></div>
+            <div id="headerMemberWrap" class="site-header__member-wrap" hidden>
+              <button id="headerMember" class="site-header__member" type="button" aria-expanded="false">
+                <img id="headerMemberAvatar" class="site-header__avatar" alt="Member avatar" />
+                <div>
+                  <div id="headerMemberName" class="site-header__member-name"></div>
+                  <div id="headerMemberEmail" class="site-header__member-email"></div>
+                </div>
+              </button>
+              <div id="headerMemberMenu" class="site-header__member-menu" hidden>
+                <button class="site-header__menu-button" type="button" id="headerAccountButton">Account Settings</button>
+                <button class="site-header__menu-button" type="button" id="headerLogoutButton">Log Out</button>
               </div>
             </div>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -95,10 +101,14 @@
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
       const resourceList = document.getElementById('resourceList');
       const resourceNotice = document.getElementById('resourceNotice');
+      const headerMemberWrap = document.getElementById('headerMemberWrap');
       const headerMember = document.getElementById('headerMember');
+      const headerMemberMenu = document.getElementById('headerMemberMenu');
       const headerMemberAvatar = document.getElementById('headerMemberAvatar');
       const headerMemberName = document.getElementById('headerMemberName');
       const headerMemberEmail = document.getElementById('headerMemberEmail');
+      const headerAccountButton = document.getElementById('headerAccountButton');
+      const headerLogoutButton = document.getElementById('headerLogoutButton');
 
       const defaultResources = [];
 
@@ -146,7 +156,8 @@
 
       function renderMemberBadge(member) {
         if (!member) {
-          headerMember.hidden = true;
+          headerMemberWrap.hidden = true;
+          headerMemberMenu.hidden = true;
           return;
         }
 
@@ -154,7 +165,13 @@
         headerMemberAvatar.alt = `${member.name || member.email} avatar`;
         headerMemberName.textContent = member.name || member.email;
         headerMemberEmail.textContent = member.email || 'Netlify member';
-        headerMember.hidden = false;
+        headerMemberWrap.hidden = false;
+      }
+
+      function toggleMemberMenu(force) {
+        const nextState = typeof force === 'boolean' ? force : headerMemberMenu.hidden;
+        headerMemberMenu.hidden = !nextState;
+        headerMember.setAttribute('aria-expanded', String(nextState));
       }
 
       function renderResources() {
@@ -217,8 +234,33 @@
         renderResources();
       });
 
+      headerMember.addEventListener('click', () => toggleMemberMenu());
+      headerAccountButton.addEventListener('click', () => {
+        window.location.href = '/login/';
+      });
+      headerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.logout();
+        }
+        localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
+        renderMemberBadge(null);
+        renderResources();
+      });
+
+      document.addEventListener('click', (event) => {
+        if (!headerMemberWrap.contains(event.target)) {
+          toggleMemberMenu(false);
+        }
+      });
+
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => renderResources());
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
+          renderMemberBadge(null);
+          renderResources();
+        });
       }
       renderResources();
     </script>
