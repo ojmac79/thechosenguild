@@ -320,17 +320,12 @@
             return `
               <li class="panel resource-item">
                 <div>
-                  <h3 class="resource-item__title">${escapeHtml(resource.name)}</h3>
+                  <h3 class="resource-item__title">
+                    <a class="resource-item__title-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">${escapeHtml(resource.name)}</a>
+                  </h3>
                   <p class="resource-item__desc">${escapeHtml(resource.description)}</p>
                 </div>
-                <div class="resource-item__side">
-                  <p class="resource-item__meta">Added by <strong>${escapeHtml(resource.addedBy)}</strong> • ${escapeHtml(resource.addedAt)}</p>
-                  <p class="resource-item__meta">Last edited by <strong>${escapeHtml(resource.editedBy)}</strong> • ${escapeHtml(resource.editedAt)}</p>
-                  <div class="resource-item__actions">
-                    <a class="resource-item__link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">Open</a>
-                    ${memberActions}
-                  </div>
-                </div>
+                ${memberActions ? `<div class="resource-item__side"><div class="resource-item__actions">${memberActions}</div></div>` : ''}
               </li>
             `;
           })
