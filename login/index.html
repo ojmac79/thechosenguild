@@ -54,6 +54,11 @@
             <button class="btn-torch" id="logoutButton" type="button" hidden>Log Out</button>
             <a class="auth-link" href="/">Return to Hall</a>
           </div>
+
+          <div id="forumRolePanel" class="panel" style="margin-top:1.5rem;text-align:left;" hidden>
+            <h2 style="margin:0 0 0.75rem;font-family:'Cinzel',serif;font-size:1.05rem;letter-spacing:0.04em;">Forum Role Config</h2>
+            <dl id="forumRoleList" style="margin:0;display:grid;gap:0.5rem;"></dl>
+          </div>
         </div>
       </main>
 
@@ -75,6 +80,7 @@
     </div>
 
     <script src="../../scripts/site-decor.js"></script>
+    <script src="../../scripts/forum-config.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const STORAGE_KEY = 'theChosenCurrentMember';
@@ -118,6 +124,38 @@
       const footerMemberEmail = document.getElementById('footerMemberEmail');
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
+      const forumRolePanel = document.getElementById('forumRolePanel');
+      const forumRoleList = document.getElementById('forumRoleList');
+
+      function renderForumRolePanel(visible) {
+        if (!visible) {
+          forumRolePanel.hidden = true;
+          return;
+        }
+        const raw = (window.THE_CHOSEN_FORUM_CONFIG || {}).roleConfig || {};
+        function normalizeList(v) {
+          return Array.isArray(v) ? v.map(String).filter(Boolean) : [];
+        }
+        const cfg = {
+          ownerEmails: normalizeList(raw.ownerEmails),
+          moderatorEmails: normalizeList(raw.moderatorEmails),
+          memberEmails: normalizeList(raw.memberEmails),
+          allowAllAuthenticatedMembers: raw.allowAllAuthenticatedMembers === true
+        };
+        const rows = [
+          { label: 'allowAllAuthenticatedMembers', value: String(cfg.allowAllAuthenticatedMembers) },
+          { label: 'ownerEmails', value: cfg.ownerEmails.length ? cfg.ownerEmails.join(', ') : '(none)' },
+          { label: 'moderatorEmails', value: cfg.moderatorEmails.length ? cfg.moderatorEmails.join(', ') : '(none)' },
+          { label: 'memberEmails', value: cfg.memberEmails.length ? cfg.memberEmails.join(', ') : '(none)' }
+        ];
+        forumRoleList.innerHTML = rows.map(({ label, value }) =>
+          `<div style="display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;border-bottom:1px solid rgba(255,123,123,0.14);padding-bottom:0.4rem;">` +
+          `<dt style="color:var(--muted);font-size:0.82rem;">${label}</dt>` +
+          `<dd style="margin:0;font-size:0.85rem;word-break:break-all;">${value}</dd>` +
+          `</div>`
+        ).join('');
+        forumRolePanel.hidden = false;
+      }
 
       function randomizeThumbnailCards() {
         const cards = Array.from(document.querySelectorAll('.thumbnail-card img'));
@@ -193,6 +231,7 @@
         clearMessage();
         if (!user) {
           renderMemberBadge(null);
+          renderForumRolePanel(false);
           gateTitle.textContent = 'Enter the Hall';
           gateIntro.textContent = 'Use your Netlify Identity account to enter the hall. Sign in or create an account from here.';
           loginButton.hidden = false;
@@ -203,6 +242,7 @@
 
         const member = saveCurrentMember(user);
         renderMemberBadge(member);
+        renderForumRolePanel(true);
         gateTitle.textContent = 'The Gate Is Open';
         gateIntro.textContent = `Welcome back, ${member.name}. Your Netlify session is active.`;
         loginButton.hidden = true;
