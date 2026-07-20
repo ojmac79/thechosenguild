@@ -31,6 +31,14 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <a
+              class="site-header__dashboard"
+              href="https://app.netlify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Netlify Dashboard
+            </a>
             <a class="btn-torch active" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -39,29 +47,217 @@
       <main class="page">
         <div class="panel gate">
           <p class="hero__eyebrow">Members Only</p>
-          <h1 class="page-title">Enter the Hall</h1>
-          <p>Only sworn members of The Chosen may pass beyond this gate.</p>
-          <div class="tab-row">
-            <button class="tab-btn active">Log In</button>
-            <button class="tab-btn">Join</button>
+          <h1 class="page-title" id="gateTitle">Enter the Hall</h1>
+          <p id="gateIntro">Only sworn members of The Chosen may pass beyond this gate.</p>
+
+          <div class="tab-row" role="tablist" aria-label="Member access mode">
+            <button class="tab-btn active" type="button" data-mode="login" aria-pressed="true">Log In</button>
+            <button class="tab-btn" type="button" data-mode="join" aria-pressed="false">Join</button>
           </div>
-          <form>
+
+          <div id="authMessage" class="auth-message" aria-live="polite"></div>
+
+          <form id="authForm" novalidate>
+            <div class="field" id="nameField" hidden>
+              <label for="memberName">Member Name</label>
+              <input id="memberName" name="memberName" type="text" placeholder="Your name in the guild" />
+            </div>
             <div class="field">
               <label for="email">Email</label>
-              <input id="email" type="email" placeholder="you@example.com" />
+              <input id="email" name="email" type="email" placeholder="you@example.com" required />
             </div>
             <div class="field">
               <label for="password">Password</label>
-              <input id="password" type="password" placeholder="••••••••" />
+              <input id="password" name="password" type="password" placeholder="••••••••" required />
             </div>
-            <button class="btn-primary" type="submit">Log In</button>
+            <div class="field" id="confirmField" hidden>
+              <label for="confirmPassword">Confirm Password</label>
+              <input id="confirmPassword" name="confirmPassword" type="password" placeholder="Repeat your password" />
+            </div>
+            <div class="auth-actions">
+              <button class="btn-primary" id="authSubmit" type="submit">Log In</button>
+              <a class="auth-link" href="/">Return to Hall</a>
+            </div>
           </form>
         </div>
       </main>
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
+
+    <script>
+      const STORAGE_KEYS = {
+        members: 'theChosenMembers',
+        current: 'theChosenCurrentMember'
+      };
+
+      const form = document.getElementById('authForm');
+      const messageBox = document.getElementById('authMessage');
+      const gateTitle = document.getElementById('gateTitle');
+      const gateIntro = document.getElementById('gateIntro');
+      const submitButton = document.getElementById('authSubmit');
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const nameField = document.getElementById('nameField');
+      const confirmField = document.getElementById('confirmField');
+      const memberNameInput = document.getElementById('memberName');
+      const emailInput = document.getElementById('email');
+      const passwordInput = document.getElementById('password');
+      const confirmPasswordInput = document.getElementById('confirmPassword');
+
+      let mode = 'login';
+
+      function setMode(nextMode) {
+        mode = nextMode;
+        const isJoin = mode === 'join';
+        nameField.hidden = !isJoin;
+        confirmField.hidden = !isJoin;
+        memberNameInput.required = isJoin;
+        confirmPasswordInput.required = isJoin;
+        submitButton.textContent = isJoin ? 'Create Account' : 'Log In';
+        gateTitle.textContent = isJoin ? 'Join the Hall' : 'Enter the Hall';
+        gateIntro.textContent = isJoin
+          ? 'Create your member account and claim your place among The Chosen.'
+          : 'Only sworn members of The Chosen may pass beyond this gate.';
+
+        tabButtons.forEach((button) => {
+          const active = button.dataset.mode === mode;
+          button.classList.toggle('active', active);
+          button.setAttribute('aria-pressed', String(active));
+        });
+
+        clearMessage();
+      }
+
+      function clearMessage() {
+        messageBox.textContent = '';
+        messageBox.className = 'auth-message';
+      }
+
+      function showMessage(text, type) {
+        messageBox.textContent = text;
+        messageBox.className = `auth-message auth-message--${type}`;
+      }
+
+      function readMembers() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEYS.members) || '[]');
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function writeMembers(members) {
+        localStorage.setItem(STORAGE_KEYS.members, JSON.stringify(members));
+      }
+
+      function saveCurrentMember(member) {
+        localStorage.setItem(STORAGE_KEYS.current, JSON.stringify(member));
+      }
+
+      function getCurrentMember() {
+        try {
+          return JSON.parse(localStorage.getItem(STORAGE_KEYS.current) || 'null');
+        } catch (error) {
+          return null;
+        }
+      }
+
+      function redirectToHall() {
+        window.setTimeout(() => {
+          window.location.href = '/';
+        }, 900);
+      }
+
+      form.addEventListener('submit', (event) => {
+        event.preventDefault();
+
+        const email = emailInput.value.trim();
+        const password = passwordInput.value;
+
+        if (!email || !password) {
+          showMessage('Please enter both your email and password.', 'error');
+          return;
+        }
+
+        if (mode === 'join') {
+          const memberName = memberNameInput.value.trim();
+          const confirmPassword = confirmPasswordInput.value;
+
+          if (!memberName) {
+            showMessage('Please enter your member name.', 'error');
+            return;
+          }
+
+          if (password.length < 6) {
+            showMessage('Choose a password with at least 6 characters.', 'error');
+            return;
+          }
+
+          if (password !== confirmPassword) {
+            showMessage('Passwords do not match. Please try again.', 'error');
+            return;
+          }
+
+          const members = readMembers();
+          const existingMember = members.find((member) => member.email.toLowerCase() === email.toLowerCase());
+
+          if (existingMember) {
+            showMessage('That email is already registered. Try logging in instead.', 'error');
+            return;
+          }
+
+          const newMember = {
+            id: Date.now().toString(36),
+            name: memberName,
+            email,
+            password
+          };
+
+          members.push(newMember);
+          writeMembers(members);
+          saveCurrentMember(newMember);
+          showMessage(`Welcome, ${newMember.name}. Your account is ready.`, 'success');
+          redirectToHall();
+          return;
+        }
+
+        const members = readMembers();
+        const member = members.find((entry) => entry.email.toLowerCase() === email.toLowerCase());
+
+        if (!member) {
+          showMessage('No member account was found for that email. Please join the hall first.', 'error');
+          return;
+        }
+
+        if (member.password !== password) {
+          showMessage('That password does not match the stored member record.', 'error');
+          return;
+        }
+
+        saveCurrentMember(member);
+        showMessage(`Welcome back, ${member.name}. The gate is opening.`, 'success');
+        redirectToHall();
+      });
+
+      tabButtons.forEach((button) => {
+        button.addEventListener('click', () => {
+          setMode(button.dataset.mode);
+        });
+      });
+
+      const currentMember = getCurrentMember();
+      if (currentMember) {
+        showMessage(`Welcome back, ${currentMember.name}.`, 'success');
+        submitButton.textContent = 'Continue';
+        submitButton.disabled = true;
+        gateTitle.textContent = 'The Gate Is Open';
+        gateIntro.textContent = 'Your member session is already active. You can return to the hall.';
+      } else {
+        setMode('login');
+      }
+    </script>
   </body>
 </html>

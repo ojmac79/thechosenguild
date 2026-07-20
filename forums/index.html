@@ -31,6 +31,14 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <a
+              class="site-header__dashboard"
+              href="https://app.netlify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Netlify Dashboard
+            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -43,50 +51,192 @@
           A place for strategy notes, raid plans, and spirited guild lore.
         </p>
 
+        <div class="thumbnail-strip" aria-label="EverQuest imagery">
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
+        </div>
+
         <section class="forum-section" aria-label="Public forum posts">
           <div class="forum-section__header">
             <h2 class="forum-section__title">Public Discussion</h2>
-            <button class="btn-torch" type="button">New Post</button>
+            <span class="forum-badge">Open to all</span>
           </div>
 
-          <form class="panel forum-form">
+          <form class="panel forum-form" id="publicForm">
             <label class="resource-field">
               <span>Post Title</span>
-              <input type="text" placeholder="Share a thought or update" />
+              <input id="publicTitle" type="text" placeholder="Share a thought or update" required />
             </label>
             <label class="resource-field">
               <span>Message</span>
-              <textarea rows="4" placeholder="Write something for the public forum..."></textarea>
+              <textarea id="publicMessage" rows="4" placeholder="Write something for the public forum..." required></textarea>
+            </label>
+            <label class="resource-field">
+              <span>Member Photo (optional)</span>
+              <input id="publicPhoto" type="file" accept="image/*" />
             </label>
             <button class="btn-primary" type="submit">Post Publicly</button>
           </form>
 
-          <ul class="resource-list">
-            <li class="panel resource-item">
-              <div>
-                <h3 class="resource-item__title">Welcome to the Hall</h3>
-                <p class="resource-item__desc">A public welcome thread for new visitors and guild friends.</p>
-              </div>
-              <div class="resource-item__side">
-                <p class="resource-item__meta">Posted by <strong>Guest</strong> • 1 hour ago</p>
-                <p class="resource-item__meta">Last edited by <strong>Guest</strong> • 10 mins ago</p>
-              </div>
-            </li>
-          </ul>
+          <div class="forum-thread-list" id="publicThreadList"></div>
         </section>
 
         <section class="forum-section forum-section--member" aria-label="Members-only forum area">
           <div class="forum-section__header">
             <h2 class="forum-section__title">Members Only</h2>
-            <button class="btn-torch" type="button">Private Post</button>
+            <span class="forum-badge forum-badge--member">Requires login</span>
           </div>
-          <div class="panel empty-state">Only sworn members may view or post in this restricted area.</div>
+
+          <div class="panel forum-gate" id="memberGate">
+            <p class="forum-gate__text">Sign in to unlock the private council chamber and reply to members-only threads.</p>
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+
+          <div class="forum-thread-list" id="memberThreadList" hidden></div>
         </section>
       </main>
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
+
+    <script>
+      const publicThreads = [
+        {
+          id: 'public-1',
+          title: 'Welcome to the Hall',
+          author: 'Guest',
+          body: 'A public welcome thread for new visitors and guild friends.',
+          replies: [
+            {
+              author: 'Kira',
+              body: 'Glad to be here. The guild feels welcoming already.'
+            }
+          ]
+        }
+      ];
+
+      const memberThreads = [
+        {
+          id: 'member-1',
+          title: 'Raid Prep for the Next Clear',
+          author: 'Officer Council',
+          body: 'A private planning thread for the next campaign and class assignments.',
+          replies: [
+            {
+              author: 'Murphy',
+              body: 'I can cover the support roster and keep the group moving.'
+            }
+          ]
+        }
+      ];
+
+      const publicForm = document.getElementById('publicForm');
+      const publicTitleInput = document.getElementById('publicTitle');
+      const publicMessageInput = document.getElementById('publicMessage');
+      const publicThreadList = document.getElementById('publicThreadList');
+      const memberGate = document.getElementById('memberGate');
+      const memberThreadList = document.getElementById('memberThreadList');
+
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = () => resolve(reader.result);
+          reader.onerror = reject;
+          reader.readAsDataURL(file);
+        });
+      }
+
+      async function handlePublicPost(event) {
+        event.preventDefault();
+        const title = document.getElementById('publicTitle').value.trim();
+        const message = document.getElementById('publicMessage').value.trim();
+        const photoFile = document.getElementById('publicPhoto').files[0];
+        if (!title || !message) {
+          return;
+        }
+
+        let photoData = '';
+        if (photoFile) {
+          photoData = await readFileAsDataUrl(photoFile);
+        }
+
+        publicThreads.unshift({
+          id: `public-${Date.now()}`,
+          title,
+          author: 'Guest',
+          body: message,
+          photo: photoData,
+          replies: []
+        });
+
+        publicForm.reset();
+        renderThreads();
+      }
+
+      function renderThreads() {
+        publicThreadList.innerHTML = publicThreads.map((thread) => `
+          <article class="panel forum-thread">
+            <div class="forum-thread__header">
+              <div>
+                <h3 class="forum-thread__title">${thread.title}</h3>
+                <p class="forum-thread__meta">Posted by <strong>${thread.author}</strong></p>
+              </div>
+              <span class="forum-badge">Public</span>
+            </div>
+            <div class="forum-thread__content">
+              ${thread.photo ? `<img class="forum-thread__photo" src="${thread.photo}" alt="Member upload" />` : ''}
+              <p class="forum-thread__body">${thread.body}</p>
+            </div>
+            <div class="forum-thread__replies">
+              ${thread.replies.map((reply) => `
+                <div class="forum-thread__reply">
+                  <p class="forum-thread__reply-author">${reply.author}</p>
+                  <p class="forum-thread__reply-body">${reply.body}</p>
+                </div>
+              `).join('')}
+            </div>
+          </article>
+        `).join('');
+
+        const currentMember = JSON.parse(localStorage.getItem('theChosenCurrentMember') || 'null');
+        if (currentMember) {
+          memberGate.hidden = true;
+          memberThreadList.hidden = false;
+          memberThreadList.innerHTML = memberThreads.map((thread) => `
+            <article class="panel forum-thread forum-thread--member">
+              <div class="forum-thread__header">
+                <div>
+                  <h3 class="forum-thread__title">${thread.title}</h3>
+                  <p class="forum-thread__meta">Posted by <strong>${thread.author}</strong></p>
+                </div>
+                <span class="forum-badge forum-badge--member">Members</span>
+              </div>
+              <p class="forum-thread__body">${thread.body}</p>
+              <div class="forum-thread__replies">
+                ${thread.replies.map((reply) => `
+                  <div class="forum-thread__reply">
+                    <p class="forum-thread__reply-author">${reply.author}</p>
+                    <p class="forum-thread__reply-body">${reply.body}</p>
+                  </div>
+                `).join('')}
+              </div>
+            </article>
+          `).join('');
+        } else {
+          memberGate.hidden = false;
+          memberThreadList.hidden = true;
+          memberThreadList.innerHTML = '';
+        }
+      }
+
+      publicForm.addEventListener('submit', handlePublicPost);
+
+      window.addEventListener('storage', renderThreads);
+      renderThreads();
+    </script>
   </body>
 </html>

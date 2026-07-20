@@ -31,6 +31,14 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <a
+              class="site-header__dashboard"
+              href="https://app.netlify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Netlify Dashboard
+            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -42,15 +50,44 @@
         <p class="page-subtitle">
           Where raid calls are made, loot is argued over, and memes flow freely.
         </p>
+        <div class="thumbnail-strip" aria-label="EverQuest imagery">
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
+        </div>
+
         <div class="panel discord-wrap">
+          <p class="discord-wrap__intro">
+            Step into the hall and join the live conversation with The Chosen.
+          </p>
           <div class="discord-frame">
             <iframe
               src="https://discord.com/widget?id=1525890254169440256&theme=dark"
-              width="500"
+              width="100%"
               height="500"
               title="The Chosen Discord Server"
               loading="lazy"
+              allowtransparency="true"
             ></iframe>
+          </div>
+          <div class="discord-embed">
+            <iframe
+              src="https://discord.com/widget/invite/id/1525890254169440256?theme=dark"
+              width="100%"
+              height="320"
+              title="Join The Chosen Discord Server"
+              loading="lazy"
+              allowtransparency="true"
+            ></iframe>
+          </div>
+          <div class="discord-members">
+            <h2 class="discord-members__title">Members Online</h2>
+            <ul class="discord-members__list">
+              <li>Murphy — Officer</li>
+              <li>Kira — Raid Lead</li>
+              <li>Rook — Scout</li>
+              <li>Lyra — Support</li>
+            </ul>
           </div>
           <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
             Join Our Discord
@@ -60,6 +97,7 @@
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
   </body>

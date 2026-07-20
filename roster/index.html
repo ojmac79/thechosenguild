@@ -31,6 +31,14 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <a
+              class="site-header__dashboard"
+              href="https://app.netlify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Netlify Dashboard
+            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
@@ -42,7 +50,13 @@
         <p class="page-subtitle">
           The heroes of The Chosen and the levels they have earned in Norrath.
         </p>
-        <div class="panel roster-table">
+        <div class="thumbnail-strip" aria-label="EverQuest imagery">
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
+        </div>
+
+        <div class="panel roster-table" id="rosterTable">
           <div class="roster-row roster-row--head">
             <span>Character</span>
             <span>Classes</span>
@@ -50,58 +64,55 @@
             <span>Player</span>
           </div>
           <div class="roster-row">
-            <span class="roster-cell__char">Murphy</span>
-            <span class="roster-cell__class">
-              <select class="roster-select">
-                <option>Shaman</option>
-                <option>Warrior</option>
-                <option>Ranger</option>
-                <option>Wizard</option>
-                <option>Paladin</option>
-                <option>Shadow Knight</option>
-                <option>Bard</option>
-                <option>Cleric</option>
-                <option>Druid</option>
-                <option>Monk</option>
-                <option>Rogue</option>
-              </select>
-              <select class="roster-select">
-                <option>—</option>
-                <option>Shaman</option>
-                <option>Warrior</option>
-                <option>Ranger</option>
-                <option>Wizard</option>
-                <option>Paladin</option>
-                <option>Shadow Knight</option>
-                <option>Bard</option>
-                <option>Cleric</option>
-                <option>Druid</option>
-                <option>Monk</option>
-                <option>Rogue</option>
-              </select>
-              <select class="roster-select">
-                <option>—</option>
-                <option>Shaman</option>
-                <option>Warrior</option>
-                <option>Ranger</option>
-                <option>Wizard</option>
-                <option>Paladin</option>
-                <option>Shadow Knight</option>
-                <option>Bard</option>
-                <option>Cleric</option>
-                <option>Druid</option>
-                <option>Monk</option>
-                <option>Rogue</option>
-              </select>
-            </span>
-            <span class="roster-cell__level">1</span>
-            <span class="roster-cell__player">Murphy</span>
+            <input class="roster-input roster-input--char" value="Murphy" aria-label="Character name" />
+            <input class="roster-input roster-input--class" value="Shaman, Warrior, Cleric" aria-label="Character classes" />
+            <input class="roster-input roster-input--level" value="60" aria-label="Character level" />
+            <input class="roster-input roster-input--player" value="Murphy" aria-label="Player name" />
+          </div>
+          <div class="roster-row">
+            <input class="roster-input roster-input--char" value="Kira" aria-label="Character name" />
+            <input class="roster-input roster-input--class" value="Bard, Enchanter" aria-label="Character classes" />
+            <input class="roster-input roster-input--level" value="58" aria-label="Character level" />
+            <input class="roster-input roster-input--player" value="Kira" aria-label="Player name" />
           </div>
         </div>
+
+        <div class="roster-access" id="rosterAccess">
+          <p class="roster-access__hint">Authorized members can edit roster details directly.</p>
+          <button class="btn-torch" type="button" id="rosterEditToggle">Enable Editing</button>
+        </div>
+
+        <script>
+          const rosterTable = document.getElementById('rosterTable');
+          const editToggle = document.getElementById('rosterEditToggle');
+          let editingEnabled = false;
+
+          function setEditing(enabled) {
+            editingEnabled = enabled;
+            rosterTable.querySelectorAll('input').forEach((input) => {
+              input.readOnly = !enabled;
+              input.classList.toggle('is-editable', enabled);
+            });
+            editToggle.textContent = enabled ? 'Editing Enabled' : 'Enable Editing';
+            editToggle.classList.toggle('is-active', enabled);
+          }
+
+          editToggle.addEventListener('click', () => {
+            const currentMember = JSON.parse(localStorage.getItem('theChosenCurrentMember') || 'null');
+            if (!currentMember) {
+              window.location.href = '/login/';
+              return;
+            }
+            setEditing(true);
+          });
+
+          setEditing(false);
+        </script>
       </main>
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
   </body>

@@ -35,12 +35,24 @@
             <a class="site-nav__link" href="/resources/">Resources</a>
           </nav>
           <div class="site-header__auth">
+            <a
+              class="site-header__dashboard"
+              href="https://app.netlify.com/"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Netlify Dashboard
+            </a>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
         </div>
       </header>
 
       <main class="page">
+        <div class="construction-banner" role="status" aria-label="Site under construction">
+          Site Under Construction
+        </div>
+
         <section class="hero">
           <p class="hero__eyebrow">The Guild Hall of Norrath</p>
           <h1 class="hero__title">The Chosen</h1>
@@ -71,6 +83,12 @@
 
         <div class="divider-rune" aria-hidden="true">✦</div>
 
+        <div class="thumbnail-strip" aria-label="EverQuest imagery">
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
+          <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
+        </div>
+
         <section class="news-section" aria-label="Guild news">
           <div class="news-section__header">
             <h2 class="news-section__title">Latest News</h2>
@@ -83,12 +101,15 @@
                 <p class="news-card__eyebrow">Announcement</p>
                 <h3 class="news-card__title">The Hall is Open</h3>
               </div>
-              <button class="news-card__edit" type="button">Edit</button>
+              <button class="news-card__edit" type="button" onclick="editNewsCard(this)">Edit</button>
             </div>
-            <p class="news-card__body">
-              The officer council has reopened the hall for a fresh season of raids,
-              planning, and guild fellowship.
-            </p>
+            <div class="news-card__content">
+              <img id="newsPhoto" class="news-card__photo" src="https://images.unsplash.com/photo-1493246507139-91e8fad9978e?auto=format&fit=crop&w=600&q=80" alt="Guild hall" />
+              <p class="news-card__body">
+                The officer council has reopened the hall for a fresh season of raids,
+                planning, and guild fellowship.
+              </p>
+            </div>
             <div class="news-card__meta-row">
               <p class="news-card__meta">Posted by <strong>Officer Council</strong> • 2 hours ago</p>
               <p class="news-card__meta">Last edited by <strong>Officer Council</strong> • 10 mins ago</p>
@@ -117,6 +138,7 @@
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
       </footer>
     </div>
 
@@ -129,6 +151,32 @@
         if (nextText && nextText.trim()) {
           tagline.textContent = nextText.trim();
         }
+      }
+
+      function editNewsCard(button) {
+        const card = button.closest('.news-card');
+        const body = card.querySelector('.news-card__body');
+        const currentText = body.textContent.trim();
+        const nextText = prompt('Update the news entry:', currentText);
+
+        if (nextText && nextText.trim()) {
+          body.textContent = nextText.trim();
+        }
+
+        const photoInput = document.createElement('input');
+        photoInput.type = 'file';
+        photoInput.accept = 'image/*';
+        photoInput.onchange = (event) => {
+          const file = event.target.files[0];
+          if (!file) return;
+          const reader = new FileReader();
+          reader.onload = () => {
+            const image = card.querySelector('.news-card__photo');
+            image.src = reader.result;
+          };
+          reader.readAsDataURL(file);
+        };
+        photoInput.click();
       }
     </script>
   </body>
