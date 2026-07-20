@@ -145,14 +145,17 @@
     </div>
 
     <script src="../../scripts/site-decor.js"></script>
+    <script src="../../scripts/forum-config.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const STORAGE_KEY = 'theChosenForumStateV2';
       const MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const rawForumConfig = window.THE_CHOSEN_FORUM_CONFIG || {};
+      const rawRoleConfig = rawForumConfig.roleConfig || {};
       const roleConfig = {
-        ownerEmails: ['ojmac79@gmail.com'],
-        moderatorEmails: [],
-        memberEmails: ['ojmac79@gmail.com']
+        ownerEmails: Array.isArray(rawRoleConfig.ownerEmails) ? rawRoleConfig.ownerEmails : ['ojmac79@gmail.com'],
+        moderatorEmails: Array.isArray(rawRoleConfig.moderatorEmails) ? rawRoleConfig.moderatorEmails : [],
+        memberEmails: Array.isArray(rawRoleConfig.memberEmails) ? rawRoleConfig.memberEmails : ['ojmac79@gmail.com']
       };
 
       const uiState = {
