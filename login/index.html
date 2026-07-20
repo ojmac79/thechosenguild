@@ -127,19 +127,37 @@
       const forumRolePanel = document.getElementById('forumRolePanel');
       const forumRoleList = document.getElementById('forumRoleList');
 
+      function normalizeConfigEmailList(v) {
+        return Array.isArray(v) ? v.map(String).filter(Boolean).map(function(s) { return s.trim().toLowerCase(); }) : [];
+      }
+
+      function makeEmailListElement(emails) {
+        if (!emails.length) {
+          const span = document.createElement('span');
+          span.textContent = '(none)';
+          return span;
+        }
+        const ul = document.createElement('ul');
+        ul.style.cssText = 'margin:0;padding:0 0 0 1.1rem;';
+        emails.forEach(function(email) {
+          const li = document.createElement('li');
+          li.style.cssText = 'word-break:break-all;';
+          li.textContent = email;
+          ul.appendChild(li);
+        });
+        return ul;
+      }
+
       function renderForumRolePanel(visible, userEmail) {
         if (!visible) {
           forumRolePanel.hidden = true;
           return;
         }
         const raw = (window.THE_CHOSEN_FORUM_CONFIG || {}).roleConfig || {};
-        function normalizeList(v) {
-          return Array.isArray(v) ? v.map(String).filter(Boolean).map(function(s) { return s.trim().toLowerCase(); }) : [];
-        }
         const cfg = {
-          ownerEmails: normalizeList(raw.ownerEmails),
-          moderatorEmails: normalizeList(raw.moderatorEmails),
-          memberEmails: normalizeList(raw.memberEmails),
+          ownerEmails: normalizeConfigEmailList(raw.ownerEmails),
+          moderatorEmails: normalizeConfigEmailList(raw.moderatorEmails),
+          memberEmails: normalizeConfigEmailList(raw.memberEmails),
           allowAllAuthenticatedMembers: raw.allowAllAuthenticatedMembers === true
         };
 
@@ -150,34 +168,17 @@
           return;
         }
 
-        function makeEmailList(emails) {
-          if (!emails.length) {
-            const span = document.createElement('span');
-            span.textContent = '(none)';
-            return span;
-          }
-          const ul = document.createElement('ul');
-          ul.style.cssText = 'margin:0;padding:0 0 0 1.1rem;';
-          emails.forEach(function(email) {
-            const li = document.createElement('li');
-            li.style.cssText = 'word-break:break-all;';
-            li.textContent = email;
-            ul.appendChild(li);
-          });
-          return ul;
-        }
-
         const rows = [
           { label: 'allowAllAuthenticatedMembers', node: null, text: String(cfg.allowAllAuthenticatedMembers) },
-          { label: 'ownerEmails', node: makeEmailList(cfg.ownerEmails), text: null },
-          { label: 'moderatorEmails', node: makeEmailList(cfg.moderatorEmails), text: null },
-          { label: 'memberEmails', node: makeEmailList(cfg.memberEmails), text: null }
+          { label: 'ownerEmails', node: makeEmailListElement(cfg.ownerEmails), text: null },
+          { label: 'moderatorEmails', node: makeEmailListElement(cfg.moderatorEmails), text: null },
+          { label: 'memberEmails', node: makeEmailListElement(cfg.memberEmails), text: null }
         ];
 
         forumRoleList.innerHTML = '';
         rows.forEach(function(row) {
           const wrap = document.createElement('div');
-          wrap.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;border-bottom:1px solid rgba(255,123,123,0.14);padding-bottom:0.4rem;';
+          wrap.style.cssText = 'display:grid;grid-template-columns:1fr 1fr;gap:0.5rem;border-bottom:1px solid var(--border);padding-bottom:0.4rem;';
           const dt = document.createElement('dt');
           dt.style.cssText = 'color:var(--muted);font-size:0.82rem;';
           dt.textContent = row.label;
