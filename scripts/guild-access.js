@@ -163,7 +163,8 @@
     const isDataUrl = raw.startsWith('data:image/');
     if (isDataUrl) {
       // Validate that the data URL has an allowed image MIME type.
-      const allowedImageTypes = ['data:image/jpeg', 'data:image/png', 'data:image/gif', 'data:image/webp', 'data:image/svg+xml'];
+      // SVG is intentionally excluded because SVG data URLs can embed scripts (XSS risk).
+      const allowedImageTypes = ['data:image/jpeg', 'data:image/png', 'data:image/gif', 'data:image/webp'];
       const hasAllowedType = allowedImageTypes.some((prefix) => raw.startsWith(prefix + ',') || raw.startsWith(prefix + ';'));
       if (!hasAllowedType) {
         return false;

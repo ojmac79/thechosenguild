@@ -201,7 +201,7 @@
        * The image is cropped to a square (centre-crop) then scaled to AVATAR_SIZE.
        */
       const AVATAR_SIZE = 128;
-      const AVATAR_JPEG_QUALITY = 0.85; // Good visual quality at a compact file size.
+      const AVATAR_JPEG_QUALITY = 0.85; // Good visual quality; a 128x128 JPEG at this quality is typically under 20KB.
       function resizeImageToDataUrl(img) {
         const canvas = document.createElement('canvas');
         canvas.width = AVATAR_SIZE;
@@ -210,8 +210,9 @@
         const srcW = img.naturalWidth;
         const srcH = img.naturalHeight;
         const side = Math.min(srcW, srcH);
-        const sx = Math.round((srcW - side) / 2);
-        const sy = Math.round((srcH - side) / 2);
+        // Use Math.floor for predictable top-left-relative centre-crop positioning.
+        const sx = Math.floor((srcW - side) / 2);
+        const sy = Math.floor((srcH - side) / 2);
         ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
         return canvas.toDataURL('image/jpeg', AVATAR_JPEG_QUALITY);
       }
