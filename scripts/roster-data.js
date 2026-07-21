@@ -27,31 +27,86 @@
     return `https://census.daybreakgames.com/${getServiceId()}/json/get/${collection}?${query}`;
   }
 
+  function buildQuery(params) {
+    return new URLSearchParams(params).toString();
+  }
+
   function buildSourceAttempts() {
+    const guildLower = GUILD_NAME.toLowerCase();
+    const eq2GuildMemberBase = {
+      'guild.world.name': WORLD_NAME,
+      'c:limit': '500',
+      'c:resolve': 'character'
+    };
+    const eq2CharacterBase = {
+      'guild.world.name': WORLD_NAME,
+      'c:limit': '500'
+    };
+    const guildBase = {
+      'world.name': WORLD_NAME,
+      'c:limit': '10'
+    };
+
     return Object.freeze([
       {
         label: 'EQ2 guild members',
-        url: buildCensusUrl('eq2/guild_member', 'guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500&c:resolve=character')
+        url: buildCensusUrl(
+          'eq2/guild_member',
+          buildQuery({
+            'guild.name.lower': guildLower,
+            ...eq2GuildMemberBase
+          })
+        )
       },
       {
         label: 'EQ2 guild members (name fallback)',
-        url: buildCensusUrl('eq2/guild_member', 'guild.name=The%20Chosen&guild.world.name=Qeynos&c:limit=500&c:resolve=character')
+        url: buildCensusUrl(
+          'eq2/guild_member',
+          buildQuery({
+            'guild.name': GUILD_NAME,
+            ...eq2GuildMemberBase
+          })
+        )
       },
       {
         label: 'EQ2 guild characters',
-        url: buildCensusUrl('eq2/character', 'guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500')
+        url: buildCensusUrl(
+          'eq2/character',
+          buildQuery({
+            'guild.name.lower': guildLower,
+            ...eq2CharacterBase
+          })
+        )
       },
       {
         label: 'EQ2 guild details',
-        url: buildCensusUrl('eq2/guild', 'name.lower=the%20chosen&world.name=Qeynos&c:limit=10')
+        url: buildCensusUrl(
+          'eq2/guild',
+          buildQuery({
+            'name.lower': guildLower,
+            ...guildBase
+          })
+        )
       },
       {
         label: 'EQL guild details',
-        url: buildCensusUrl('eql:guild', 'name.lower=the%20chosen&world.name=Qeynos&c:limit=10')
+        url: buildCensusUrl(
+          'eql:guild',
+          buildQuery({
+            'name.lower': guildLower,
+            ...guildBase
+          })
+        )
       },
       {
         label: 'EQ Legends guild details',
-        url: buildCensusUrl('eq_legends:guild', 'name.lower=the%20chosen&world.name=Qeynos&c:limit=10')
+        url: buildCensusUrl(
+          'eq_legends:guild',
+          buildQuery({
+            'name.lower': guildLower,
+            ...guildBase
+          })
+        )
       }
     ]);
   }
