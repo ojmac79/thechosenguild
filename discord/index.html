@@ -12,71 +12,49 @@
     />
     <link rel="stylesheet" href="../../styles.css" />
     <style>
-      .discord-hero {
+      .discord-page {
         display: flex;
         flex-direction: column;
         align-items: center;
+        padding: 2rem 1rem 3rem;
         gap: 1.5rem;
-        padding: 3rem 1.5rem 2rem;
+      }
+      .discord-page__header {
         text-align: center;
       }
-      .discord-hero__icon {
-        font-size: 4rem;
-        line-height: 1;
-        filter: drop-shadow(0 0 18px rgba(88, 101, 242, 0.6));
+      .discord-page__header .hero__eyebrow {
+        margin-bottom: 0.4rem;
       }
-      .discord-features {
-        display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.25rem;
-        margin: 2rem 0;
-        width: 100%;
-        max-width: 760px;
+      .discord-page__header .page-title {
+        margin: 0 0 0.5rem;
       }
-      .discord-feature {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 215, 0, 0.15);
-        border-radius: 8px;
-        padding: 1.25rem 1rem;
-        text-align: center;
+      .discord-page__header .page-subtitle {
+        margin: 0;
+        max-width: 560px;
       }
-      .discord-feature__icon {
-        font-size: 1.75rem;
-        display: block;
-        margin-bottom: 0.5rem;
-      }
-      .discord-feature__title {
-        font-family: 'Cinzel', serif;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #ffd700;
-        margin-bottom: 0.35rem;
-        letter-spacing: 0.05em;
-      }
-      .discord-feature__desc {
-        font-size: 0.82rem;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.5;
-      }
-      .discord-cta {
+      .discord-page__actions {
         display: flex;
-        flex-wrap: wrap;
         gap: 1rem;
+        flex-wrap: wrap;
         justify-content: center;
-        margin-top: 1rem;
       }
-      .discord-embed-wrap {
+      .discord-embed {
         width: 100%;
-        max-width: 820px;
-        margin: 2rem auto 0;
+        max-width: 900px;
         border: 1px solid rgba(255, 215, 0, 0.2);
         border-radius: 10px;
         overflow: hidden;
-        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+        box-shadow: 0 6px 40px rgba(0, 0, 0, 0.6);
       }
-      .discord-embed-wrap widgetbot {
+      .discord-embed widgetbot {
         display: block;
         width: 100%;
+        height: 700px;
+      }
+      @media (max-width: 600px) {
+        .discord-embed widgetbot {
+          height: 500px;
+        }
       }
     </style>
   </head>
@@ -109,42 +87,22 @@
       </header>
 
       <main class="page">
-        <div class="discord-hero">
-          <div class="discord-hero__icon" aria-hidden="true">🎙️</div>
-          <p class="hero__eyebrow">Voice of the Guild</p>
-          <h1 class="page-title">Join Us on Discord</h1>
-          <p class="page-subtitle">
-            The Chosen guild lives and breathes in our Discord server — raid
-            planning, lore debates, real-time callouts, and the occasional
-            late-night Norrath story. Browse the live server below or hit the
-            button to join permanently.
-          </p>
-
-          <div class="discord-features">
-            <div class="discord-feature">
-              <span class="discord-feature__icon" aria-hidden="true">⚔️</span>
-              <div class="discord-feature__title">Raid Coordination</div>
-              <div class="discord-feature__desc">Strategy threads, sign-ups, and live voice during progression nights.</div>
-            </div>
-            <div class="discord-feature">
-              <span class="discord-feature__icon" aria-hidden="true">📢</span>
-              <div class="discord-feature__title">Guild Announcements</div>
-              <div class="discord-feature__desc">Officer posts, patch notes, and event scheduling in one place.</div>
-            </div>
-            <div class="discord-feature">
-              <span class="discord-feature__icon" aria-hidden="true">🏰</span>
-              <div class="discord-feature__title">Community Channels</div>
-              <div class="discord-feature__desc">Class discussion, crafting tips, off-topic banter, and more.</div>
-            </div>
+        <div class="discord-page">
+          <div class="discord-page__header">
+            <p class="hero__eyebrow">Voice of the Guild</p>
+            <h1 class="page-title">The Chosen Discord</h1>
+            <p class="page-subtitle">
+              Chat, coordinate raids, and hang out with the guild — live, right here on the site.
+            </p>
           </div>
 
-          <div class="discord-cta">
+          <div class="discord-page__actions">
             <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
               Join Our Discord
             </a>
           </div>
 
-          <div class="discord-embed-wrap">
+          <div class="discord-embed">
             <widgetbot
               server="1525890254169440256"
               width="800"
@@ -172,7 +130,6 @@
       </footer>
     </div>
 
-    <!-- WidgetBot HTML embed — inline Discord server panel -->
     <script src="https://cdn.jsdelivr.net/npm/@widgetbot/html-embed"></script>
 
     <script src="../../scripts/site-decor.js"></script>
