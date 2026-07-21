@@ -479,7 +479,7 @@
           statusEditableTargets.forEach((element, index) => {
             const next = saved[index];
             if (typeof next === 'string') {
-              element.innerHTML = next;
+              element.textContent = next;
             }
           });
         } catch {
@@ -490,7 +490,7 @@
       function saveStatusContent() {
         const saved = {};
         statusEditableTargets.forEach((element, index) => {
-          saved[index] = element.innerHTML;
+          saved[index] = element.textContent;
         });
         localStorage.setItem(STATUS_CONTENT_STORAGE_KEY, JSON.stringify(saved));
       }

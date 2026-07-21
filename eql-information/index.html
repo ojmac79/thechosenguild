@@ -591,9 +591,6 @@
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
         setFormAccess(currentMember);
-        if (window.TheChosenApp && typeof window.TheChosenApp.updateEqlContentEditAccess === 'function') {
-          window.TheChosenApp.updateEqlContentEditAccess();
-        }
         const resources = readResources();
 
         if (!resources.length) {
@@ -756,11 +753,19 @@
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderResources());
+        window.netlifyIdentity.on('login', () => {
+          renderResources();
+          if (window.TheChosenApp && typeof window.TheChosenApp.updateEqlContentEditAccess === 'function') {
+            window.TheChosenApp.updateEqlContentEditAccess();
+          }
+        });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
           renderMemberBadge(null);
           renderResources();
+          if (window.TheChosenApp && typeof window.TheChosenApp.updateEqlContentEditAccess === 'function') {
+            window.TheChosenApp.updateEqlContentEditAccess();
+          }
         });
       }
       randomizeThumbnailCards();

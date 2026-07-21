@@ -1455,7 +1455,7 @@
       function saveLoreContent() {
         const saved = {};
         loreEditableTargets.forEach((element, index) => {
-          saved[index] = element.innerHTML;
+          saved[index] = element.textContent;
         });
         localStorage.setItem(LORE_CONTENT_STORAGE_KEY, JSON.stringify(saved));
       }
@@ -1469,7 +1469,7 @@
           loreEditableTargets.forEach((element, index) => {
             const next = saved[index];
             if (typeof next === 'string') {
-              element.innerHTML = next;
+              element.textContent = next;
             }
           });
         } catch {
@@ -1585,7 +1585,7 @@
           saveLoreImages();
         }
         loreEditNotice.textContent = loreEditingEnabled
-          ? 'Lore editing is enabled for this session. Click any image to replace it.'
+          ? 'Lore editing is enabled for this session. Click any image to replace it (large uploads may exceed browser storage limits).'
           : 'Lore editing is disabled.';
       });
 
@@ -1620,7 +1620,7 @@
           return;
         }
         if (file.size > MAX_LORE_IMAGE_SIZE_BYTES) {
-          loreEditNotice.textContent = 'Image is too large. Please choose one under 500 KB.';
+          loreEditNotice.textContent = `Image is too large. Please choose one under ${Math.floor(MAX_LORE_IMAGE_SIZE_BYTES / 1024)} KB.`;
           pendingLoreImageTarget = null;
           loreImageUploadInput.value = '';
           return;
