@@ -418,7 +418,7 @@
         }
       }
 
-      function buildReplyEl(reply, spaceKey, role, replyMap) {
+      function buildReplyEl(reply, spaceKey, role, childrenMap) {
         const replyEl = document.createElement('div');
         replyEl.className = 'forum-thread__reply';
 
@@ -469,12 +469,12 @@
           replyEl.appendChild(actions);
         }
 
-        const children = [...replyMap.values()].filter((r) => r.parentReplyId === reply.id);
+        const children = (childrenMap.get(reply.id) || []).slice().sort((a, b) => a.createdAt - b.createdAt);
         if (children.length) {
           const childrenEl = document.createElement('div');
           childrenEl.className = 'forum-thread__reply-children';
-          children.sort((a, b) => a.createdAt - b.createdAt).forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, spaceKey, role, replyMap));
+          children.forEach((child) => {
+            childrenEl.appendChild(buildReplyEl(child, spaceKey, role, childrenMap));
           });
           replyEl.appendChild(childrenEl);
         }
@@ -563,6 +563,18 @@
         const categoryMap = new Map(forumState[spaceKey].categories.map((category) => [category.id, category]));
         const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
 
+        // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
+        const replyCountByThread = new Map();
+        const childrenMap = new Map();
+        forumState[spaceKey].replies.forEach((reply) => {
+          replyCountByThread.set(reply.threadId, (replyCountByThread.get(reply.threadId) || 0) + 1);
+          if (reply.parentReplyId) {
+            const siblings = childrenMap.get(reply.parentReplyId) || [];
+            siblings.push(reply);
+            childrenMap.set(reply.parentReplyId, siblings);
+          }
+        });
+
         const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
           return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
         });
@@ -595,7 +607,7 @@
           meta.className = 'forum-thread__meta';
           const categoryName = categoryMap.get(thread.categoryId)?.name || forumState[spaceKey].categories[0].name;
           const postedOn = new Date(thread.createdAt).toLocaleString();
-          const totalReplyCount = forumState[spaceKey].replies.filter((reply) => reply.threadId === thread.id).length;
+          const totalReplyCount = replyCountByThread.get(thread.id) || 0;
           const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
           meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn} • ${replyLabel}`;
 
@@ -677,13 +689,13 @@
             const repliesContainer = document.createElement('div');
             repliesContainer.className = 'forum-thread__replies';
             topLevelReplies.forEach((reply) => {
-              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, role, replyMap));
+              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, role, childrenMap));
             });
             article.appendChild(repliesContainer);
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          const canReply = spaceKey === 'public' ? !!member : !!privateAccess;
+          const canReply = spaceKey === 'public' ? !!member : (!!member && !!privateAccess);
           if (canReply && !thread.isLocked) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
 
@@ -915,7 +927,7 @@
           threadId,
           parentReplyId: parentReplyId || null,
           body: trimmedBody,
-          authorName: member.name || member.email,
+          authorName: member.name || member.email || 'Guest Adventurer',
           authorEmail: member.email,
           authorAvatar: member.avatar || '',
           createdAt: Date.now()
