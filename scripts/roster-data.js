@@ -53,10 +53,6 @@
     return String(value || '').trim().toLowerCase();
   }
 
-  function escapeRegex(value) {
-    return String(value || '').replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  }
-
   function titleCase(value) {
     return String(value || '')
       .replace(/[_-]+/g, ' ')
@@ -297,7 +293,11 @@
     const assignedMemberName = String(input && input.assignedMemberName ? input.assignedMemberName : '').trim();
 
     return {
-      id: String(input && input.id ? input.id : extractCharacterId(input || {}, name) || `roster-${Date.now()}`),
+      id: String(
+        input && input.id
+          ? input.id
+          : extractCharacterId(input || {}, name) || `roster-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+      ),
       characterId: String(input && input.characterId ? input.characterId : extractCharacterId(input || {}, name) || ''),
       characterName: name,
       firstName: nameParts.firstName,

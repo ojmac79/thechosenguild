@@ -419,7 +419,8 @@
           setNotice(rosterAssignmentNotice, 'That character could not be identified for assignment.', 'error');
           return;
         }
-        const select = rosterList.querySelector(`[data-assignment-select="${CSS.escape(entryId)}"]`);
+        const card = (saveButton || clearButton).closest('[data-entry-id]');
+        const select = card ? card.querySelector('[data-assignment-select]') : null;
         const email = clearButton ? '' : (select ? select.value : '');
         const updated = rosterData.assignCharacter(entryId, email);
         if (!updated) {
@@ -474,7 +475,7 @@
       let rosterPollTimer = null;
 
       renderRoster();
-      if (rosterData.needsSync(rosterData.readSnapshot())) {
+      if (rosterData.needsSync()) {
         syncRoster(false);
       }
       rosterPollTimer = window.setInterval(() => {
