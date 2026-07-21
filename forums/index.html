@@ -767,6 +767,18 @@
         }
       }
 
+      async function refreshMembershipAndRender(options = {}) {
+        try {
+          await guildAccess.initialize({ force: Boolean(options.force) });
+        } catch (error) {
+          const publicAuthNote = document.getElementById('publicAuthNote');
+          if (publicAuthNote) {
+            publicAuthNote.textContent = error.message || 'Unable to verify your forum access right now.';
+          }
+        }
+        render();
+      }
+
       function addCategory(spaceKey, name, description) {
         const trimmedName = String(name || '').trim();
         const trimmedDescription = String(description || '').trim();
@@ -1068,8 +1080,8 @@
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-        render();
+        guildAccess.clearCurrentMember();
+        void refreshMembershipAndRender({ force: true });
       });
 
       window.addEventListener('storage', (event) => {
@@ -1081,23 +1093,30 @@
           const latestState = readState();
           forumState.public = latestState.public;
           forumState.private = latestState.private;
-          render();
+          void refreshMembershipAndRender({
+            force: event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY
+          });
         }
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => {
-          guildAccess.ensureMemberRecord(getCurrentMember());
-          render();
+          void guildAccess.ensureMemberRecord(getCurrentMember()).finally(() => {
+            void refreshMembershipAndRender({ force: true });
+          });
         });
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-          render();
+          guildAccess.clearCurrentMember();
+          void refreshMembershipAndRender({ force: true });
         });
       }
 
-      render();
+      window.addEventListener(guildAccess.MEMBERSHIP_EVENT_NAME, () => {
+        render();
+      });
+
+      void refreshMembershipAndRender({ force: true });
     </script>
   </body>
 </html>

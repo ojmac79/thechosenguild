@@ -105,9 +105,9 @@
     document.body.appendChild(container);
   }
 
-  function injectOwnerNavigation() {
+  async function injectOwnerNavigation() {
     const nav = document.querySelector('.site-nav');
-    if (!nav || nav.querySelector('[data-guild-management-link]')) {
+    if (!nav) {
       return;
     }
 
@@ -116,33 +116,23 @@
       return;
     }
 
-    const storedMember = window.localStorage.getItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-    if (!storedMember) {
+    try {
+      await guildAccess.initialize();
+    } catch (error) {
+      // Ignore membership bootstrap failures for decorative nav.
+    }
+
+    const member = guildAccess.getCurrentMember();
+    const permissions = guildAccess.getPermissions(member);
+    const existingLink = nav.querySelector('[data-guild-management-link]');
+    if (!permissions.canManageGuild) {
+      if (existingLink) {
+        existingLink.remove();
+      }
       return;
     }
 
-    let parsedMember = null;
-    let parsedDirectory = null;
-    try {
-      parsedMember = JSON.parse(storedMember);
-    } catch (error) {
-      parsedMember = null;
-    }
-
-    const email = String(parsedMember && parsedMember.email ? parsedMember.email : '').trim().toLowerCase();
-    if (!email) {
-      return;
-    }
-
-    try {
-      parsedDirectory = JSON.parse(window.localStorage.getItem(guildAccess.DIRECTORY_STORAGE_KEY) || 'null');
-    } catch (error) {
-      parsedDirectory = null;
-    }
-
-    const members = Array.isArray(parsedDirectory && parsedDirectory.members) ? parsedDirectory.members : [];
-    const matchingRecord = members.find((member) => String(member && member.email ? member.email : '').trim().toLowerCase() === email);
-    if (!matchingRecord || !matchingRecord.access || matchingRecord.access.management !== true) {
+    if (existingLink) {
       return;
     }
 
@@ -159,7 +149,13 @@
 
   window.addEventListener("DOMContentLoaded", () => {
     placeRelics();
-    injectOwnerNavigation();
+    void injectOwnerNavigation();
+    const guildAccess = window.TheChosenGuildAccess;
+    if (guildAccess && guildAccess.MEMBERSHIP_EVENT_NAME) {
+      window.addEventListener(guildAccess.MEMBERSHIP_EVENT_NAME, () => {
+        void injectOwnerNavigation();
+      });
+    }
   });
   window.addEventListener("resize", () => {
     window.clearTimeout(window.__chosenRelicResizeTimer);

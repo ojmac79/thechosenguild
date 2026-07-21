@@ -190,7 +190,6 @@
           return;
         }
 
-        guildAccess.ensureMemberRecord(member);
         const permissions = guildAccess.getPermissions(member);
         const record = permissions.record;
         const links = [];
@@ -223,9 +222,14 @@
         updateView(null);
       });
 
-      function updateView(user) {
+      async function updateView(user) {
         clearMessage();
         if (!user) {
+          try {
+            await guildAccess.initialize({ force: true });
+          } catch (error) {
+            // Ignore guest bootstrap failures.
+          }
           renderMemberBadge(null);
           gateTitle.textContent = 'Enter the Hall';
           gateIntro.textContent = 'Use your Netlify Identity account to enter the hall. Sign in or create an account from here.';
@@ -237,7 +241,11 @@
         }
 
         const member = saveCurrentMember(user);
-        guildAccess.ensureMemberRecord(member);
+        try {
+          await guildAccess.ensureMemberRecord(member);
+        } catch (error) {
+          showMessage(error.message || 'Unable to load your guild access right now.', 'error');
+        }
         renderMemberBadge(member);
         gateTitle.textContent = 'The Gate Is Open';
         gateIntro.textContent = `Welcome back, ${member.name}. Your Netlify session is active.`;
@@ -250,16 +258,18 @@
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('init', updateView);
+        window.netlifyIdentity.on('init', (user) => {
+          void updateView(user);
+        });
         window.netlifyIdentity.on('login', (user) => {
-          updateView(user);
+          void updateView(user);
           window.setTimeout(() => {
             window.location.href = '/';
           }, 800);
         });
         window.netlifyIdentity.on('logout', () => {
           clearCurrentMember();
-          updateView(null);
+          void updateView(null);
         });
 
         loginButton.addEventListener('click', () => {
@@ -274,6 +284,10 @@
       } else {
         showMessage('Netlify Identity is not available on this page.', 'error');
       }
+
+      window.addEventListener(guildAccess.MEMBERSHIP_EVENT_NAME, () => {
+        renderAccessSummary(guildAccess.getCurrentMember());
+      });
     </script>
   </body>
 </html>

@@ -3,7 +3,6 @@
   const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
   const OWNER_EMAIL = 'ojmac79@gmail.com';
   const ACTIVE_STATUSES = new Set(['active', 'probation']);
-  const MEMBER_ACTIVITY_REFRESH_MS = 5 * 60 * 1000;
   const LEVEL_ORDER = Object.freeze({
     leader: 0,
     officer: 1,
@@ -11,7 +10,18 @@
     applicant: 3,
     retired: 4
   });
+  const MEMBERSHIP_API_ENDPOINT = '/.netlify/functions/guild-membership';
+  const MEMBERSHIP_EVENT_NAME = 'thechosenguild:membershipchange';
   let fallbackIdCounter = 0;
+  let cachedDirectory = null;
+  let cachedSelfContext = {
+    authenticated: false,
+    member: null,
+    record: null,
+    permissions: buildPermissions(null, null, false)
+  };
+  let initializationPromise = null;
+  let hasLoadedDirectoryFromServer = false;
 
   function nowIso() {
     return new Date().toISOString();
@@ -131,6 +141,31 @@
     return normalized;
   }
 
+  function normalizeDirectory(directory) {
+    const parsed = directory && typeof directory === 'object' ? directory : {};
+    const sourceMembers = Array.isArray(parsed.members) ? parsed.members : [];
+    const seen = new Set();
+    const members = sourceMembers
+      .map(normalizeRecord)
+      .filter((record) => {
+        if (!record || seen.has(record.email)) {
+          return false;
+        }
+        seen.add(record.email);
+        return true;
+      });
+
+    if (!seen.has(OWNER_EMAIL)) {
+      members.unshift(defaultRecord(OWNER_EMAIL));
+    }
+
+    return {
+      version: 1,
+      updatedAt: typeof parsed.updatedAt === 'string' ? parsed.updatedAt : nowIso(),
+      members
+    };
+  }
+
   function sanitizeMember(user) {
     if (!user || !user.email) {
       return null;
@@ -152,6 +187,26 @@
         (user.user_metadata && user.user_metadata.avatar_url) || user.avatar_url || user.avatar || '',
         500
       )
+    };
+  }
+
+  function buildPermissions(member, record, authenticated) {
+    const email = normalizeEmail(member && member.email);
+    const isOwner = Boolean(authenticated && record && record.email === OWNER_EMAIL);
+    const status = record ? record.status : authenticated ? 'pending' : 'guest';
+    const statusAllowsAccess = Boolean(record && (ACTIVE_STATUSES.has(status) || isOwner));
+
+    return {
+      isSignedIn: Boolean(authenticated && member && email),
+      isOwner,
+      record,
+      level: record ? record.level : 'guest',
+      title: record ? record.title : 'Visitor',
+      status,
+      canUseForums: Boolean(record && record.access.forums && statusAllowsAccess),
+      canUseRoster: Boolean(record && record.access.roster && statusAllowsAccess),
+      canModerateForums: Boolean(record && record.access.moderateForums && statusAllowsAccess),
+      canManageGuild: Boolean(record && record.access.management && statusAllowsAccess)
     };
   }
 
@@ -184,118 +239,121 @@
     return sanitized;
   }
 
-  function readDirectory() {
-    let parsed = null;
-    try {
-      parsed = JSON.parse(localStorage.getItem(DIRECTORY_STORAGE_KEY) || 'null');
-    } catch (error) {
-      parsed = null;
-    }
-
-    const sourceMembers = Array.isArray(parsed && parsed.members) ? parsed.members : [];
-    const seen = new Set();
-    const members = sourceMembers
-      .map(normalizeRecord)
-      .filter((record) => {
-        if (!record || seen.has(record.email)) {
-          return false;
-        }
-        seen.add(record.email);
-        return true;
-      });
-
-    if (!seen.has(OWNER_EMAIL)) {
-      members.unshift(defaultRecord(OWNER_EMAIL));
-    }
-
-    return {
-      version: 1,
-      updatedAt: typeof (parsed && parsed.updatedAt) === 'string' ? parsed.updatedAt : nowIso(),
-      members
-    };
+  function clearCurrentMember() {
+    localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
   }
 
-  function writeDirectory(directory) {
-    const normalizedMembers = Array.isArray(directory && directory.members)
-      ? directory.members.map(normalizeRecord).filter(Boolean)
-      : [];
+  function readCachedDirectoryStorage() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(DIRECTORY_STORAGE_KEY) || 'null');
+      return normalizeDirectory(parsed);
+    } catch (error) {
+      return normalizeDirectory(null);
+    }
+  }
 
-    const seen = new Set();
-    const dedupedMembers = normalizedMembers.filter((record) => {
-      if (seen.has(record.email)) {
-        return false;
+  function persistDirectory(directory) {
+    const normalized = normalizeDirectory(directory);
+    cachedDirectory = normalized;
+    hasLoadedDirectoryFromServer = true;
+    localStorage.setItem(DIRECTORY_STORAGE_KEY, JSON.stringify(normalized));
+    dispatchMembershipChange();
+    return clone(normalized);
+  }
+
+  function clearDirectoryCache() {
+    cachedDirectory = normalizeDirectory(null);
+    hasLoadedDirectoryFromServer = false;
+    localStorage.removeItem(DIRECTORY_STORAGE_KEY);
+    dispatchMembershipChange();
+  }
+
+  function dispatchMembershipChange() {
+    window.dispatchEvent(new CustomEvent(MEMBERSHIP_EVENT_NAME, {
+      detail: {
+        member: getCurrentMember(),
+        permissions: clone(cachedSelfContext.permissions),
+        record: cachedSelfContext.record ? clone(cachedSelfContext.record) : null,
+        directory: cachedDirectory ? clone(cachedDirectory) : null
       }
-      seen.add(record.email);
-      return true;
-    });
+    }));
+  }
 
-    if (!seen.has(OWNER_EMAIL)) {
-      dedupedMembers.unshift(defaultRecord(OWNER_EMAIL));
+  function hasIdentitySession() {
+    return Boolean(
+      window.netlifyIdentity &&
+      typeof window.netlifyIdentity.currentUser === 'function' &&
+      window.netlifyIdentity.currentUser()
+    );
+  }
+
+  async function getAuthToken() {
+    const identityUser = window.netlifyIdentity && typeof window.netlifyIdentity.currentUser === 'function'
+      ? window.netlifyIdentity.currentUser()
+      : null;
+    if (!identityUser || typeof identityUser.jwt !== 'function') {
+      return '';
     }
 
-    const payload = {
-      version: 1,
-      updatedAt: nowIso(),
-      members: dedupedMembers
-    };
-    localStorage.setItem(DIRECTORY_STORAGE_KEY, JSON.stringify(payload));
+    try {
+      const token = await identityUser.jwt();
+      return typeof token === 'string' ? token : '';
+    } catch (error) {
+      return '';
+    }
+  }
+
+  async function requestMembership(url, options) {
+    const init = { ...options };
+    const headers = new Headers(init.headers || {});
+    const token = await getAuthToken();
+    if (token) {
+      headers.set('Authorization', 'Bearer '.concat(token));
+    }
+    if (init.body && !headers.has('Content-Type')) {
+      headers.set('Content-Type', 'application/json');
+    }
+    init.headers = headers;
+
+    const response = await fetch(url, init);
+    const text = await response.text();
+    let payload = {};
+    if (text) {
+      try {
+        payload = JSON.parse(text);
+      } catch (error) {
+        payload = { error: text };
+      }
+    }
+
+    if (!response.ok) {
+      throw new Error(payload.error || `Membership request failed (${response.status}).`);
+    }
+
     return payload;
   }
 
-  function findRecordByEmail(email) {
-    const normalizedEmail = normalizeEmail(email);
-    if (!normalizedEmail) {
-      return null;
-    }
-    return readDirectory().members.find((record) => record.email === normalizedEmail) || null;
-  }
+  function setSelfContext(payload, fallbackMember, authenticatedOverride) {
+    const member = sanitizeMember((payload && payload.member) || fallbackMember);
+    const record = normalizeRecord(payload && payload.record);
+    const authenticated = typeof authenticatedOverride === 'boolean'
+      ? authenticatedOverride
+      : Boolean(payload && payload.authenticated && member);
+    cachedSelfContext = {
+      authenticated,
+      member,
+      record,
+      permissions: buildPermissions(member, record, authenticated)
+    };
 
-  function upsertRecord(input) {
-    const normalizedInput = normalizeRecord(input);
-    if (!normalizedInput) {
-      return null;
-    }
-
-    const directory = readDirectory();
-    const index = directory.members.findIndex((record) => record.email === normalizedInput.email);
-    const existing = index >= 0 ? directory.members[index] : null;
-    const nextRecord = normalizeRecord({
-      ...(existing || defaultRecord(normalizedInput.email)),
-      ...normalizedInput,
-      access: normalizeAccess(
-        {
-          ...(existing && existing.access ? existing.access : {}),
-          ...(normalizedInput.access || {})
-        },
-        normalizedInput.email === OWNER_EMAIL
-      ),
-      updatedAt: nowIso()
-    });
-
-    if (index >= 0) {
-      directory.members[index] = nextRecord;
+    if (member && (authenticated || hasIdentitySession())) {
+      saveCurrentMember(member);
     } else {
-      directory.members.unshift(nextRecord);
+      clearCurrentMember();
     }
 
-    writeDirectory(directory);
-    return nextRecord;
-  }
-
-  function removeRecord(email) {
-    const normalizedEmail = normalizeEmail(email);
-    if (!normalizedEmail || normalizedEmail === OWNER_EMAIL) {
-      return false;
-    }
-
-    const directory = readDirectory();
-    const nextMembers = directory.members.filter((record) => record.email !== normalizedEmail);
-    if (nextMembers.length === directory.members.length) {
-      return false;
-    }
-
-    writeDirectory({ ...directory, members: nextMembers });
-    return true;
+    dispatchMembershipChange();
+    return clone(cachedSelfContext);
   }
 
   function getCurrentMember() {
@@ -314,88 +372,126 @@
     return storedMember;
   }
 
-  function ensureMemberRecord(member) {
-    const sanitizedMember = sanitizeMember(member);
-    if (!sanitizedMember) {
-      return null;
+  async function refreshSelfContext() {
+    const member = getCurrentMember();
+    if (!member) {
+      setSelfContext({ member: null, record: null }, null, false);
+      return clone(cachedSelfContext);
     }
 
-    const existing = findRecordByEmail(sanitizedMember.email);
-    const existingLastSeen = existing && existing.lastSeenAt ? Date.parse(existing.lastSeenAt) : NaN;
-    const shouldUpdateLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > MEMBER_ACTIVITY_REFRESH_MS;
-    const needsWrite =
-      !existing ||
-      !existing.verifiedNetlify ||
-      existing.name !== (sanitizedMember.name || existing.name) ||
-      shouldUpdateLastSeen;
-
-    if (!needsWrite) {
-      return existing;
-    }
-
-    const nextRecord = normalizeRecord({
-      ...(existing || defaultRecord(sanitizedMember.email)),
-      email: sanitizedMember.email,
-      name: sanitizedMember.name || (existing && existing.name) || '',
-      verifiedNetlify: true,
-      lastSeenAt: nowIso(),
-      updatedAt: nowIso()
-    });
-
-    return upsertRecord(nextRecord);
+    const payload = await requestMembership(`${MEMBERSHIP_API_ENDPOINT}?view=self`, { method: 'GET' });
+    return setSelfContext(payload, member, Boolean(payload && payload.authenticated));
   }
 
-  function getGuildRecord(memberOrEmail) {
-    if (!memberOrEmail) {
-      return null;
+  async function initialize(options) {
+    const force = Boolean(options && options.force);
+    if (!force && initializationPromise) {
+      return initializationPromise;
     }
-    const email = typeof memberOrEmail === 'string' ? memberOrEmail : memberOrEmail.email;
+
+    initializationPromise = refreshSelfContext().catch((error) => {
+      const member = getCurrentMember();
+      setSelfContext({ member, record: null }, member, false);
+      initializationPromise = null;
+      throw error;
+    });
+
+    return initializationPromise;
+  }
+
+  async function loadDirectory(options) {
+    const force = Boolean(options && options.force);
+    if (!cachedDirectory) {
+      cachedDirectory = readCachedDirectoryStorage();
+    }
+    if (!force && hasLoadedDirectoryFromServer) {
+      return clone(cachedDirectory);
+    }
+
+    const payload = await requestMembership(`${MEMBERSHIP_API_ENDPOINT}?view=directory`, { method: 'GET' });
+    return persistDirectory(payload.directory);
+  }
+
+  function readDirectory() {
+    if (!cachedDirectory) {
+      cachedDirectory = readCachedDirectoryStorage();
+    }
+    return clone(cachedDirectory);
+  }
+
+  function findRecordByEmail(email) {
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) {
       return null;
     }
+    return readDirectory().members.find((record) => record.email === normalizedEmail) || null;
+  }
 
-    const existing = findRecordByEmail(normalizedEmail);
-    if (existing) {
-      return existing;
+  async function upsertRecord(input) {
+    const payload = await requestMembership(MEMBERSHIP_API_ENDPOINT, {
+      method: 'POST',
+      body: JSON.stringify(input)
+    });
+    persistDirectory(payload.directory);
+
+    const currentMember = getCurrentMember();
+    if (currentMember && normalizeEmail(currentMember.email) === normalizeEmail(payload.record && payload.record.email)) {
+      setSelfContext({ member: currentMember, record: payload.record }, currentMember, true);
     }
 
-    if (normalizedEmail === OWNER_EMAIL) {
-      return defaultRecord(normalizedEmail);
+    return normalizeRecord(payload.record);
+  }
+
+  async function removeRecord(email) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) {
+      return false;
+    }
+    const payload = await requestMembership(`${MEMBERSHIP_API_ENDPOINT}?email=${encodeURIComponent(normalizedEmail)}`, {
+      method: 'DELETE'
+    });
+    persistDirectory(payload.directory);
+    return Boolean(payload.removed);
+  }
+
+  function getGuildRecord(memberOrEmail) {
+    const email = typeof memberOrEmail === 'string'
+      ? normalizeEmail(memberOrEmail)
+      : normalizeEmail(memberOrEmail && memberOrEmail.email);
+    if (!email) {
+      return null;
     }
 
-    if (typeof memberOrEmail === 'object' && memberOrEmail.email) {
-      return normalizeRecord({
-        ...defaultRecord(normalizedEmail),
-        email: normalizedEmail,
-        name: memberOrEmail.name || '',
-        verifiedNetlify: true,
-        lastSeenAt: nowIso()
-      });
+    if (cachedSelfContext.record && cachedSelfContext.record.email === email) {
+      return clone(cachedSelfContext.record);
     }
 
-    return null;
+    return findRecordByEmail(email);
+  }
+
+  async function ensureMemberRecord(member) {
+    const currentMember = sanitizeMember(member) || getCurrentMember();
+    if (!currentMember) {
+      setSelfContext({ member: null, record: null }, null, false);
+      return null;
+    }
+
+    const context = await refreshSelfContext();
+    return context.record ? clone(context.record) : null;
   }
 
   function getPermissions(member) {
-    const record = getGuildRecord(member);
-    const email = normalizeEmail(member && member.email);
-    const isOwner = email === OWNER_EMAIL;
-    const status = record ? record.status : 'guest';
-    const statusAllowsAccess = ACTIVE_STATUSES.has(status) || isOwner;
+    const normalizedEmail = normalizeEmail(member && member.email);
+    if (
+      normalizedEmail &&
+      cachedSelfContext.member &&
+      cachedSelfContext.authenticated &&
+      normalizeEmail(cachedSelfContext.member.email) === normalizedEmail
+    ) {
+      return clone(cachedSelfContext.permissions);
+    }
 
-    return {
-      isSignedIn: Boolean(member && email),
-      isOwner,
-      record,
-      level: record ? record.level : 'guest',
-      title: record ? record.title : 'Visitor',
-      status,
-      canUseForums: Boolean(record && record.access.forums && statusAllowsAccess),
-      canUseRoster: Boolean(record && record.access.roster && statusAllowsAccess),
-      canModerateForums: Boolean(record && record.access.moderateForums && statusAllowsAccess),
-      canManageGuild: Boolean(record && record.access.management && statusAllowsAccess)
-    };
+    return buildPermissions(member, null, false);
   }
 
   function getMemberLabel(record) {
@@ -437,6 +533,8 @@
     return stats;
   }
 
+  cachedDirectory = readCachedDirectoryStorage();
+
   window.TheChosenGuildAccess = {
     OWNER_EMAIL,
     LEVEL_ORDER,
@@ -445,11 +543,15 @@
     normalizeEmail,
     sanitizeMember,
     readDirectory,
-    writeDirectory,
     readStoredMember,
     saveCurrentMember,
+    clearCurrentMember,
     getCurrentMember,
+    initialize,
+    ready: initialize,
+    refreshSelfContext,
     ensureMemberRecord,
+    loadDirectory,
     findRecordByEmail,
     getGuildRecord,
     upsertRecord,
@@ -457,8 +559,7 @@
     getPermissions,
     getMemberLabel,
     getDashboardStats,
-    clone
+    clone,
+    MEMBERSHIP_EVENT_NAME
   };
-
-  writeDirectory(readDirectory());
 })();

@@ -291,6 +291,15 @@
           .join('');
       }
 
+      async function refreshMembershipAndRender(options = {}) {
+        try {
+          await guildAccess.initialize({ force: Boolean(options.force) });
+        } catch (error) {
+          rosterNotice.textContent = error.message || 'Unable to load your guild roster access right now.';
+        }
+        renderRoster();
+      }
+
       function populateFormForEdit(entry) {
         editingEntryId = entry.id;
         characterFirstName.value = entry.firstName;
@@ -336,6 +345,7 @@
               updatedAt: new Date().toISOString()
             };
           }
+
         } else {
           entries.push({
             id: `roster-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -394,10 +404,10 @@
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+        guildAccess.clearCurrentMember();
         resetForm();
         renderMemberBadge(null);
-        renderRoster();
+        void refreshMembershipAndRender({ force: true });
       });
 
       window.addEventListener('storage', (event) => {
@@ -406,25 +416,32 @@
           event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
           event.key === guildAccess.DIRECTORY_STORAGE_KEY
         ) {
-          renderRoster();
+          void refreshMembershipAndRender({
+            force: event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY
+          });
         }
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => {
-          guildAccess.ensureMemberRecord(getCurrentMember());
-          renderRoster();
+          void guildAccess.ensureMemberRecord(getCurrentMember()).finally(() => {
+            void refreshMembershipAndRender({ force: true });
+          });
         });
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+          guildAccess.clearCurrentMember();
           resetForm();
           renderMemberBadge(null);
-          renderRoster();
+          void refreshMembershipAndRender({ force: true });
         });
       }
 
-      renderRoster();
+      window.addEventListener(guildAccess.MEMBERSHIP_EVENT_NAME, () => {
+        renderRoster();
+      });
+
+      void refreshMembershipAndRender({ force: true });
     </script>
   </body>
 </html>

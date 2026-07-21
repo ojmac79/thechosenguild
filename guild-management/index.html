@@ -406,7 +406,16 @@
           .join('');
       }
 
-      function renderPage() {
+      async function renderPage(options = {}) {
+        const forceSelf = Boolean(options.forceSelf);
+        const forceDirectory = Boolean(options.forceDirectory);
+
+        try {
+          await guildAccess.initialize({ force: forceSelf });
+        } catch (error) {
+          setNotice(error.message || 'Unable to verify your guild membership right now.', 'error');
+        }
+
         const member = guildAccess.getCurrentMember();
         const permissions = guildAccess.getPermissions(member);
 
@@ -418,6 +427,16 @@
           gateMessage.textContent = member
             ? `Signed in as ${member.email}. Guild Management is reserved for the guild leader account.`
             : 'Sign in with the guild leader Netlify account to manage membership, titles, and site access.';
+          return;
+        }
+
+        try {
+          await guildAccess.loadDirectory({ force: forceDirectory });
+        } catch (error) {
+          gate.hidden = true;
+          app.hidden = false;
+          setNotice(error.message || 'Unable to load the guild registry.', 'error');
+          directoryList.innerHTML = '<article class="panel guild-member-card"><p class="empty-state">Unable to load the guild registry.</p></article>';
           return;
         }
 
@@ -446,11 +465,11 @@
         memberForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
-      memberForm.addEventListener('submit', (event) => {
+      memberForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const currentMember = guildAccess.getCurrentMember();
         if (!guildAccess.getPermissions(currentMember).canManageGuild) {
-          renderPage();
+          await renderPage({ forceSelf: true });
           return;
         }
 
@@ -467,25 +486,29 @@
         } else if (nextLevel === 'leader') {
           nextLevel = 'officer';
         }
-        const saved = guildAccess.upsertRecord({
-          email,
-          name: memberName.value.trim(),
-          level: nextLevel,
-          title: memberTitle.value.trim() || (leader ? 'Guild Leader' : ''),
-          status: leader ? 'active' : memberStatus.value,
-          notes: memberNotes.value.trim(),
-          verifiedNetlify: Boolean(guildAccess.findRecordByEmail(email)?.verifiedNetlify),
-          access: {
-            forums: leader ? true : memberForumsAccess.checked,
-            roster: leader ? true : memberRosterAccess.checked,
-            moderateForums: leader ? true : memberModerateAccess.checked,
-            management: leader
-          }
-        });
+        try {
+          const saved = await guildAccess.upsertRecord({
+            email,
+            name: memberName.value.trim(),
+            level: nextLevel,
+            title: memberTitle.value.trim() || (leader ? 'Guild Leader' : ''),
+            status: leader ? 'active' : memberStatus.value,
+            notes: memberNotes.value.trim(),
+            verifiedNetlify: Boolean(guildAccess.findRecordByEmail(email)?.verifiedNetlify),
+            access: {
+              forums: leader ? true : memberForumsAccess.checked,
+              roster: leader ? true : memberRosterAccess.checked,
+              moderateForums: leader ? true : memberModerateAccess.checked,
+              management: leader
+            }
+          });
 
-        clearForm();
-        renderDirectory();
-        setNotice(`${saved.email} has been updated in the guild registry.`, 'success');
+          clearForm();
+          renderDirectory();
+          setNotice(`${saved.email} has been updated in the guild registry.`, 'success');
+        } catch (error) {
+          setNotice(error.message || 'Unable to update that member right now.', 'error');
+        }
       });
 
       memberResetButton.addEventListener('click', () => {
@@ -494,7 +517,13 @@
 
       memberLevel.addEventListener('change', applyLevelDefaults);
 
-      exportGuildButton.addEventListener('click', () => {
+      exportGuildButton.addEventListener('click', async () => {
+        try {
+          await guildAccess.loadDirectory({ force: true });
+        } catch (error) {
+          setNotice(error.message || 'Unable to export the guild registry right now.', 'error');
+          return;
+        }
         const payload = JSON.stringify(guildAccess.readDirectory(), null, 2);
         const blob = new Blob([payload], { type: 'application/json' });
         const url = URL.createObjectURL(blob);
@@ -511,7 +540,7 @@
         element.addEventListener('change', renderDirectory);
       });
 
-      directoryList.addEventListener('click', (event) => {
+      directoryList.addEventListener('click', async (event) => {
         const button = event.target.closest('[data-action]');
         if (!button) {
           return;
@@ -519,7 +548,7 @@
 
         const currentMember = guildAccess.getCurrentMember();
         if (!guildAccess.getPermissions(currentMember).canManageGuild) {
-          renderPage();
+          await renderPage({ forceSelf: true });
           return;
         }
 
@@ -536,65 +565,85 @@
         }
 
         if (action === 'approve-member') {
-          guildAccess.upsertRecord({
-            ...record,
-            status: 'active',
-            level: record.level === 'applicant' ? 'member' : record.level,
-            title: record.title || 'Guild Member',
-            access: {
-              ...record.access,
-              forums: true,
-              roster: true
-            }
-          });
-          renderDirectory();
-          setNotice(`${record.email} has been approved for guild systems.`, 'success');
+          try {
+            await guildAccess.upsertRecord({
+              ...record,
+              status: 'active',
+              level: record.level === 'applicant' ? 'member' : record.level,
+              title: record.title || 'Guild Member',
+              access: {
+                ...record.access,
+                forums: true,
+                roster: true
+              }
+            });
+            renderDirectory();
+            setNotice(`${record.email} has been approved for guild systems.`, 'success');
+          } catch (error) {
+            setNotice(error.message || 'Unable to approve that member right now.', 'error');
+          }
           return;
         }
 
         if (action === 'toggle-forums') {
-          guildAccess.upsertRecord({
-            ...record,
-            access: {
-              ...record.access,
-              forums: !record.access.forums
-            }
-          });
-          renderDirectory();
-          setNotice(`Forum access updated for ${record.email}.`, 'success');
+          try {
+            await guildAccess.upsertRecord({
+              ...record,
+              access: {
+                ...record.access,
+                forums: !record.access.forums
+              }
+            });
+            renderDirectory();
+            setNotice(`Forum access updated for ${record.email}.`, 'success');
+          } catch (error) {
+            setNotice(error.message || 'Unable to update forum access right now.', 'error');
+          }
           return;
         }
 
         if (action === 'toggle-roster') {
-          guildAccess.upsertRecord({
-            ...record,
-            access: {
-              ...record.access,
-              roster: !record.access.roster
-            }
-          });
-          renderDirectory();
-          setNotice(`Roster access updated for ${record.email}.`, 'success');
+          try {
+            await guildAccess.upsertRecord({
+              ...record,
+              access: {
+                ...record.access,
+                roster: !record.access.roster
+              }
+            });
+            renderDirectory();
+            setNotice(`Roster access updated for ${record.email}.`, 'success');
+          } catch (error) {
+            setNotice(error.message || 'Unable to update roster access right now.', 'error');
+          }
           return;
         }
 
         if (action === 'toggle-suspension') {
-          guildAccess.upsertRecord({
-            ...record,
-            status: record.status === 'suspended' ? 'active' : 'suspended'
-          });
-          renderDirectory();
-          setNotice(`Standing updated for ${record.email}.`, 'success');
+          try {
+            await guildAccess.upsertRecord({
+              ...record,
+              status: record.status === 'suspended' ? 'active' : 'suspended'
+            });
+            renderDirectory();
+            setNotice(`Standing updated for ${record.email}.`, 'success');
+          } catch (error) {
+            setNotice(error.message || 'Unable to update standing right now.', 'error');
+          }
           return;
         }
 
         if (action === 'remove-member') {
-          guildAccess.removeRecord(record.email);
-          if (editingEmail === record.email) {
-            clearForm();
+          try {
+            await guildAccess.removeRecord(record.email);
+            if (editingEmail === record.email) {
+              clearForm();
+            }
+            renderDirectory();
+            setNotice(`${record.email} has been removed from the guild registry.`, 'success');
+          } catch (error) {
+            setNotice(error.message || 'Unable to remove that member right now.', 'error');
           }
-          renderDirectory();
-          setNotice(`${record.email} has been removed from the guild registry.`, 'success');
         }
       });
 
@@ -606,8 +655,8 @@
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-        renderPage();
+        guildAccess.clearCurrentMember();
+        void renderPage({ forceSelf: true, forceDirectory: true });
       });
 
       window.addEventListener('storage', (event) => {
@@ -615,23 +664,31 @@
           event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
           event.key === guildAccess.DIRECTORY_STORAGE_KEY
         ) {
-          renderPage();
+          void renderPage({
+            forceSelf: event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY,
+            forceDirectory: event.key === guildAccess.DIRECTORY_STORAGE_KEY
+          });
         }
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => {
-          guildAccess.ensureMemberRecord(guildAccess.getCurrentMember());
-          renderPage();
+          void guildAccess.ensureMemberRecord(guildAccess.getCurrentMember()).finally(() => {
+            void renderPage({ forceSelf: true, forceDirectory: true });
+          });
         });
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-          renderPage();
+          guildAccess.clearCurrentMember();
+          void renderPage({ forceSelf: true, forceDirectory: true });
         });
       }
 
-      renderPage();
+      window.addEventListener(guildAccess.MEMBERSHIP_EVENT_NAME, () => {
+        renderMemberBadge(guildAccess.getCurrentMember());
+      });
+
+      void renderPage({ forceSelf: true, forceDirectory: true });
     </script>
   </body>
 </html>
