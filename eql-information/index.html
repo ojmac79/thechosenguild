@@ -689,7 +689,6 @@
 
         resourceForm.reset();
         clearEditingState();
-        randomizeThumbnailCards();
         renderResources();
         resourceNotice.textContent = successMessage;
       });
@@ -754,6 +753,7 @@
           renderResources();
         });
       }
+      randomizeThumbnailCards();
       renderResources();
     </script>
     <script>
