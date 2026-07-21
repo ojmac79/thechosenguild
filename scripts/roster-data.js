@@ -7,6 +7,7 @@
   const DEFAULT_SYNC_INTERVAL_MS = 86400000; // 24 hours in milliseconds
   const RANDOM_ID_SUFFIX_LENGTH = 7;
   const OFFICIAL_SOURCE_URL = 'https://census.daybreakgames.com/';
+  const DEFAULT_DAYBREAK_SERVICE_ID = 's:Murphy';
 
   function getSyncIntervalMs() {
     const configured = Number(window.TheChosenRosterSyncIntervalMs || DEFAULT_SYNC_INTERVAL_MS);
@@ -17,32 +18,40 @@
     const configured =
       window.TheChosenDaybreakServiceId ||
       localStorage.getItem(DAYBREAK_SERVICE_ID_STORAGE_KEY) ||
-      's:example';
-    return String(configured || 's:example').trim() || 's:example';
+      DEFAULT_DAYBREAK_SERVICE_ID;
+    const trimmed = String(configured || DEFAULT_DAYBREAK_SERVICE_ID).trim();
+    return /^s:[\w.-]+$/i.test(trimmed) ? trimmed : DEFAULT_DAYBREAK_SERVICE_ID;
+  }
+
+  function buildCensusUrl(collection, query) {
+    return `https://census.daybreakgames.com/${getServiceId()}/json/get/${collection}?${query}`;
   }
 
   function buildSourceAttempts() {
-    const serviceId = encodeURIComponent(getServiceId());
     return Object.freeze([
       {
         label: 'EQ2 guild members',
-        url: `https://census.daybreakgames.com/${serviceId}/get/eq2/guild_member?guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500`
+        url: buildCensusUrl('eq2/guild_member', 'guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500&c:resolve=character')
+      },
+      {
+        label: 'EQ2 guild members (name fallback)',
+        url: buildCensusUrl('eq2/guild_member', 'guild.name=The%20Chosen&guild.world.name=Qeynos&c:limit=500&c:resolve=character')
       },
       {
         label: 'EQ2 guild characters',
-        url: `https://census.daybreakgames.com/${serviceId}/get/eq2/character?guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500`
+        url: buildCensusUrl('eq2/character', 'guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500')
       },
       {
         label: 'EQ2 guild details',
-        url: `https://census.daybreakgames.com/${serviceId}/get/eq2/guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10`
+        url: buildCensusUrl('eq2/guild', 'name.lower=the%20chosen&world.name=Qeynos&c:limit=10')
       },
       {
         label: 'EQL guild details',
-        url: `https://census.daybreakgames.com/${serviceId}/get/eql:guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10`
+        url: buildCensusUrl('eql:guild', 'name.lower=the%20chosen&world.name=Qeynos&c:limit=10')
       },
       {
         label: 'EQ Legends guild details',
-        url: `https://census.daybreakgames.com/${serviceId}/get/eq_legends:guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10`
+        url: buildCensusUrl('eq_legends:guild', 'name.lower=the%20chosen&world.name=Qeynos&c:limit=10')
       }
     ]);
   }
