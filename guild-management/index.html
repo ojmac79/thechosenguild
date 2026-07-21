@@ -32,7 +32,7 @@
             <a class="site-nav__link" href="/lore/">Lore</a>
             <a class="site-nav__link" href="/server-status/">Status</a>
             <a class="site-nav__link" href="/stories/">Stories</a>
-            <a class="site-nav__link active" href="/guild-management/">Guild Management</a>
+            <a class="site-nav__link active" href="/guild-management/" data-guild-management-link="true">Guild Management</a>
           </nav>
           <div class="site-header__auth">
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -41,7 +41,7 @@
       </header>
 
       <main class="page">
-        <p class="hero__eyebrow">Officer Council Control Room</p>
+        <p class="hero__eyebrow">Guild Leader Control Room</p>
         <h1 class="page-title">Guild Management</h1>
         <p class="page-subtitle">
           Owner-only command center for verified Netlify members, ranks, titles, and access across guild systems.
@@ -366,7 +366,7 @@
         directoryList.innerHTML = members
           .map((record) => {
             const owner = record.email === guildAccess.OWNER_EMAIL;
-            const verificationBadge = record.verifiedNetlify ? 'Verified Netlify' : 'Awaiting Sign-In';
+            const verificationBadge = record.verifiedNetlify ? 'Verified Netlify' : 'Pending First Sign-In';
             const quickApprove = record.status === 'pending'
               ? `<button class="resource-item__edit" type="button" data-action="approve-member" data-email="${record.email}">Approve</button>`
               : '';

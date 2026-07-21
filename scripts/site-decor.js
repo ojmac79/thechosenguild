@@ -107,7 +107,7 @@
 
   function injectOwnerNavigation() {
     const nav = document.querySelector('.site-nav');
-    if (!nav || nav.querySelector('[data-guild-management-link], a[href="/guild-management/"]')) {
+    if (!nav || nav.querySelector('[data-guild-management-link]')) {
       return;
     }
 
@@ -151,7 +151,7 @@
     link.href = '/guild-management/';
     link.dataset.guildManagementLink = 'true';
     link.textContent = 'Guild Management';
-    if (window.location.pathname.startsWith('/guild-management')) {
+    if (window.location.pathname.startsWith('/guild-management/')) {
       link.classList.add('active');
     }
     nav.appendChild(link);

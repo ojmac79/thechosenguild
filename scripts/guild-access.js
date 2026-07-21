@@ -143,8 +143,8 @@
       id: user.id || normalizedEmail,
       name: cleanText(
         (user.user_metadata && user.user_metadata.full_name) ||
-          (user.email ? user.email.split('@')[0] : '') ||
-          user.name,
+          user.name ||
+          (user.email ? user.email.split('@')[0] : ''),
         80
       ),
       email: normalizedEmail,

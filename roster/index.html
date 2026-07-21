@@ -246,19 +246,18 @@
 
         renderMemberBadge(member);
         setNoticeForMember(member);
-        rosterGate.hidden = permissions.canUseRoster;
-        rosterList.hidden = !permissions.canUseRoster;
-
         if (!permissions.canUseRoster) {
           rosterGateMessage.textContent = member
             ? `Welcome, ${member.name || 'guild member'}. Your account is verified, but roster access is still locked.`
             : 'Sign in with a verified Netlify account, then ask the guild leader to authorize your roster access.';
-        }
-
-        if (!permissions.canUseRoster) {
+          rosterGate.hidden = false;
+          rosterList.hidden = true;
           rosterList.innerHTML = '';
           return;
         }
+
+        rosterGate.hidden = true;
+        rosterList.hidden = false;
 
         if (!entries.length) {
           rosterList.innerHTML = '<div class="panel empty-state"><p>No roster entries yet. Add your character to begin the roll call.</p></div>';
