@@ -33,56 +33,38 @@
     return Math.random() * (max - min) + min;
   }
 
-  function getRouteProfile() {
+  function getRouteKey() {
     const path = window.location.pathname;
     if (path === "/") {
-      return routeProfiles.home;
+      return "home";
     }
     if (path.startsWith("/forums")) {
-      return routeProfiles.forums;
+      return "forums";
     }
     if (path.startsWith("/stories")) {
-      return routeProfiles.stories;
+      return "stories";
     }
     if (path.startsWith("/roster")) {
-      return routeProfiles.roster;
+      return "roster";
     }
     if (path.startsWith("/discord")) {
-      return routeProfiles.discord;
+      return "discord";
     }
     if (path.startsWith("/eql-information")) {
-      return routeProfiles.eqlInformation;
+      return "eqlInformation";
     }
     if (path.startsWith("/login")) {
-      return routeProfiles.login;
+      return "login";
     }
-    return routeProfiles.default;
+    return "default";
+  }
+
+  function getRouteProfile() {
+    return routeProfiles[getRouteKey()] || routeProfiles.default;
   }
 
   function getRouteZone() {
-    const path = window.location.pathname;
-    if (path === "/") {
-      return routeZones.home;
-    }
-    if (path.startsWith("/forums")) {
-      return routeZones.forums;
-    }
-    if (path.startsWith("/stories")) {
-      return routeZones.stories;
-    }
-    if (path.startsWith("/roster")) {
-      return routeZones.roster;
-    }
-    if (path.startsWith("/discord")) {
-      return routeZones.discord;
-    }
-    if (path.startsWith("/eql-information")) {
-      return routeZones.eqlInformation;
-    }
-    if (path.startsWith("/login")) {
-      return routeZones.login;
-    }
-    return routeZones.default;
+    return routeZones[getRouteKey()] || routeZones.default;
   }
 
   function buildWeightedPool(profile) {
