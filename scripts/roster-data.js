@@ -8,6 +8,13 @@
   const RANDOM_ID_SUFFIX_LENGTH = 7;
   const OFFICIAL_SOURCE_URL = 'https://census.daybreakgames.com/';
   const DEFAULT_DAYBREAK_SERVICE_ID = 's:Murphy';
+  const ALLOWED_CENSUS_COLLECTIONS = Object.freeze(new Set([
+    'eq2/guild_member',
+    'eq2/character',
+    'eq2/guild',
+    'eql:guild',
+    'eq_legends:guild'
+  ]));
 
   function getSyncIntervalMs() {
     const configured = Number(window.TheChosenRosterSyncIntervalMs || DEFAULT_SYNC_INTERVAL_MS);
@@ -25,14 +32,15 @@
 
   function sanitizeCollection(value) {
     const collection = String(value || '').trim();
-    if (!/^[a-z0-9_:/-]+$/i.test(collection)) {
+    if (!ALLOWED_CENSUS_COLLECTIONS.has(collection)) {
       throw new Error('Invalid Census collection path.');
     }
     return collection;
   }
 
   function buildCensusUrl(collection, query) {
-    return `https://census.daybreakgames.com/${getServiceId()}/json/get/${sanitizeCollection(collection)}?${query}`;
+    const serviceIdPath = encodeURIComponent(getServiceId()).replace(/%3A/gi, ':');
+    return `https://census.daybreakgames.com/${serviceIdPath}/json/get/${sanitizeCollection(collection)}?${query}`;
   }
 
   function buildQuery(params) {
