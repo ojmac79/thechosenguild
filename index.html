@@ -56,7 +56,7 @@
               Bound by oath, tempered by raid wipes, undefeated in spirit. Seek
               word of the guild below, or cast your search further afield.
             </p>
-            <button class="hero__edit" id="heroEditButton" type="button" onclick="editHeroTagline()">Edit</button>
+            <button class="hero__edit" id="heroEditButton" type="button" onclick="editHeroTagline()" hidden>Edit</button>
           </div>
           <form class="search-console">
             <div class="search-console__row">
@@ -87,7 +87,7 @@
         <section class="news-section" aria-label="Guild news">
           <div class="news-section__header">
             <h2 class="news-section__title">Latest News</h2>
-            <button class="btn-torch news-section__new" id="newPostButton" type="button">New Post</button>
+            <button class="btn-torch news-section__new" id="newPostButton" type="button" hidden>New Post</button>
           </div>
 
           <div id="newsList"></div>
@@ -138,6 +138,7 @@
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
       const heroTagline = document.getElementById('heroTagline');
       const newsForm = document.getElementById('newsForm');
@@ -183,6 +184,10 @@
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
       let editingPostId = null;
+
+      function isOwner(member) {
+        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      }
 
       function readCurrentMember() {
         const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);
@@ -289,7 +294,7 @@
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
         const posts = readPosts().slice(0, 3);
-        const canEditNews = Boolean(currentMember);
+        const canEditNews = isOwner(currentMember);
         newPostButton.hidden = !canEditNews;
         heroEditButton.hidden = !canEditNews;
         if (!canEditNews) {
@@ -299,8 +304,8 @@
         if (!posts.length) {
           newsList.innerHTML = '<div class="panel empty-state"><p>No news has been posted yet. Start a fresh entry for the guild hall.</p></div>';
           newsNotice.textContent = currentMember
-            ? 'Signed in Netlify members can add or update guild news.'
-            : 'Sign in with your Netlify account to publish or edit news.';
+            ? 'Owner access enabled: you can add or update guild news.'
+            : 'Public view is enabled. Owner sign-in is required to publish or edit news.';
           return;
         }
 
@@ -329,13 +334,13 @@
           .join('');
 
         newsNotice.textContent = currentMember
-          ? 'Signed in Netlify members can add or update guild news.'
-          : 'Sign in with your Netlify account to publish or edit news.';
+          ? 'Owner access enabled: you can add or update guild news.'
+          : 'Public view is enabled. Owner sign-in is required to publish or edit news.';
       }
 
       function editHeroTagline() {
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!isOwner(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -350,7 +355,7 @@
 
       newPostButton.addEventListener('click', () => {
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!isOwner(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -369,7 +374,7 @@
       newsForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!isOwner(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -419,7 +424,7 @@
         }
 
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!isOwner(currentMember)) {
           window.location.href = '/login/';
           return;
         }

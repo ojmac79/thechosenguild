@@ -154,7 +154,7 @@
         </p>
         <div class="resource-section__header" data-noneditable="true">
           <h2 class="resource-section__title">Page Content</h2>
-          <button id="toggleContentEdit" class="btn-torch" type="button" aria-pressed="false">Enable Content Editing</button>
+          <button id="toggleContentEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
         </div>
         <p id="contentEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
           Sign in to enable page-wide content editing.
@@ -307,13 +307,13 @@
           <section class="resource-section" aria-label="Resource links">
             <div class="resource-section__header">
               <h2 class="resource-section__title">Shared Links</h2>
-              <button id="resourceAddLink" class="btn-torch" type="button">Add Link</button>
+              <button id="resourceAddLink" class="btn-torch" type="button" hidden>Add Link</button>
             </div>
 
             <ul id="resourceList" class="resource-list" data-noneditable="true"></ul>
             <div class="resource-section__editor" data-noneditable="true">
               <p id="resourceNotice" class="resource-notice" aria-live="polite"></p>
-              <form id="resourceForm" class="panel resource-form">
+              <form id="resourceForm" class="panel resource-form" hidden>
                 <div class="resource-form__row">
                   <label class="resource-field">
                     <span>Link Name</span>
@@ -388,6 +388,7 @@
     <script>
       const RESOURCE_STORAGE_KEY = 'theChosenResources';
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const thumbnailOptions = [
         { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
         { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
@@ -434,6 +435,10 @@
 
       const defaultResources = [];
       let editingResourceId = null;
+
+      function isOwner(member) {
+        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      }
 
       function getNowLabel() {
         return new Date().toLocaleString(undefined, {
@@ -565,7 +570,7 @@
       }
 
       function setFormAccess(currentMember) {
-        const canManage = Boolean(currentMember);
+        const canManage = isOwner(currentMember);
         const controls = resourceForm.querySelectorAll('input, textarea, button');
         controls.forEach((control) => {
           if (control.id === 'resourceCancelEdit') {
@@ -573,6 +578,8 @@
           }
           control.disabled = !canManage;
         });
+        resourceAddLink.hidden = !canManage;
+        resourceForm.hidden = !canManage;
 
         if (!canManage) {
           resourceCancelEdit.hidden = true;
@@ -584,19 +591,22 @@
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
         setFormAccess(currentMember);
+        if (typeof window.updateEqlContentEditAccess === 'function') {
+          window.updateEqlContentEditAccess();
+        }
         const resources = readResources();
 
         if (!resources.length) {
           resourceList.innerHTML = '<li class="panel resource-item resource-item--empty">No shared links are currently available.</li>';
           resourceNotice.textContent = currentMember
-            ? 'Members can add, edit, and delete shared links.'
-            : 'Sign in to add, edit, or remove links from the archive.';
+            ? 'Owner sign-in is required to add, edit, or remove links from the archive.'
+            : 'Public view is enabled. Owner sign-in is required to add, edit, or remove links.';
           return;
         }
 
         resourceList.innerHTML = resources
           .map((resource) => {
-            const memberActions = currentMember
+            const memberActions = isOwner(currentMember)
               ? `
                 <button class="resource-item__edit" type="button" data-edit-resource="${resource.id}">Edit</button>
                 <button class="resource-item__delete" type="button" data-delete-resource="${resource.id}">Delete</button>
@@ -617,15 +627,15 @@
           })
           .join('');
 
-        resourceNotice.textContent = currentMember
-          ? 'Members can add, edit, and delete shared links.'
-          : 'Sign in to add, edit, or remove links from the archive.';
+        resourceNotice.textContent = isOwner(currentMember)
+          ? 'Owner access enabled: you can add, edit, and delete shared links.'
+          : 'Public view is enabled. Owner sign-in is required to add, edit, or remove links.';
       }
 
       resourceAddLink.addEventListener('click', () => {
         const currentMember = readCurrentMember();
-        if (!currentMember) {
-          resourceNotice.textContent = 'Sign in to add, edit, or remove links from the archive.';
+        if (!isOwner(currentMember)) {
+          resourceNotice.textContent = 'Owner sign-in is required to add, edit, or remove links from the archive.';
           return;
         }
         resourceNameInput.focus();
@@ -634,8 +644,8 @@
       resourceForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const currentMember = readCurrentMember();
-        if (!currentMember) {
-          resourceNotice.textContent = 'Sign in to add, edit, or remove links from the archive.';
+        if (!isOwner(currentMember)) {
+          resourceNotice.textContent = 'Owner sign-in is required to add, edit, or remove links from the archive.';
           return;
         }
 
@@ -701,8 +711,8 @@
 
       resourceList.addEventListener('click', (event) => {
         const currentMember = readCurrentMember();
-        if (!currentMember) {
-          resourceNotice.textContent = 'Sign in to add, edit, or remove links from the archive.';
+        if (!isOwner(currentMember)) {
+          resourceNotice.textContent = 'Owner sign-in is required to add, edit, or remove links from the archive.';
           return;
         }
 
@@ -764,6 +774,18 @@
       ).filter((element) => !element.closest('[data-noneditable="true"]'));
       let contentEditingEnabled = false;
 
+      function updateContentEditAccess() {
+        const canEdit = isOwner(readCurrentMember());
+        toggleContentEditButton.hidden = !canEdit;
+        if (!canEdit && contentEditingEnabled) {
+          setContentEditingState(false);
+        }
+        window.updateEqlContentEditAccess = updateContentEditAccess;
+        contentEditNotice.textContent = canEdit
+          ? 'Owner access enabled. Use the button to enable page-wide content editing.'
+          : 'Public view is enabled. Owner sign-in is required to edit page content.';
+      }
+
       function setContentEditingState(enabled) {
         contentEditingEnabled = enabled;
         contentEditableTargets.forEach((element) => {
@@ -775,8 +797,8 @@
 
       toggleContentEditButton.addEventListener('click', () => {
         const currentMember = readCurrentMember();
-        if (!currentMember) {
-          contentEditNotice.textContent = 'Sign in to enable page-wide content editing.';
+        if (!isOwner(currentMember)) {
+          contentEditNotice.textContent = 'Owner sign-in is required to enable page-wide content editing.';
           return;
         }
         setContentEditingState(!contentEditingEnabled);
@@ -786,6 +808,7 @@
       });
 
       setContentEditingState(false);
+      updateContentEditAccess();
     </script>
     <script src="../scripts/site-decor.js"></script>
   </body>
