@@ -171,7 +171,9 @@
       };
       const uiState = {
         publicFilter: 'all',
-        privateFilter: 'all'
+        privateFilter: 'all',
+        openReplyForms: new Set(),
+        replyingToReplyId: {}
       };
 
       function getCurrentMember() {
@@ -251,14 +253,16 @@
               { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
               { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
             ],
-            threads: []
+            threads: [],
+            replies: []
           },
           private: {
             categories: [
               { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
               { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
             ],
-            threads: []
+            threads: [],
+            replies: []
           }
         };
       }
@@ -309,6 +313,29 @@
         };
       }
 
+      function normalizeReply(reply, threadIds, fallbackPrefix) {
+        if (!reply || typeof reply !== 'object') {
+          return null;
+        }
+        const body = String(reply.body || '').trim();
+        if (!body) {
+          return null;
+        }
+        if (!threadIds.includes(String(reply.threadId || ''))) {
+          return null;
+        }
+        return {
+          id: typeof reply.id === 'string' && reply.id ? reply.id : buildId(fallbackPrefix),
+          threadId: String(reply.threadId),
+          parentReplyId: typeof reply.parentReplyId === 'string' && reply.parentReplyId ? reply.parentReplyId : null,
+          body,
+          authorName: String(reply.authorName || 'Guest Adventurer'),
+          authorEmail: String(reply.authorEmail || ''),
+          authorAvatar: String(reply.authorAvatar || ''),
+          createdAt: Number(reply.createdAt) || Date.now()
+        };
+      }
+
       function readState() {
         try {
           const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
@@ -327,6 +354,12 @@
             normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
               ? sourceSpace.threads
                   .map((thread) => normalizeThread(thread, normalized[spaceKey].categories, `${spaceKey}-thread`))
+                  .filter(Boolean)
+              : [];
+            const threadIds = normalized[spaceKey].threads.map((thread) => thread.id);
+            normalized[spaceKey].replies = Array.isArray(sourceSpace.replies)
+              ? sourceSpace.replies
+                  .map((reply) => normalizeReply(reply, threadIds, `${spaceKey}-reply`))
                   .filter(Boolean)
               : [];
           });
@@ -383,6 +416,70 @@
         if (hasExisting) {
           selectElement.value = existingValue;
         }
+      }
+
+      function buildReplyEl(reply, spaceKey, role, childrenMap) {
+        const replyEl = document.createElement('div');
+        replyEl.className = 'forum-thread__reply';
+
+        const header = document.createElement('div');
+        header.className = 'forum-thread__reply-header';
+
+        const avatarSrc = reply.authorAvatar ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.authorName)}&background=ff7b7b&color=14070b`;
+        const avatar = document.createElement('img');
+        avatar.className = 'forum-thread__author-avatar';
+        avatar.src = avatarSrc;
+        avatar.alt = `${reply.authorName} avatar`;
+
+        const author = document.createElement('p');
+        author.className = 'forum-thread__reply-author';
+        author.textContent = reply.authorName;
+
+        const time = document.createElement('span');
+        time.className = 'forum2-note';
+        time.style.marginLeft = 'auto';
+        time.textContent = new Date(reply.createdAt).toLocaleString();
+
+        header.appendChild(avatar);
+        header.appendChild(author);
+        header.appendChild(time);
+
+        const body = document.createElement('p');
+        body.className = 'forum-thread__reply-body';
+        body.textContent = reply.body;
+
+        replyEl.appendChild(header);
+        replyEl.appendChild(body);
+
+        if (canModerate(role)) {
+          const actions = document.createElement('div');
+          actions.className = 'forum-thread__actions';
+          actions.style.marginTop = '0.35rem';
+
+          const deleteBtn = document.createElement('button');
+          deleteBtn.type = 'button';
+          deleteBtn.className = 'resource-item__delete';
+          deleteBtn.textContent = 'Delete';
+          deleteBtn.dataset.action = 'delete-reply';
+          deleteBtn.dataset.space = spaceKey;
+          deleteBtn.dataset.replyId = reply.id;
+
+          actions.appendChild(deleteBtn);
+          replyEl.appendChild(actions);
+        }
+
+        const children = (childrenMap.get(reply.id) || []).slice().sort((a, b) => a.createdAt - b.createdAt);
+        if (children.length) {
+          const childrenEl = document.createElement('div');
+          childrenEl.className = 'forum-thread__reply-children';
+          children.forEach((child) => {
+            childrenEl.appendChild(buildReplyEl(child, spaceKey, role, childrenMap));
+          });
+          replyEl.appendChild(childrenEl);
+        }
+
+        return replyEl;
       }
 
       function renderCategoryFilters(spaceKey, categories) {
@@ -460,10 +557,23 @@
         });
       }
 
-      function renderThreads(spaceKey, role) {
+      function renderThreads(spaceKey, role, member, privateAccess) {
         const container = document.getElementById(`${spaceKey}ThreadList`);
         const selectedFilter = uiState[`${spaceKey}Filter`];
         const categoryMap = new Map(forumState[spaceKey].categories.map((category) => [category.id, category]));
+        const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
+
+        // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
+        const replyCountByThread = new Map();
+        const childrenMap = new Map();
+        forumState[spaceKey].replies.forEach((reply) => {
+          replyCountByThread.set(reply.threadId, (replyCountByThread.get(reply.threadId) || 0) + 1);
+          if (reply.parentReplyId) {
+            const siblings = childrenMap.get(reply.parentReplyId) || [];
+            siblings.push(reply);
+            childrenMap.set(reply.parentReplyId, siblings);
+          }
+        });
 
         const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
           return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
@@ -497,7 +607,9 @@
           meta.className = 'forum-thread__meta';
           const categoryName = categoryMap.get(thread.categoryId)?.name || forumState[spaceKey].categories[0].name;
           const postedOn = new Date(thread.createdAt).toLocaleString();
-          meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn}`;
+          const totalReplyCount = replyCountByThread.get(thread.id) || 0;
+          const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
+          meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn} • ${replyLabel}`;
 
           titleWrap.appendChild(title);
           titleWrap.appendChild(meta);
@@ -568,6 +680,84 @@
             article.appendChild(actions);
           }
 
+          // Replies section
+          const topLevelReplies = forumState[spaceKey].replies
+            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
+            .sort((a, b) => a.createdAt - b.createdAt);
+
+          if (topLevelReplies.length) {
+            const repliesContainer = document.createElement('div');
+            repliesContainer.className = 'forum-thread__replies';
+            topLevelReplies.forEach((reply) => {
+              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, role, childrenMap));
+            });
+            article.appendChild(repliesContainer);
+          }
+
+          // Reply form (shown when member has access and thread is not locked)
+          const canReply = spaceKey === 'public' ? !!member : (!!member && !!privateAccess);
+          if (canReply && !thread.isLocked) {
+            const isFormOpen = uiState.openReplyForms.has(thread.id);
+
+            const replyToggle = document.createElement('button');
+            replyToggle.type = 'button';
+            replyToggle.className = 'resource-item__edit';
+            replyToggle.style.marginTop = '0.2rem';
+            replyToggle.textContent = isFormOpen ? 'Cancel' : 'Reply';
+            replyToggle.dataset.action = 'toggle-reply-form';
+            replyToggle.dataset.space = spaceKey;
+            replyToggle.dataset.threadId = thread.id;
+            article.appendChild(replyToggle);
+
+            if (isFormOpen) {
+              const form = document.createElement('div');
+              form.className = 'forum-reply-form';
+              form.dataset.threadId = thread.id;
+
+              const parentReplyId = uiState.replyingToReplyId[thread.id] || null;
+              if (parentReplyId) {
+                const parentReply = replyMap.get(parentReplyId);
+                if (parentReply) {
+                  const indicator = document.createElement('p');
+                  indicator.className = 'forum2-note';
+                  indicator.textContent = `Replying to ${parentReply.authorName}`;
+                  form.appendChild(indicator);
+                }
+              }
+
+              const textarea = document.createElement('textarea');
+              textarea.className = 'forum-reply-form__input';
+              textarea.rows = 2;
+              textarea.placeholder = 'Write a reply…';
+              textarea.id = `replyInput-${thread.id}`;
+              form.appendChild(textarea);
+
+              const formActions = document.createElement('div');
+              formActions.className = 'forum-reply-form__actions';
+
+              const submitBtn = document.createElement('button');
+              submitBtn.type = 'button';
+              submitBtn.className = 'btn-primary';
+              submitBtn.textContent = 'Post Reply';
+              submitBtn.dataset.action = 'post-reply';
+              submitBtn.dataset.space = spaceKey;
+              submitBtn.dataset.threadId = thread.id;
+              if (parentReplyId) {
+                submitBtn.dataset.parentReplyId = parentReplyId;
+              }
+
+              formActions.appendChild(submitBtn);
+              form.appendChild(formActions);
+              article.appendChild(form);
+            }
+          } else if (thread.isLocked) {
+            const lockedNote = document.createElement('p');
+            lockedNote.className = 'forum2-note';
+            lockedNote.style.marginTop = '0.2rem';
+            lockedNote.textContent = 'This thread is locked.';
+            article.appendChild(lockedNote);
+          }
+
           container.appendChild(article);
         });
       }
@@ -622,11 +812,11 @@
         renderCategoryManager('private', moderator && privateAccess);
 
         renderCategoryFilters('public', forumState.public.categories);
-        renderThreads('public', role);
+        renderThreads('public', role, member, privateAccess);
 
         if (privateAccess) {
           renderCategoryFilters('private', forumState.private.categories);
-          renderThreads('private', role);
+          renderThreads('private', role, member, privateAccess);
         }
       }
 
@@ -723,6 +913,41 @@
 
       function deleteThread(spaceKey, threadId) {
         forumState[spaceKey].threads = forumState[spaceKey].threads.filter((thread) => thread.id !== threadId);
+        forumState[spaceKey].replies = forumState[spaceKey].replies.filter((reply) => reply.threadId !== threadId);
+        writeState(forumState);
+      }
+
+      function addReply(spaceKey, member, threadId, body, parentReplyId) {
+        const trimmedBody = String(body || '').trim();
+        if (!trimmedBody) {
+          return;
+        }
+        forumState[spaceKey].replies.push({
+          id: buildId(`${spaceKey}-reply`),
+          threadId,
+          parentReplyId: parentReplyId || null,
+          body: trimmedBody,
+          authorName: member.name || member.email || 'Guest Adventurer',
+          authorEmail: member.email,
+          authorAvatar: member.avatar || '',
+          createdAt: Date.now()
+        });
+        writeState(forumState);
+      }
+
+      function deleteReply(spaceKey, replyId) {
+        const toRemove = new Set([replyId]);
+        let changed = true;
+        while (changed) {
+          changed = false;
+          forumState[spaceKey].replies.forEach((reply) => {
+            if (reply.parentReplyId && toRemove.has(reply.parentReplyId) && !toRemove.has(reply.id)) {
+              toRemove.add(reply.id);
+              changed = true;
+            }
+          });
+        }
+        forumState[spaceKey].replies = forumState[spaceKey].replies.filter((reply) => !toRemove.has(reply.id));
         writeState(forumState);
       }
 
@@ -818,25 +1043,72 @@
             return;
           }
 
-          const role = getRole(getCurrentMember());
+          const action = button.dataset.action;
+          const member = getCurrentMember();
+          const role = getRole(member);
+
+          if (action === 'toggle-reply-form') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openReplyForms.has(threadId)) {
+              uiState.openReplyForms.delete(threadId);
+              delete uiState.replyingToReplyId[threadId];
+            } else {
+              uiState.openReplyForms.add(threadId);
+            }
+            render();
+            return;
+          }
+
+          if (action === 'post-reply') {
+            const threadId = button.dataset.threadId;
+            const parentReplyId = button.dataset.parentReplyId || null;
+            if (!threadId || !member) {
+              return;
+            }
+            const textarea = document.getElementById(`replyInput-${threadId}`);
+            if (!textarea || !textarea.value.trim()) {
+              return;
+            }
+            addReply(spaceKey, member, threadId, textarea.value, parentReplyId);
+            uiState.openReplyForms.delete(threadId);
+            delete uiState.replyingToReplyId[threadId];
+            render();
+            return;
+          }
+
           if (!canModerate(role)) {
             return;
           }
 
-          const action = button.dataset.action;
           const threadId = button.dataset.threadId;
-          if (!threadId) {
-            return;
-          }
 
           if (action === 'toggle-pin') {
+            if (!threadId) {
+              return;
+            }
             updateThread(spaceKey, threadId, (thread) => ({ ...thread, isPinned: !thread.isPinned }));
           }
           if (action === 'toggle-lock') {
+            if (!threadId) {
+              return;
+            }
             updateThread(spaceKey, threadId, (thread) => ({ ...thread, isLocked: !thread.isLocked }));
           }
           if (action === 'delete-thread') {
+            if (!threadId) {
+              return;
+            }
             deleteThread(spaceKey, threadId);
+          }
+          if (action === 'delete-reply') {
+            const replyId = button.dataset.replyId;
+            if (!replyId) {
+              return;
+            }
+            deleteReply(spaceKey, replyId);
           }
           render();
         });
