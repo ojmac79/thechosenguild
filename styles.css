@@ -11,6 +11,7 @@
   --accent-strong: #9b7236;
   --border: rgba(226, 183, 104, 0.35);
   --arcane: #72a0d8;
+  --button-text: #251507;
 }
 
 * { box-sizing: border-box; }
@@ -49,11 +50,11 @@ a { color: inherit; text-decoration: none; }
   content: "";
   position: fixed;
   inset: 1rem;
-  border: 1px solid rgba(226, 183, 104, 0.18);
+  border: 1px solid var(--border);
   border-radius: 22px;
   pointer-events: none;
   z-index: -1;
-  box-shadow: inset 0 0 0 1px rgba(114, 160, 216, 0.12), 0 0 40px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--arcane) 24%, transparent), 0 0 40px rgba(0, 0, 0, 0.45);
 }
 
 .floating-relics {
@@ -161,8 +162,8 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   padding: 0.55rem 0.8rem;
   border-radius: 999px;
   border: 1px solid var(--border);
-  background: linear-gradient(135deg, #f0c97e, #af8245);
-  color: #271709;
+  background: linear-gradient(135deg, var(--accent), var(--accent-strong));
+  color: var(--button-text);
   font-weight: 700;
   cursor: pointer;
   font-size: 0.8rem;
@@ -284,7 +285,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   content: "";
   position: absolute;
   inset: 0.55rem;
-  border: 1px solid rgba(114, 160, 216, 0.16);
+  border: 1px solid color-mix(in srgb, var(--arcane) 30%, transparent);
   border-radius: 18px;
   pointer-events: none;
 }
