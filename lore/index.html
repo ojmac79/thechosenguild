@@ -306,6 +306,13 @@
         <p class="hero__eyebrow">The Chronicles of Norrath</p>
         <h1 class="page-title">Lore of Norrath</h1>
         <p class="page-subtitle">The history of the world of EverQuest — its gods, dragons, races, and cities — told in the order the ages unfolded.</p>
+        <div class="resource-section__header" data-noneditable="true">
+          <h2 class="resource-section__title">Page Content</h2>
+          <button id="toggleLoreEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
+        </div>
+        <p id="loreEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
+          Public view is enabled. Owner sign-in is required to edit lore content.
+        </p>
 
         <!-- Search bar -->
         <div class="lore-search-bar">
@@ -1395,6 +1402,256 @@
           });
         });
       })();
+    </script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
+      const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const LORE_CONTENT_STORAGE_KEY = 'theChosenLoreEditableContent';
+      const LORE_IMAGE_STORAGE_KEY = 'theChosenLoreEditableImages';
+      const MAX_LORE_IMAGE_SIZE_BYTES = 500 * 1024;
+      const loreEditButton = document.getElementById('toggleLoreEdit');
+      const loreEditNotice = document.getElementById('loreEditNotice');
+      const loreEditableTargets = Array.from(
+        document.querySelectorAll('.page h1, .page h2, .page h3, .page h4, .page p, .page li, .page a, .page summary > span:first-child, .page span')
+      ).filter((element) => !element.closest('[data-noneditable="true"]'));
+      const loreImages = Array.from(document.querySelectorAll('.page img'));
+      const loreImageUploadInput = document.createElement('input');
+      loreImageUploadInput.type = 'file';
+      loreImageUploadInput.accept = 'image/*';
+      loreImageUploadInput.hidden = true;
+      document.body.appendChild(loreImageUploadInput);
+      let loreEditingEnabled = false;
+      let pendingLoreImageTarget = null;
+
+      function readCurrentMember() {
+        const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);
+        if (stored) {
+          try {
+            return JSON.parse(stored);
+          } catch {
+            return null;
+          }
+        }
+
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
+          const user = window.netlifyIdentity.currentUser();
+          const member = {
+            id: user.id || user.email,
+            name: user.user_metadata?.full_name || user.email.split('@')[0],
+            email: user.email,
+            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
+          };
+          localStorage.setItem(CURRENT_MEMBER_STORAGE_KEY, JSON.stringify(member));
+          return member;
+        }
+
+        return null;
+      }
+
+      function isOwner(member) {
+        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      }
+
+      function saveLoreContent() {
+        const saved = {};
+        loreEditableTargets.forEach((element, index) => {
+          saved[index] = element.textContent;
+        });
+        localStorage.setItem(LORE_CONTENT_STORAGE_KEY, JSON.stringify(saved));
+      }
+
+      function applySavedLoreContent() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(LORE_CONTENT_STORAGE_KEY) || 'null');
+          if (!saved || typeof saved !== 'object') {
+            return;
+          }
+          loreEditableTargets.forEach((element, index) => {
+            const next = saved[index];
+            if (typeof next === 'string') {
+              element.textContent = next;
+            }
+          });
+        } catch {
+          console.warn('Unable to read saved lore text content from localStorage.');
+        }
+      }
+
+      function saveLoreImages() {
+        const saved = {};
+        loreImages.forEach((img, index) => {
+          saved[index] = {
+            src: img.getAttribute('src') || '',
+            alt: img.getAttribute('alt') || ''
+          };
+        });
+        localStorage.setItem(LORE_IMAGE_STORAGE_KEY, JSON.stringify(saved));
+      }
+
+      function applySavedLoreImages() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(LORE_IMAGE_STORAGE_KEY) || 'null');
+          if (!saved || typeof saved !== 'object') {
+            return;
+          }
+          loreImages.forEach((img, index) => {
+            const next = saved[index];
+            if (!next || typeof next !== 'object') {
+              return;
+            }
+            if (typeof next.src === 'string' && next.src) {
+              img.src = next.src;
+            }
+            if (typeof next.alt === 'string') {
+              img.alt = next.alt;
+            }
+          });
+        } catch {
+          console.warn('Unable to read saved lore image content from localStorage.');
+        }
+      }
+
+      function normalizeImageUrl(url) {
+        try {
+          const parsed = new URL(url, window.location.href);
+          if (parsed.protocol !== 'http:' && parsed.protocol !== 'https:') {
+            return '';
+          }
+          return parsed.href;
+        } catch {
+          return '';
+        }
+      }
+
+      function setLoreEditingState(enabled) {
+        loreEditingEnabled = enabled;
+        loreEditableTargets.forEach((element) => {
+          element.setAttribute('contenteditable', enabled ? 'true' : 'false');
+        });
+        loreImages.forEach((image) => {
+          image.style.cursor = enabled ? 'pointer' : '';
+          image.title = enabled ? 'Click to replace this image' : '';
+        });
+        loreEditButton.textContent = enabled ? 'Disable Content Editing' : 'Enable Content Editing';
+        loreEditButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      }
+
+      function updateLoreEditAccess() {
+        const canEdit = isOwner(readCurrentMember());
+        loreEditButton.hidden = !canEdit;
+        if (!canEdit && loreEditingEnabled) {
+          setLoreEditingState(false);
+        }
+        loreEditNotice.textContent = canEdit
+          ? 'Owner access enabled. You can edit all text and replace images.'
+          : 'Public view is enabled. Owner sign-in is required to edit lore content.';
+      }
+
+      function replaceLoreImage(targetImage) {
+        const currentSrc = targetImage.getAttribute('src') || '';
+        const nextSource = prompt(
+          'Enter a new image URL. Leave blank to upload an image file from this device.',
+          currentSrc
+        );
+        if (nextSource === null) {
+          return;
+        }
+        const trimmedSource = nextSource.trim();
+        if (trimmedSource) {
+          const safeImageUrl = normalizeImageUrl(trimmedSource);
+          if (!safeImageUrl) {
+            loreEditNotice.textContent = 'Please enter a valid http(s) image URL.';
+            return;
+          }
+          targetImage.src = safeImageUrl;
+          saveLoreImages();
+          loreEditNotice.textContent = 'Image updated.';
+          return;
+        }
+
+        pendingLoreImageTarget = targetImage;
+        loreImageUploadInput.click();
+      }
+
+      loreEditButton.addEventListener('click', () => {
+        if (!isOwner(readCurrentMember())) {
+          loreEditNotice.textContent = 'Owner sign-in is required to edit lore content.';
+          return;
+        }
+
+        setLoreEditingState(!loreEditingEnabled);
+        if (loreEditingEnabled) {
+          saveLoreContent();
+          saveLoreImages();
+        }
+        loreEditNotice.textContent = loreEditingEnabled
+          ? 'Lore editing is enabled for this session. Click any image to replace it (large uploads may exceed browser storage limits).'
+          : 'Lore editing is disabled.';
+      });
+
+      loreEditableTargets.forEach((element) => {
+        element.addEventListener('blur', () => {
+          if (loreEditingEnabled) {
+            saveLoreContent();
+          }
+        });
+      });
+
+      loreImages.forEach((image) => {
+        image.addEventListener('click', () => {
+          if (!loreEditingEnabled || !isOwner(readCurrentMember())) {
+            return;
+          }
+          replaceLoreImage(image);
+        });
+      });
+
+      loreImageUploadInput.addEventListener('change', () => {
+        const [file] = loreImageUploadInput.files || [];
+        if (!file || !pendingLoreImageTarget) {
+          pendingLoreImageTarget = null;
+          loreImageUploadInput.value = '';
+          return;
+        }
+        if (!String(file.type || '').startsWith('image/')) {
+          loreEditNotice.textContent = 'Please select a valid image file.';
+          pendingLoreImageTarget = null;
+          loreImageUploadInput.value = '';
+          return;
+        }
+        if (file.size > MAX_LORE_IMAGE_SIZE_BYTES) {
+          loreEditNotice.textContent = `Image is too large. Please choose one under ${Math.floor(MAX_LORE_IMAGE_SIZE_BYTES / 1024)} KB.`;
+          pendingLoreImageTarget = null;
+          loreImageUploadInput.value = '';
+          return;
+        }
+
+        const reader = new FileReader();
+        reader.onload = () => {
+          pendingLoreImageTarget.src = String(reader.result || '');
+          saveLoreImages();
+          loreEditNotice.textContent = 'Image updated.';
+          pendingLoreImageTarget = null;
+          loreImageUploadInput.value = '';
+        };
+        reader.readAsDataURL(file);
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => updateLoreEditAccess());
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
+          setLoreEditingState(false);
+          updateLoreEditAccess();
+        });
+      }
+
+      applySavedLoreContent();
+      applySavedLoreImages();
+      setLoreEditingState(false);
+      updateLoreEditAccess();
     </script>
     <script src="../scripts/site-decor.js"></script>
   </body>

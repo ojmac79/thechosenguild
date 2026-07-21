@@ -286,6 +286,13 @@
         <p class="hero__eyebrow">The Realm Gate</p>
         <h1 class="page-title">Server Status</h1>
         <p class="page-subtitle">Live status for the Qeynos server. Data sourced from <a href="https://www.daybreakgames.com/status" target="_blank" rel="noopener noreferrer" style="color:var(--accent);text-decoration:underline;text-underline-offset:2px">daybreakgames.com/status</a>.</p>
+        <div class="resource-section__header" data-noneditable="true">
+          <h2 class="resource-section__title">Page Content</h2>
+          <button id="toggleStatusEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
+        </div>
+        <p id="statusEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
+          Public view is enabled. Owner sign-in is required to edit page content.
+        </p>
 
         <!-- ── Qeynos primary card ── -->
         <div class="server-primary panel" id="qeynosCard" aria-live="polite" aria-label="Qeynos server status">
@@ -396,6 +403,13 @@
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton  = document.getElementById('footerLogoutButton');
 
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
+      const STATUS_CONTENT_STORAGE_KEY = 'theChosenStatusPageEditableContent';
+
+      function isOwner(member) {
+        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      }
+
       function getCurrentMember() {
         const stored = localStorage.getItem('theChosenCurrentMember');
         if (stored) {
@@ -438,13 +452,96 @@
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login',  () => renderMemberBadge(getCurrentMember()));
+        window.netlifyIdentity.on('login',  () => {
+          renderMemberBadge(getCurrentMember());
+          updateStatusEditAccess();
+        });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem('theChosenCurrentMember');
           renderMemberBadge(null);
+          updateStatusEditAccess();
         });
       }
       renderMemberBadge(getCurrentMember());
+
+      const statusEditButton = document.getElementById('toggleStatusEdit');
+      const statusEditNotice = document.getElementById('statusEditNotice');
+      const statusEditableTargets = Array.from(
+        document.querySelectorAll('.page h1, .page h2, .page h3, .page h4, .page p, .page li, .page a, .page summary > span:first-child, .page span')
+      ).filter((element) => !element.closest('[data-noneditable="true"]'));
+      let statusEditingEnabled = false;
+
+      function applySavedStatusContent() {
+        try {
+          const saved = JSON.parse(localStorage.getItem(STATUS_CONTENT_STORAGE_KEY) || 'null');
+          if (!saved || typeof saved !== 'object') {
+            return;
+          }
+          statusEditableTargets.forEach((element, index) => {
+            const next = saved[index];
+            if (typeof next === 'string') {
+              element.textContent = next;
+            }
+          });
+        } catch {
+          console.warn('Unable to read saved status page content from localStorage.');
+        }
+      }
+
+      function saveStatusContent() {
+        const saved = {};
+        statusEditableTargets.forEach((element, index) => {
+          saved[index] = element.textContent;
+        });
+        localStorage.setItem(STATUS_CONTENT_STORAGE_KEY, JSON.stringify(saved));
+      }
+
+      function setStatusEditingState(enabled) {
+        statusEditingEnabled = enabled;
+        statusEditableTargets.forEach((element) => {
+          element.setAttribute('contenteditable', enabled ? 'true' : 'false');
+        });
+        statusEditButton.textContent = enabled ? 'Disable Content Editing' : 'Enable Content Editing';
+        statusEditButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+      }
+
+      function updateStatusEditAccess() {
+        const canEdit = isOwner(getCurrentMember());
+        statusEditButton.hidden = !canEdit;
+        if (!canEdit && statusEditingEnabled) {
+          setStatusEditingState(false);
+        }
+        statusEditNotice.textContent = canEdit
+          ? 'Owner access enabled. Use the button to edit this page.'
+          : 'Public view is enabled. Owner sign-in is required to edit page content.';
+      }
+
+      statusEditButton.addEventListener('click', () => {
+        const currentMember = getCurrentMember();
+        if (!isOwner(currentMember)) {
+          statusEditNotice.textContent = 'Owner sign-in is required to edit page content.';
+          return;
+        }
+        setStatusEditingState(!statusEditingEnabled);
+        if (statusEditingEnabled) {
+          saveStatusContent();
+        }
+        statusEditNotice.textContent = statusEditingEnabled
+          ? 'Content editing is enabled for this session.'
+          : 'Content editing is disabled.';
+      });
+
+      statusEditableTargets.forEach((element) => {
+        element.addEventListener('blur', () => {
+          if (statusEditingEnabled) {
+            saveStatusContent();
+          }
+        });
+      });
+
+      applySavedStatusContent();
+      setStatusEditingState(false);
+      updateStatusEditAccess();
 
       /* ═══════════════════════════════════════════════════
          Server Status — real-time fetch from Daybreak
