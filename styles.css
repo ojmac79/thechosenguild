@@ -930,7 +930,7 @@ a { color: inherit; text-decoration: none; }
   .roster-row { grid-template-columns: 1fr 1fr; }
   .roster-row--head { display: none; }
   .roster-entry { flex-direction: column; }
-  .roster-sync__meta,
+  .roster-sync__meta { flex-direction: column; align-items: flex-start; }
   .roster-card__assignment-row { grid-template-columns: 1fr; }
   .stories-compact-form__row { grid-template-columns: 1fr; }
   .stories-compact-form__row--forum { grid-template-columns: 1fr; }
