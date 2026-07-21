@@ -9,6 +9,7 @@ const LEVEL_ORDER = Object.freeze({
 });
 const STORE_NAME = 'guild-membership';
 const DIRECTORY_KEY = 'directory';
+const MEMBER_ACTIVITY_REFRESH_MS = 5 * 60 * 1000;
 
 let fallbackIdCounter = 0;
 
@@ -331,7 +332,7 @@ async function syncAuthenticatedMember(store, user) {
   const directory = await readDirectory(store);
   const existing = findRecordByEmail(directory, member.email);
   const existingLastSeen = existing && existing.lastSeenAt ? Date.parse(existing.lastSeenAt) : NaN;
-  const shouldUpdateLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > 5 * 60 * 1000;
+  const shouldUpdateLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > MEMBER_ACTIVITY_REFRESH_MS;
   const nextRecord = normalizeRecord({
     ...(existing || defaultRecord(member.email)),
     email: member.email,

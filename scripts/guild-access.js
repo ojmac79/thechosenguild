@@ -14,7 +14,7 @@
   const MEMBERSHIP_EVENT_NAME = 'thechosenguild:membershipchange';
   let fallbackIdCounter = 0;
   let cachedDirectory = null;
-  let cachedSelfContext;
+  let cachedSelfContext = null;
   let initializationPromise = null;
   let hasLoadedDirectoryFromServer = false;
 
@@ -550,7 +550,6 @@
     clearCurrentMember,
     getCurrentMember,
     initialize,
-    ready: initialize,
     refreshSelfContext,
     ensureMemberRecord,
     loadDirectory,
