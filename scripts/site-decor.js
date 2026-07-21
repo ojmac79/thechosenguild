@@ -1,12 +1,12 @@
 (function () {
-  const relicCatalog = {
+  const relicCatalog = Object.freeze({
     sword: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2694.svg",
     axe: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1fa93.svg",
     shield: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f6e1.svg",
     staff: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1fa84.svg",
     dagger: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f5e1.svg",
     crystal: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f52e.svg"
-  };
+  });
 
   const routeProfiles = Object.freeze({
     home: { sword: 2, axe: 1, shield: 3, staff: 5, dagger: 2, crystal: 2 },
