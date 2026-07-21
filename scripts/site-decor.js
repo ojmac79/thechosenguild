@@ -8,7 +8,7 @@
     crystal: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f52e.svg"
   };
 
-  const routeProfiles = {
+  const routeProfiles = Object.freeze({
     home: { sword: 2, axe: 1, shield: 3, staff: 5, dagger: 2, crystal: 2 },
     forums: { sword: 4, axe: 4, shield: 3, staff: 1, dagger: 2, crystal: 1 },
     stories: { sword: 2, axe: 1, shield: 1, staff: 5, dagger: 3, crystal: 4 },
@@ -17,7 +17,7 @@
     eqlInformation: { sword: 1, axe: 1, shield: 1, staff: 4, dagger: 3, crystal: 5 },
     login: { sword: 1, axe: 1, shield: 2, staff: 4, dagger: 2, crystal: 3 },
     default: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 2, crystal: 2 }
-  };
+  });
   const routeZones = Object.freeze({
     home: "qeynos",
     forums: "knowledge",
