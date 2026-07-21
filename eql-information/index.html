@@ -591,8 +591,8 @@
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
         setFormAccess(currentMember);
-        if (typeof window.updateEqlContentEditAccess === 'function') {
-          window.updateEqlContentEditAccess();
+        if (window.TheChosenApp && typeof window.TheChosenApp.updateEqlContentEditAccess === 'function') {
+          window.TheChosenApp.updateEqlContentEditAccess();
         }
         const resources = readResources();
 
@@ -784,7 +784,8 @@
           ? 'Owner access enabled. Use the button to enable page-wide content editing.'
           : 'Public view is enabled. Owner sign-in is required to edit page content.';
       }
-      window.updateEqlContentEditAccess = updateContentEditAccess;
+      window.TheChosenApp = window.TheChosenApp || {};
+      window.TheChosenApp.updateEqlContentEditAccess = updateContentEditAccess;
 
       function setContentEditingState(enabled) {
         contentEditingEnabled = enabled;
