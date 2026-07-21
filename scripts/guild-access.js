@@ -14,12 +14,7 @@
   const MEMBERSHIP_EVENT_NAME = 'thechosenguild:membershipchange';
   let fallbackIdCounter = 0;
   let cachedDirectory = null;
-  let cachedSelfContext = {
-    authenticated: false,
-    member: null,
-    record: null,
-    permissions: buildPermissions(null, null, false)
-  };
+  let cachedSelfContext;
   let initializationPromise = null;
   let hasLoadedDirectoryFromServer = false;
 
@@ -209,6 +204,13 @@
       canManageGuild: Boolean(record && record.access.management && statusAllowsAccess)
     };
   }
+
+  cachedSelfContext = {
+    authenticated: false,
+    member: null,
+    record: null,
+    permissions: buildPermissions(null, null, false)
+  };
 
   function readStoredMember() {
     const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);

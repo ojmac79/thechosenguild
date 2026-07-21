@@ -407,8 +407,8 @@
       }
 
       async function renderPage(options = {}) {
-        const forceSelf = Boolean(options.forceSelf);
-        const forceDirectory = Boolean(options.forceDirectory);
+        const forceSelf = options.forceSelf === true;
+        const forceDirectory = options.forceDirectory === true;
 
         try {
           await guildAccess.initialize({ force: forceSelf });

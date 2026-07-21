@@ -150,9 +150,9 @@
   window.addEventListener("DOMContentLoaded", () => {
     placeRelics();
     void injectOwnerNavigation();
-    const guildAccess = window.TheChosenGuildAccess;
-    if (guildAccess && guildAccess.MEMBERSHIP_EVENT_NAME) {
-      window.addEventListener(guildAccess.MEMBERSHIP_EVENT_NAME, () => {
+    const guildAccessRef = window.TheChosenGuildAccess;
+    if (guildAccessRef && guildAccessRef.MEMBERSHIP_EVENT_NAME) {
+      window.addEventListener(guildAccessRef.MEMBERSHIP_EVENT_NAME, () => {
         void injectOwnerNavigation();
       });
     }
