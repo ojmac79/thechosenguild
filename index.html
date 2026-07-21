@@ -75,6 +75,7 @@
               <button type="button" class="scope-btn" id="heroScopeWeb">The Web</button>
             </div>
           </form>
+          <div id="heroSearchResults" class="panel empty-state" hidden></div>
         </section>
 
         <div class="divider-rune" aria-hidden="true">✦</div>
@@ -190,6 +191,20 @@
       const heroSearchInput = document.getElementById('heroSearchInput');
       const heroScopeSite = document.getElementById('heroScopeSite');
       const heroScopeWeb = document.getElementById('heroScopeWeb');
+      const heroSearchResults = document.getElementById('heroSearchResults');
+      const siteSearchPages = [
+        { path: '/', title: 'News' },
+        { path: '/forums/', title: 'Forums' },
+        { path: '/roster/', title: 'Roster' },
+        { path: '/discord/', title: 'Discord' },
+        { path: '/eql-information/', title: 'EQL Information' },
+        { path: '/lore/', title: 'Lore' },
+        { path: '/server-status/', title: 'Status' },
+        { path: '/stories/', title: 'Stories' },
+        { path: '/login/', title: 'Login' },
+        { path: '/guild-management/', title: 'Guild Management' }
+      ];
+      const siteSearchContentCache = new Map();
       let editingPostId = null;
 
       function isOwner(member) {
@@ -365,36 +380,140 @@
         heroScopeWeb.classList.toggle('active', scope === 'web');
       }
 
-      function getSearchDomain() {
-        const hostname = (window.location.hostname || '').toLowerCase();
-        if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
-          return 'thechosenguild.netlify.app';
-        }
-        return hostname;
+      function escapeHtml(value) {
+        return String(value || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
       }
 
-      function runHeroSearch(query) {
-        const searchQuery = String(query || '').trim();
-        if (!searchQuery) {
+      function normalizeSearchValue(value) {
+        return String(value || '')
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function createSearchSnippet(text, query) {
+        const normalizedText = normalizeSearchValue(text);
+        const normalizedQuery = normalizeSearchValue(query);
+        const matchIndex = normalizedText.indexOf(normalizedQuery);
+        if (matchIndex < 0) {
+          return '';
+        }
+
+        const start = Math.max(0, matchIndex - 70);
+        const end = Math.min(text.length, matchIndex + normalizedQuery.length + 90);
+        const prefix = start > 0 ? '…' : '';
+        const suffix = end < text.length ? '…' : '';
+        return `${prefix}${text.slice(start, end).trim()}${suffix}`;
+      }
+
+      async function readPageSearchText(path) {
+        if (siteSearchContentCache.has(path)) {
+          return siteSearchContentCache.get(path);
+        }
+
+        try {
+          const response = await fetch(path, { credentials: 'same-origin' });
+          if (!response.ok) {
+            siteSearchContentCache.set(path, '');
+            return '';
+          }
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          doc.querySelectorAll('script, style, noscript').forEach((element) => element.remove());
+          const content = String(doc.body && doc.body.textContent ? doc.body.textContent : '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          siteSearchContentCache.set(path, content);
+          return content;
+        } catch (error) {
+          siteSearchContentCache.set(path, '');
+          return '';
+        }
+      }
+
+      async function searchEntireSite(query) {
+        const normalizedQuery = normalizeSearchValue(query);
+        if (!normalizedQuery) {
+          return [];
+        }
+
+        const matches = await Promise.all(
+          siteSearchPages.map(async (page) => {
+            const pageText = await readPageSearchText(page.path);
+            if (!normalizeSearchValue(pageText).includes(normalizedQuery)) {
+              return null;
+            }
+
+            return {
+              ...page,
+              snippet: createSearchSnippet(pageText, query)
+            };
+          })
+        );
+
+        return matches.filter(Boolean);
+      }
+
+      function renderSiteSearchResults(results, query) {
+        if (!results.length) {
+          heroSearchResults.hidden = true;
+          heroSearchResults.innerHTML = '';
           return;
         }
 
-        const siteQuery = `site:${getSearchDomain()} ${searchQuery}`;
-        const siteSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(siteQuery)}`;
-        const webSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`;
+        heroSearchResults.hidden = false;
+        heroSearchResults.innerHTML = `
+          <p><strong>Found ${results.length}</strong> matching page${results.length === 1 ? '' : 's'} on this site for “${escapeHtml(query)}”:</p>
+          <ul>
+            ${results
+              .map((result) => `<li><a href="${result.path}">${escapeHtml(result.title)}</a>${result.snippet ? ` — ${escapeHtml(result.snippet)}` : ''}</li>`)
+              .join('')}
+          </ul>
+        `;
+      }
+
+      function runWebSearch(query) {
+        const webSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(String(query || '').trim())}`;
+        window.location.href = webSearchUrl;
+      }
+
+      async function runHeroSearch(query) {
+        const searchQuery = String(query || '').trim();
+        if (!searchQuery) {
+          renderSiteSearchResults([], searchQuery);
+          return;
+        }
 
         setActiveSearchScope('site');
-        window.open(siteSearchUrl, '_blank', 'noopener,noreferrer');
+        const matches = await searchEntireSite(searchQuery);
+        renderSiteSearchResults(matches, searchQuery);
 
-        if (window.confirm('Search the wider web for this query as well?')) {
+        if (!matches.length) {
           setActiveSearchScope('web');
-          window.open(webSearchUrl, '_blank', 'noopener,noreferrer');
+          runWebSearch(searchQuery);
         }
       }
 
-      heroSearchForm.addEventListener('submit', (event) => {
+      heroScopeSite.addEventListener('click', () => {
+        setActiveSearchScope('site');
+      });
+
+      heroScopeWeb.addEventListener('click', () => {
+        setActiveSearchScope('web');
+      });
+
+      heroSearchForm.addEventListener('submit', async (event) => {
         event.preventDefault();
-        runHeroSearch(heroSearchInput.value);
+        if (heroScopeWeb.classList.contains('active')) {
+          runWebSearch(heroSearchInput.value);
+          return;
+        }
+        await runHeroSearch(heroSearchInput.value);
       });
 
       newPostButton.addEventListener('click', () => {
