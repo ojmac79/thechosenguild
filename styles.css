@@ -719,6 +719,107 @@ a { color: inherit; text-decoration: none; }
   text-underline-offset: 0.2rem;
 }
 
+/* ── Stories ─────────────────────────────────────────────────────────────── */
+.stories-form-panel { display: grid; gap: 0.8rem; margin-top: 1.2rem; }
+.stories-form-panel__header { display: flex; align-items: center; justify-content: space-between; gap: 0.8rem; flex-wrap: wrap; }
+.stories-compact-form { display: grid; gap: 0.65rem; }
+.stories-compact-form__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.75rem;
+  align-items: start;
+}
+.stories-compact-form__row--forum {
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.stories-checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.stories-checkbox-label input[type="checkbox"] { accent-color: var(--accent); width: 14px; height: 14px; }
+.stories-forum-summary { flex: 1; min-width: 0; }
+.stories-form__actions { justify-content: flex-start; }
+.stories-image-previews {
+  display: flex;
+  gap: 0.6rem;
+  flex-wrap: wrap;
+  margin-top: 0.2rem;
+}
+.story-img-preview {
+  position: relative;
+  width: 80px;
+  height: 80px;
+  border-radius: 10px;
+  overflow: hidden;
+  border: 1px solid var(--border);
+}
+.story-img-preview img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.story-img-remove {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  border: none;
+  background: rgba(0,0,0,0.7);
+  color: var(--text);
+  font-size: 0.65rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  padding: 0;
+}
+.stories-search-wrap { margin: 0.5rem 0 1rem; }
+.stories-search { width: 100%; max-width: 100%; }
+.stories-list { display: grid; gap: 1.25rem; }
+.stories-archive-row { display: flex; justify-content: center; margin-top: 1rem; }
+.stories-show-all { font-size: 0.85rem; padding: 0.5rem 1rem; }
+.story-card { display: grid; gap: 0.85rem; }
+.story-card__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 1rem; }
+.story-card__header-main { display: grid; gap: 0.3rem; flex: 1; min-width: 0; }
+.story-card__title { margin: 0; font-size: 1.2rem; font-family: 'Cinzel', serif; }
+.story-card__meta {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.75rem;
+  color: var(--muted);
+  font-size: 0.88rem;
+}
+.story-card__avatar { width: 22px; height: 22px; border-radius: 50%; object-fit: cover; border: 1px solid var(--border); flex-shrink: 0; }
+.story-card__author { font-weight: 700; color: var(--text); }
+.story-card__character { color: var(--accent); font-size: 0.84rem; }
+.story-card__time { color: var(--muted); font-size: 0.84rem; }
+.story-card__edited { color: var(--muted); font-size: 0.8rem; font-style: italic; }
+.story-card__body { margin: 0; color: var(--text); line-height: 1.7; white-space: pre-wrap; }
+.story-card__images {
+  display: grid;
+  gap: 0.6rem;
+  border-radius: 14px;
+  overflow: hidden;
+}
+.story-card__images--1 { grid-template-columns: 1fr; }
+.story-card__images--2 { grid-template-columns: repeat(2, 1fr); }
+.story-card__images--3 { grid-template-columns: repeat(3, 1fr); }
+.story-card__image {
+  width: 100%;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 10px;
+  border: 1px solid var(--border);
+  display: block;
+}
+
 @media (max-width: 800px) {
   .site-header__inner { flex-direction: column; border-radius: 24px; }
   .site-nav { justify-content: center; }
@@ -727,4 +828,9 @@ a { color: inherit; text-decoration: none; }
   .roster-row { grid-template-columns: 1fr 1fr; }
   .roster-row--head { display: none; }
   .roster-entry { flex-direction: column; }
+  .stories-compact-form__row { grid-template-columns: 1fr; }
+  .stories-compact-form__row--forum { grid-template-columns: 1fr; }
+  .story-card__images--2,
+  .story-card__images--3 { grid-template-columns: repeat(2, 1fr); }
+  .story-card__image { height: 120px; }
 }

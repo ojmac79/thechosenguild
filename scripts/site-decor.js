@@ -9,6 +9,7 @@
   const routeProfiles = {
     home: { sword: 1, axe: 1, staff: 5, dagger: 2 },
     forums: { sword: 4, axe: 4, staff: 1, dagger: 2 },
+    stories: { sword: 2, axe: 1, staff: 5, dagger: 3 },
     roster: { sword: 4, axe: 3, staff: 1, dagger: 2 },
     discord: { sword: 2, axe: 2, staff: 2, dagger: 3 },
     resources: { sword: 1, axe: 1, staff: 4, dagger: 3 },
@@ -27,6 +28,9 @@
     }
     if (path.startsWith("/forums")) {
       return routeProfiles.forums;
+    }
+    if (path.startsWith("/stories")) {
+      return routeProfiles.stories;
     }
     if (path.startsWith("/roster")) {
       return routeProfiles.roster;
