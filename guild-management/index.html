@@ -1,0 +1,635 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Guild Management</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">Stories</a>
+            <a class="site-nav__link active" href="/guild-management/">Guild Management</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Officer Council Control Room</p>
+        <h1 class="page-title">Guild Management</h1>
+        <p class="page-subtitle">
+          Owner-only command center for verified Netlify members, ranks, titles, and access across guild systems.
+        </p>
+
+        <section id="managementGate" class="panel gate">
+          <p class="hero__eyebrow">Restricted</p>
+          <h2 class="resource-section__title">Guild Leader Sign-In Required</h2>
+          <p id="managementGateMessage">
+            Sign in with the guild leader Netlify account to manage membership, titles, and site access.
+          </p>
+          <div class="auth-actions">
+            <a class="btn-primary" href="/login/">Log In with Netlify</a>
+            <a class="auth-link" href="/">Return to Hall</a>
+          </div>
+        </section>
+
+        <div id="managementApp" hidden>
+          <section class="guild-metrics" aria-label="Guild overview">
+            <article class="panel guild-metric">
+              <p class="guild-metric__label">Registered Members</p>
+              <p class="guild-metric__value" id="metricTotal">0</p>
+            </article>
+            <article class="panel guild-metric">
+              <p class="guild-metric__label">Active Members</p>
+              <p class="guild-metric__value" id="metricActive">0</p>
+            </article>
+            <article class="panel guild-metric">
+              <p class="guild-metric__label">Pending Reviews</p>
+              <p class="guild-metric__value" id="metricPending">0</p>
+            </article>
+            <article class="panel guild-metric">
+              <p class="guild-metric__label">Leadership Roles</p>
+              <p class="guild-metric__value" id="metricOfficers">0</p>
+            </article>
+            <article class="panel guild-metric">
+              <p class="guild-metric__label">Forum Access</p>
+              <p class="guild-metric__value" id="metricForums">0</p>
+            </article>
+            <article class="panel guild-metric">
+              <p class="guild-metric__label">Roster Access</p>
+              <p class="guild-metric__value" id="metricRoster">0</p>
+            </article>
+          </section>
+
+          <section class="panel guild-command">
+            <div class="guild-command__header">
+              <div>
+                <h2 class="resource-section__title">Membership Command</h2>
+                <p class="forum2-note">Authorize verified Netlify accounts and assign guild structure for the entire site.</p>
+              </div>
+              <div class="guild-command__actions">
+                <button class="btn-torch" type="button" id="exportGuildButton">Export Registry</button>
+              </div>
+            </div>
+            <p id="managementNotice" class="resource-notice" aria-live="polite"></p>
+
+            <form id="guildMemberForm" class="resource-form">
+              <div class="resource-form__row">
+                <label class="resource-field">
+                  <span>Netlify Account Email</span>
+                  <input id="memberEmail" type="email" maxlength="120" required />
+                </label>
+                <label class="resource-field">
+                  <span>Display Name</span>
+                  <input id="memberName" type="text" maxlength="80" />
+                </label>
+              </div>
+              <div class="resource-form__row">
+                <label class="resource-field">
+                  <span>Membership Level</span>
+                  <select id="memberLevel" required>
+                    <option value="applicant">Applicant</option>
+                    <option value="member">Guild Member</option>
+                    <option value="officer">Guild Officer</option>
+                    <option value="leader">Guild Leader</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </label>
+                <label class="resource-field">
+                  <span>Honor Title</span>
+                  <input id="memberTitle" type="text" maxlength="80" placeholder="Guild Officer" />
+                </label>
+              </div>
+              <div class="resource-form__row">
+                <label class="resource-field">
+                  <span>Standing</span>
+                  <select id="memberStatus" required>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="probation">Probation</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </label>
+                <label class="resource-field">
+                  <span>Access Package</span>
+                  <div class="guild-checkbox-grid">
+                    <label class="guild-checkbox">
+                      <input id="memberForumsAccess" type="checkbox" />
+                      <span>Forum posting + private forum</span>
+                    </label>
+                    <label class="guild-checkbox">
+                      <input id="memberRosterAccess" type="checkbox" />
+                      <span>Roster visibility + editing</span>
+                    </label>
+                    <label class="guild-checkbox">
+                      <input id="memberModerateAccess" type="checkbox" />
+                      <span>Forum moderation powers</span>
+                    </label>
+                  </div>
+                </label>
+              </div>
+              <label class="resource-field">
+                <span>Command Notes</span>
+                <textarea id="memberNotes" rows="4" maxlength="800" placeholder="Recruit notes, raid responsibility, special permissions, or follow-up reminders."></textarea>
+              </label>
+              <div class="auth-actions roster-form__actions">
+                <button class="btn-primary" type="submit" id="memberSaveButton">Authorize Member</button>
+                <button class="btn-torch" type="button" id="memberResetButton">Clear Form</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="panel guild-directory-panel">
+            <div class="guild-directory-panel__header">
+              <div>
+                <h2 class="resource-section__title">Guild Registry</h2>
+                <p class="forum2-note">Track approved accounts, pending sign-ins, site privileges, and leadership roles.</p>
+              </div>
+              <div class="guild-filter-grid">
+                <label class="resource-field">
+                  <span>Search</span>
+                  <input id="memberSearch" type="search" maxlength="120" placeholder="Search by name, email, title, or notes" />
+                </label>
+                <label class="resource-field">
+                  <span>Standing</span>
+                  <select id="memberStatusFilter">
+                    <option value="all">All standings</option>
+                    <option value="pending">Pending</option>
+                    <option value="active">Active</option>
+                    <option value="probation">Probation</option>
+                    <option value="suspended">Suspended</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </label>
+                <label class="resource-field">
+                  <span>Level</span>
+                  <select id="memberLevelFilter">
+                    <option value="all">All levels</option>
+                    <option value="leader">Guild Leader</option>
+                    <option value="officer">Guild Officer</option>
+                    <option value="member">Guild Member</option>
+                    <option value="applicant">Applicant</option>
+                    <option value="retired">Retired</option>
+                  </select>
+                </label>
+              </div>
+            </div>
+            <div id="guildDirectoryList" class="guild-directory-list"></div>
+          </section>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <div id="footerMember" class="site-footer__member" hidden>
+          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
+          <div>
+            <div id="footerMemberName" class="site-footer__member-name"></div>
+            <div id="footerMemberEmail" class="site-footer__member-email"></div>
+          </div>
+        </div>
+        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
+          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
+          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
+        </div>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
+      </footer>
+    </div>
+
+    <script src="../scripts/site-decor.js"></script>
+    <script src="../scripts/guild-access.js"></script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      const guildAccess = window.TheChosenGuildAccess;
+      const gate = document.getElementById('managementGate');
+      const gateMessage = document.getElementById('managementGateMessage');
+      const app = document.getElementById('managementApp');
+      const notice = document.getElementById('managementNotice');
+      const directoryList = document.getElementById('guildDirectoryList');
+      const exportGuildButton = document.getElementById('exportGuildButton');
+      const memberForm = document.getElementById('guildMemberForm');
+      const memberSaveButton = document.getElementById('memberSaveButton');
+      const memberResetButton = document.getElementById('memberResetButton');
+      const memberSearch = document.getElementById('memberSearch');
+      const memberStatusFilter = document.getElementById('memberStatusFilter');
+      const memberLevelFilter = document.getElementById('memberLevelFilter');
+
+      const memberEmail = document.getElementById('memberEmail');
+      const memberName = document.getElementById('memberName');
+      const memberLevel = document.getElementById('memberLevel');
+      const memberTitle = document.getElementById('memberTitle');
+      const memberStatus = document.getElementById('memberStatus');
+      const memberForumsAccess = document.getElementById('memberForumsAccess');
+      const memberRosterAccess = document.getElementById('memberRosterAccess');
+      const memberModerateAccess = document.getElementById('memberModerateAccess');
+      const memberNotes = document.getElementById('memberNotes');
+
+      const footerMember = document.getElementById('footerMember');
+      const footerMemberMenu = document.getElementById('footerMemberMenu');
+      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
+      const footerMemberName = document.getElementById('footerMemberName');
+      const footerMemberEmail = document.getElementById('footerMemberEmail');
+      const footerAccountButton = document.getElementById('footerAccountButton');
+      const footerLogoutButton = document.getElementById('footerLogoutButton');
+
+      let editingEmail = '';
+
+      function renderMemberBadge(member) {
+        if (!member) {
+          footerMember.hidden = true;
+          footerMemberMenu.hidden = true;
+          return;
+        }
+
+        const displayName = member.name || member.email || 'Guild Member';
+        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt = `${displayName} avatar`;
+        footerMemberName.textContent = displayName;
+        footerMemberEmail.textContent = member.email || 'Netlify member';
+        footerMember.hidden = false;
+        footerMemberMenu.hidden = false;
+      }
+
+      function setNotice(message, type) {
+        notice.textContent = message;
+        notice.className = type ? `resource-notice resource-notice--${type}` : 'resource-notice';
+      }
+
+      function clearForm() {
+        editingEmail = '';
+        memberForm.reset();
+        memberSaveButton.textContent = 'Authorize Member';
+        memberEmail.disabled = false;
+        setNotice('Owner access is active. Authorize verified Netlify members for forums, roster, and moderation.', '');
+      }
+
+      function formatDate(value) {
+        if (!value) {
+          return 'Never';
+        }
+        const date = new Date(value);
+        return Number.isNaN(date.getTime()) ? 'Never' : date.toLocaleString();
+      }
+
+      function applyLevelDefaults() {
+        if (memberLevel.value === 'leader') {
+          memberTitle.value = memberTitle.value || 'Guild Leader';
+          memberStatus.value = 'active';
+          memberForumsAccess.checked = true;
+          memberRosterAccess.checked = true;
+          memberModerateAccess.checked = true;
+        }
+        if (memberLevel.value === 'officer') {
+          memberTitle.value = memberTitle.value || 'Guild Officer';
+          memberStatus.value = memberStatus.value === 'pending' ? 'active' : memberStatus.value;
+          memberForumsAccess.checked = true;
+          memberRosterAccess.checked = true;
+        }
+      }
+
+      function populateMetrics() {
+        const stats = guildAccess.getDashboardStats();
+        document.getElementById('metricTotal').textContent = stats.total;
+        document.getElementById('metricActive').textContent = stats.active;
+        document.getElementById('metricPending').textContent = stats.pending;
+        document.getElementById('metricOfficers').textContent = stats.officers;
+        document.getElementById('metricForums').textContent = stats.forumAccess;
+        document.getElementById('metricRoster').textContent = stats.rosterAccess;
+      }
+
+      function getFilteredMembers() {
+        const directory = guildAccess.readDirectory();
+        const query = guildAccess.normalizeEmail(memberSearch.value) || memberSearch.value.trim().toLowerCase();
+        const standing = memberStatusFilter.value;
+        const level = memberLevelFilter.value;
+
+        return directory.members
+          .slice()
+          .sort((a, b) => {
+            const levelOrder = { leader: 0, officer: 1, member: 2, applicant: 3, retired: 4 };
+            const rankDiff = (levelOrder[a.level] ?? 99) - (levelOrder[b.level] ?? 99);
+            if (rankDiff !== 0) {
+              return rankDiff;
+            }
+            return a.email.localeCompare(b.email);
+          })
+          .filter((record) => {
+            if (standing !== 'all' && record.status !== standing) {
+              return false;
+            }
+            if (level !== 'all' && record.level !== level) {
+              return false;
+            }
+            if (!query) {
+              return true;
+            }
+            const haystack = [record.name, record.email, record.title, record.notes, record.level, record.status]
+              .join(' ')
+              .toLowerCase();
+            return haystack.includes(query.toLowerCase());
+          });
+      }
+
+      function renderDirectory() {
+        populateMetrics();
+        const members = getFilteredMembers();
+
+        if (!members.length) {
+          directoryList.innerHTML = '<article class="panel guild-member-card"><p class="empty-state">No members match the current filter.</p></article>';
+          return;
+        }
+
+        directoryList.innerHTML = members
+          .map((record) => {
+            const owner = record.email === guildAccess.OWNER_EMAIL;
+            const verificationBadge = record.verifiedNetlify ? 'Verified Netlify' : 'Awaiting Sign-In';
+            const quickApprove = record.status === 'pending'
+              ? `<button class="resource-item__edit" type="button" data-action="approve-member" data-email="${record.email}">Approve</button>`
+              : '';
+
+            return `
+              <article class="panel guild-member-card">
+                <div class="guild-member-card__top">
+                  <div>
+                    <p class="guild-member-card__title">${record.name || 'Unnamed Member'}</p>
+                    <p class="guild-member-card__email">${record.email}</p>
+                  </div>
+                  <div class="guild-badge-group">
+                    <span class="forum-badge forum-badge--member">${record.title || guildAccess.getMemberLabel(record)}</span>
+                    <span class="forum-badge">${record.status}</span>
+                    <span class="forum-badge">${verificationBadge}</span>
+                  </div>
+                </div>
+                <div class="guild-member-card__meta">
+                  <p><strong>Level:</strong> ${record.level}</p>
+                  <p><strong>Forums:</strong> ${record.access.forums ? 'Enabled' : 'Disabled'}</p>
+                  <p><strong>Roster:</strong> ${record.access.roster ? 'Enabled' : 'Disabled'}</p>
+                  <p><strong>Moderation:</strong> ${record.access.moderateForums ? 'Enabled' : 'Disabled'}</p>
+                  <p><strong>Last Seen:</strong> ${formatDate(record.lastSeenAt)}</p>
+                </div>
+                <p class="guild-member-card__notes">${record.notes || 'No command notes recorded.'}</p>
+                <div class="resource-item__actions guild-member-card__actions">
+                  ${quickApprove}
+                  <button class="resource-item__edit" type="button" data-action="edit-member" data-email="${record.email}">Edit</button>
+                  ${owner ? '' : `<button class="resource-item__edit" type="button" data-action="toggle-forums" data-email="${record.email}">${record.access.forums ? 'Disable Forums' : 'Enable Forums'}</button>`}
+                  ${owner ? '' : `<button class="resource-item__edit" type="button" data-action="toggle-roster" data-email="${record.email}">${record.access.roster ? 'Disable Roster' : 'Enable Roster'}</button>`}
+                  ${owner ? '' : `<button class="resource-item__delete" type="button" data-action="toggle-suspension" data-email="${record.email}">${record.status === 'suspended' ? 'Reinstate' : 'Suspend'}</button>`}
+                  ${owner ? '' : `<button class="resource-item__delete" type="button" data-action="remove-member" data-email="${record.email}">Remove</button>`}
+                </div>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      function renderPage() {
+        const member = guildAccess.getCurrentMember();
+        const permissions = guildAccess.getPermissions(member);
+
+        renderMemberBadge(member);
+
+        if (!permissions.canManageGuild) {
+          gate.hidden = false;
+          app.hidden = true;
+          gateMessage.textContent = member
+            ? `Signed in as ${member.email}. Guild Management is reserved for the guild leader account.`
+            : 'Sign in with the guild leader Netlify account to manage membership, titles, and site access.';
+          return;
+        }
+
+        gate.hidden = true;
+        app.hidden = false;
+        if (!editingEmail) {
+          clearForm();
+        }
+        renderDirectory();
+      }
+
+      function loadRecordIntoForm(record) {
+        editingEmail = record.email;
+        memberEmail.value = record.email;
+        memberName.value = record.name || '';
+        memberLevel.value = record.level || 'member';
+        memberTitle.value = record.title || '';
+        memberStatus.value = record.status || 'pending';
+        memberForumsAccess.checked = Boolean(record.access.forums);
+        memberRosterAccess.checked = Boolean(record.access.roster);
+        memberModerateAccess.checked = Boolean(record.access.moderateForums);
+        memberNotes.value = record.notes || '';
+        memberSaveButton.textContent = 'Update Member';
+        memberEmail.disabled = true;
+        setNotice(`Editing ${record.email}. Update their rank, status, title, or site access.`, '');
+        memberForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+
+      memberForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const currentMember = guildAccess.getCurrentMember();
+        if (!guildAccess.getPermissions(currentMember).canManageGuild) {
+          renderPage();
+          return;
+        }
+
+        const email = guildAccess.normalizeEmail(memberEmail.value);
+        if (!email) {
+          setNotice('A verified Netlify account email is required.', 'error');
+          return;
+        }
+
+        const leader = email === guildAccess.OWNER_EMAIL || memberLevel.value === 'leader';
+        const saved = guildAccess.upsertRecord({
+          email,
+          name: memberName.value.trim(),
+          level: leader ? 'leader' : memberLevel.value,
+          title: memberTitle.value.trim() || (leader ? 'Guild Leader' : ''),
+          status: leader ? 'active' : memberStatus.value,
+          notes: memberNotes.value.trim(),
+          verifiedNetlify: Boolean(guildAccess.findRecordByEmail(email)?.verifiedNetlify),
+          access: {
+            forums: leader ? true : memberForumsAccess.checked,
+            roster: leader ? true : memberRosterAccess.checked,
+            moderateForums: leader ? true : memberModerateAccess.checked,
+            management: leader
+          }
+        });
+
+        clearForm();
+        renderDirectory();
+        setNotice(`${saved.email} has been updated in the guild registry.`, 'success');
+      });
+
+      memberResetButton.addEventListener('click', () => {
+        clearForm();
+      });
+
+      memberLevel.addEventListener('change', applyLevelDefaults);
+
+      exportGuildButton.addEventListener('click', () => {
+        const payload = JSON.stringify(guildAccess.readDirectory(), null, 2);
+        const blob = new Blob([payload], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = 'the-chosen-guild-registry.json';
+        link.click();
+        URL.revokeObjectURL(url);
+        setNotice('Guild registry exported.', 'success');
+      });
+
+      [memberSearch, memberStatusFilter, memberLevelFilter].forEach((element) => {
+        element.addEventListener('input', renderDirectory);
+        element.addEventListener('change', renderDirectory);
+      });
+
+      directoryList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-action]');
+        if (!button) {
+          return;
+        }
+
+        const currentMember = guildAccess.getCurrentMember();
+        if (!guildAccess.getPermissions(currentMember).canManageGuild) {
+          renderPage();
+          return;
+        }
+
+        const email = button.dataset.email;
+        const record = guildAccess.findRecordByEmail(email);
+        if (!record) {
+          return;
+        }
+
+        const action = button.dataset.action;
+        if (action === 'edit-member') {
+          loadRecordIntoForm(record);
+          return;
+        }
+
+        if (action === 'approve-member') {
+          guildAccess.upsertRecord({
+            ...record,
+            status: 'active',
+            level: record.level === 'applicant' ? 'member' : record.level,
+            title: record.title || 'Guild Member',
+            access: {
+              ...record.access,
+              forums: true,
+              roster: true
+            }
+          });
+          renderDirectory();
+          setNotice(`${record.email} has been approved for guild systems.`, 'success');
+          return;
+        }
+
+        if (action === 'toggle-forums') {
+          guildAccess.upsertRecord({
+            ...record,
+            access: {
+              ...record.access,
+              forums: !record.access.forums
+            }
+          });
+          renderDirectory();
+          setNotice(`Forum access updated for ${record.email}.`, 'success');
+          return;
+        }
+
+        if (action === 'toggle-roster') {
+          guildAccess.upsertRecord({
+            ...record,
+            access: {
+              ...record.access,
+              roster: !record.access.roster
+            }
+          });
+          renderDirectory();
+          setNotice(`Roster access updated for ${record.email}.`, 'success');
+          return;
+        }
+
+        if (action === 'toggle-suspension') {
+          guildAccess.upsertRecord({
+            ...record,
+            status: record.status === 'suspended' ? 'active' : 'suspended'
+          });
+          renderDirectory();
+          setNotice(`Standing updated for ${record.email}.`, 'success');
+          return;
+        }
+
+        if (action === 'remove-member') {
+          guildAccess.removeRecord(record.email);
+          if (editingEmail === record.email) {
+            clearForm();
+          }
+          renderDirectory();
+          setNotice(`${record.email} has been removed from the guild registry.`, 'success');
+        }
+      });
+
+      footerAccountButton.addEventListener('click', () => {
+        window.location.href = '/login/';
+      });
+
+      footerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.logout();
+        }
+        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+        renderPage();
+      });
+
+      window.addEventListener('storage', (event) => {
+        if (
+          event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
+          event.key === guildAccess.DIRECTORY_STORAGE_KEY
+        ) {
+          renderPage();
+        }
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => {
+          guildAccess.ensureMemberRecord(guildAccess.getCurrentMember());
+          renderPage();
+        });
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+          renderPage();
+        });
+      }
+
+      renderPage();
+    </script>
+  </body>
+</html>

@@ -42,7 +42,17 @@
       <main class="page">
         <p class="hero__eyebrow">The Muster Roll</p>
         <h1 class="page-title">Guild Roster</h1>
-        <p class="page-subtitle">Members can maintain character records. Entries are sorted by character first name.</p>
+        <p class="page-subtitle">Authorized guild members can maintain character records. Entries are sorted by character first name.</p>
+
+        <section id="rosterGate" class="panel gate">
+          <p class="hero__eyebrow">Roster Access Required</p>
+          <h2 class="resource-section__title">Verified Guild Access Needed</h2>
+          <p id="rosterGateMessage">Sign in with a verified Netlify account, then ask the guild leader to authorize your roster access.</p>
+          <div class="auth-actions">
+            <a class="btn-primary" href="/login/">Enter the Hall</a>
+            <a class="auth-link" href="/">Return to Hall</a>
+          </div>
+        </section>
 
         <section class="panel roster-manager" aria-label="Roster manager">
           <div class="roster-manager__top">
@@ -113,17 +123,19 @@
     </div>
 
     <script src="../../scripts/site-decor.js"></script>
+    <script src="../../scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const ROSTER_STORAGE_KEY = 'theChosenRosterEntries';
-      const MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
+      const guildAccess = window.TheChosenGuildAccess;
 
       const rosterForm = document.getElementById('rosterForm');
       const rosterList = document.getElementById('rosterList');
       const rosterNotice = document.getElementById('rosterNotice');
       const rosterSaveButton = document.getElementById('rosterSaveButton');
       const rosterCancelEdit = document.getElementById('rosterCancelEdit');
+      const rosterGate = document.getElementById('rosterGate');
+      const rosterGateMessage = document.getElementById('rosterGateMessage');
 
       const characterFirstName = document.getElementById('characterFirstName');
       const characterLastName = document.getElementById('characterLastName');
@@ -152,32 +164,11 @@
       }
 
       function getCurrentMember() {
-        const stored = localStorage.getItem(MEMBER_STORAGE_KEY);
-        if (stored) {
-          try {
-            return JSON.parse(stored);
-          } catch (error) {
-            return null;
-          }
-        }
-
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          const user = window.netlifyIdentity.currentUser();
-          const member = {
-            id: user.id || user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email,
-            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-          };
-          localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(member));
-          return member;
-        }
-
-        return null;
+        return guildAccess.getCurrentMember();
       }
 
-      function isOwner(member) {
-        return Boolean(member && member.email && member.email.toLowerCase() === OWNER_EMAIL.toLowerCase());
+      function getPermissions(member) {
+        return guildAccess.getPermissions(member);
       }
 
       function readRosterEntries() {
@@ -212,10 +203,11 @@
       }
 
       function canManageEntry(entry, member) {
-        if (!member) {
+        const permissions = getPermissions(member);
+        if (!member || !permissions.canUseRoster) {
           return false;
         }
-        return isOwner(member) || entry.ownerId === member.id;
+        return permissions.isOwner || entry.ownerId === member.id;
       }
 
       function resetForm() {
@@ -226,26 +218,47 @@
       }
 
       function setNoticeForMember(member) {
+        const permissions = getPermissions(member);
         if (!member) {
-          rosterNotice.textContent = 'Sign in to add or edit your character listings.';
+          rosterNotice.textContent = 'Sign in with Netlify Identity to request roster access.';
+          rosterForm.hidden = true;
+          return;
+        }
+
+        if (!permissions.canUseRoster) {
+          rosterNotice.textContent = 'Your account is verified, but roster access has not been granted yet.';
           rosterForm.hidden = true;
           return;
         }
 
         rosterForm.hidden = false;
-        rosterNotice.textContent = isOwner(member)
-          ? 'Owner access: you can edit or delete any roster entry.'
-          : 'Member access: you can add entries and edit/delete only your own.';
+        rosterNotice.textContent = permissions.isOwner
+          ? 'Guild leader access: you can edit or delete any roster entry.'
+          : 'Guild roster access: you can add entries and edit/delete only your own.';
       }
 
       function renderRoster() {
         const member = getCurrentMember();
+        const permissions = getPermissions(member);
         const entries = readRosterEntries()
           .slice()
           .sort((a, b) => a.firstName.localeCompare(b.firstName, undefined, { sensitivity: 'base' }));
 
         renderMemberBadge(member);
         setNoticeForMember(member);
+        rosterGate.hidden = permissions.canUseRoster;
+        rosterList.hidden = !permissions.canUseRoster;
+
+        if (!member) {
+          rosterGateMessage.textContent = 'Sign in with a verified Netlify account, then ask the guild leader to authorize your roster access.';
+        } else if (!permissions.canUseRoster) {
+          rosterGateMessage.textContent = `Signed in as ${member.email}. Your account is verified, but roster access is still locked.`;
+        }
+
+        if (!permissions.canUseRoster) {
+          rosterList.innerHTML = '';
+          return;
+        }
 
         if (!entries.length) {
           rosterList.innerHTML = '<div class="panel empty-state"><p>No roster entries yet. Add your character to begin the roll call.</p></div>';
@@ -295,7 +308,7 @@
       rosterForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const member = getCurrentMember();
-        if (!member) {
+        if (!getPermissions(member).canUseRoster) {
           window.location.href = '/login/';
           return;
         }
@@ -382,17 +395,30 @@
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem(MEMBER_STORAGE_KEY);
+        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
         resetForm();
         renderMemberBadge(null);
         renderRoster();
       });
 
+      window.addEventListener('storage', (event) => {
+        if (
+          event.key === ROSTER_STORAGE_KEY ||
+          event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
+          event.key === guildAccess.DIRECTORY_STORAGE_KEY
+        ) {
+          renderRoster();
+        }
+      });
+
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderRoster());
+        window.netlifyIdentity.on('login', () => {
+          guildAccess.ensureMemberRecord(getCurrentMember());
+          renderRoster();
+        });
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(MEMBER_STORAGE_KEY);
+          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
           resetForm();
           renderMemberBadge(null);
           renderRoster();

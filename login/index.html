@@ -55,6 +55,12 @@
             <button class="btn-torch" id="logoutButton" type="button" hidden>Log Out</button>
             <a class="auth-link" href="/">Return to Hall</a>
           </div>
+
+          <div class="panel guild-access-summary" id="memberAccessSummary">
+            <h2 class="resource-section__title" id="memberAccessTitle">Guild Standing</h2>
+            <p id="memberAccessBody">Sign in to verify your Netlify account and see whether forums or roster access has been granted.</p>
+            <div class="guild-access-summary__links" id="memberAccessLinks"></div>
+          </div>
         </div>
       </main>
 
@@ -77,15 +83,19 @@
     </div>
 
     <script src="../../scripts/site-decor.js"></script>
+    <script src="../../scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const STORAGE_KEY = 'theChosenCurrentMember';
+      const guildAccess = window.TheChosenGuildAccess;
       const messageBox = document.getElementById('authMessage');
       const gateTitle = document.getElementById('gateTitle');
       const gateIntro = document.getElementById('gateIntro');
       const loginButton = document.getElementById('loginButton');
       const signupButton = document.getElementById('signupButton');
       const logoutButton = document.getElementById('logoutButton');
+      const memberAccessTitle = document.getElementById('memberAccessTitle');
+      const memberAccessBody = document.getElementById('memberAccessBody');
+      const memberAccessLinks = document.getElementById('memberAccessLinks');
       const thumbnailOptions = [
         { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
         { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
@@ -150,18 +160,11 @@
       }
 
       function saveCurrentMember(user) {
-        const member = {
-          id: user.id || user.email,
-          name: user.user_metadata?.full_name || user.email.split('@')[0],
-          email: user.email,
-          avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-        };
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(member));
-        return member;
+        return guildAccess.saveCurrentMember(user);
       }
 
       function clearCurrentMember() {
-        localStorage.removeItem(STORAGE_KEY);
+        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
       }
 
       function renderMemberBadge(member) {
@@ -177,6 +180,35 @@
         footerMemberEmail.textContent = member.email || 'Netlify member';
         footerMember.hidden = false;
         footerMemberMenu.hidden = false;
+      }
+
+      function renderAccessSummary(member) {
+        if (!member) {
+          memberAccessTitle.textContent = 'Guild Standing';
+          memberAccessBody.textContent = 'Sign in to verify your Netlify account and see whether forums or roster access has been granted.';
+          memberAccessLinks.innerHTML = '';
+          return;
+        }
+
+        guildAccess.ensureMemberRecord(member);
+        const permissions = guildAccess.getPermissions(member);
+        const record = permissions.record;
+        const links = [];
+        if (permissions.canUseForums) {
+          links.push('<a class="btn-torch" href="/forums/">Open Forums</a>');
+        }
+        if (permissions.canUseRoster) {
+          links.push('<a class="btn-torch" href="/roster/">Open Roster</a>');
+        }
+        if (permissions.canManageGuild) {
+          links.push('<a class="btn-primary" href="/guild-management/">Guild Management</a>');
+        }
+
+        memberAccessTitle.textContent = record && record.title ? record.title : 'Verified Visitor';
+        memberAccessBody.textContent = permissions.canUseForums || permissions.canUseRoster
+          ? `Standing: ${record.status}. Forums ${permissions.canUseForums ? 'enabled' : 'locked'} · Roster ${permissions.canUseRoster ? 'enabled' : 'locked'}.`
+          : `Standing: ${record.status}. Your account is verified, but guild access is still pending approval.`;
+        memberAccessLinks.innerHTML = links.join('');
       }
 
       footerAccountButton.addEventListener('click', () => {
@@ -200,16 +232,19 @@
           loginButton.hidden = false;
           signupButton.hidden = false;
           logoutButton.hidden = true;
+          renderAccessSummary(null);
           return;
         }
 
         const member = saveCurrentMember(user);
+        guildAccess.ensureMemberRecord(member);
         renderMemberBadge(member);
         gateTitle.textContent = 'The Gate Is Open';
         gateIntro.textContent = `Welcome back, ${member.name}. Your Netlify session is active.`;
         loginButton.hidden = true;
         signupButton.hidden = true;
         logoutButton.hidden = false;
+        renderAccessSummary(member);
         showMessage(`Signed in as ${member.email}.`, 'success');
       }
 

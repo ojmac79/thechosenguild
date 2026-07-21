@@ -90,7 +90,7 @@
           </div>
           <div class="panel forum-gate" id="privateGate">
             <p class="forum-gate__text">
-              Private categories require a Netlify account with member access.
+              Private categories require a verified Netlify account with guild forum authorization.
             </p>
             <a class="btn-torch" href="/login/">Enter the Hall</a>
           </div>
@@ -147,30 +147,11 @@
     </div>
 
     <script src="../../scripts/site-decor.js"></script>
-    <script src="../../scripts/forum-config.js"></script>
+    <script src="../../scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const STORAGE_KEY = 'theChosenForumStateV2';
-      const MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
-      function normalizeEmail(value) {
-        return String(value || '').trim().toLowerCase();
-      }
-
-      function normalizeEmailList(value) {
-        if (!Array.isArray(value)) {
-          return [];
-        }
-        return value.map(normalizeEmail).filter(Boolean);
-      }
-
-      const rawForumConfig = window.THE_CHOSEN_FORUM_CONFIG || {};
-      const rawRoleConfig = rawForumConfig.roleConfig || {};
-      const roleConfig = {
-        ownerEmails: normalizeEmailList(rawRoleConfig.ownerEmails),
-        moderatorEmails: normalizeEmailList(rawRoleConfig.moderatorEmails),
-        memberEmails: normalizeEmailList(rawRoleConfig.memberEmails),
-        allowAllAuthenticatedMembers: rawRoleConfig.allowAllAuthenticatedMembers === true
-      };
+      const guildAccess = window.TheChosenGuildAccess;
       const uiState = {
         publicFilter: 'all',
         privateFilter: 'all',
@@ -179,66 +160,27 @@
       };
 
       function getCurrentMember() {
-        const stored = localStorage.getItem(MEMBER_STORAGE_KEY);
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed && parsed.email) {
-              return parsed;
-            }
-          } catch (error) {
-            // Ignore broken storage state.
-          }
-        }
-
-        const identityUser = window.netlifyIdentity && window.netlifyIdentity.currentUser
-          ? window.netlifyIdentity.currentUser()
-          : null;
-
-        if (!identityUser || !identityUser.email) {
-          return null;
-        }
-
-        const member = {
-          id: identityUser.id || identityUser.email,
-          name: identityUser.user_metadata?.full_name || identityUser.email.split('@')[0],
-          email: identityUser.email,
-          avatar: identityUser.user_metadata?.avatar_url || identityUser.avatar_url || ''
-        };
-        localStorage.setItem(MEMBER_STORAGE_KEY, JSON.stringify(member));
-        return member;
+        return guildAccess.getCurrentMember();
       }
 
-      function getRole(member) {
-        const email = normalizeEmail(member && member.email);
-        if (!email) {
-          return 'guest';
+      function getRoleLabel(permissions) {
+        if (permissions.isOwner) {
+          return 'Owner';
         }
-        if (roleConfig.ownerEmails.includes(email)) {
-          return 'owner';
+        if (permissions.canModerateForums) {
+          return 'Officer';
         }
-        if (roleConfig.moderatorEmails.includes(email)) {
-          return 'moderator';
+        if (permissions.canUseForums) {
+          return permissions.record && permissions.record.title ? permissions.record.title : 'Guild Member';
         }
-        return 'member';
+        if (permissions.isSignedIn) {
+          return 'Verified Visitor';
+        }
+        return 'Guest';
       }
 
-      function hasMemberAccess(member, role) {
-        if (!member) {
-          return false;
-        }
-        if (role === 'owner' || role === 'moderator') {
-          return true;
-        }
-        if (!roleConfig.memberEmails.length) {
-          return roleConfig.allowAllAuthenticatedMembers;
-        }
-        const email = normalizeEmail(member.email);
-        return roleConfig.memberEmails.includes(email);
-      }
-
-      function canModerate(role) {
-        return role === 'owner' || role === 'moderator';
+      function canModerate(permissions) {
+        return Boolean(permissions && permissions.canModerateForums);
       }
 
       function buildId(prefix) {
@@ -420,7 +362,7 @@
         }
       }
 
-      function buildReplyEl(reply, spaceKey, role, childrenMap) {
+      function buildReplyEl(reply, spaceKey, permissions, childrenMap) {
         const replyEl = document.createElement('div');
         replyEl.className = 'forum-thread__reply';
 
@@ -454,7 +396,7 @@
         replyEl.appendChild(header);
         replyEl.appendChild(body);
 
-        if (canModerate(role)) {
+        if (canModerate(permissions)) {
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           actions.style.marginTop = '0.35rem';
@@ -476,7 +418,7 @@
           const childrenEl = document.createElement('div');
           childrenEl.className = 'forum-thread__reply-children';
           children.forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, spaceKey, role, childrenMap));
+            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, childrenMap));
           });
           replyEl.appendChild(childrenEl);
         }
@@ -559,7 +501,7 @@
         });
       }
 
-      function renderThreads(spaceKey, role, member, privateAccess) {
+      function renderThreads(spaceKey, permissions, member, privateAccess) {
         const container = document.getElementById(`${spaceKey}ThreadList`);
         const selectedFilter = uiState[`${spaceKey}Filter`];
         const categoryMap = new Map(forumState[spaceKey].categories.map((category) => [category.id, category]));
@@ -648,7 +590,7 @@
           article.appendChild(header);
           article.appendChild(body);
 
-          if (canModerate(role)) {
+          if (canModerate(permissions)) {
             const actions = document.createElement('div');
             actions.className = 'forum-thread__actions';
 
@@ -691,7 +633,7 @@
             const repliesContainer = document.createElement('div');
             repliesContainer.className = 'forum-thread__replies';
             topLevelReplies.forEach((reply) => {
-              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, role, childrenMap));
+              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, permissions, childrenMap));
             });
             article.appendChild(repliesContainer);
           }
@@ -764,31 +706,34 @@
         });
       }
 
-      function updateAuthNotes(member, role, privateAccess) {
+      function updateAuthNotes(member, permissions, privateAccess) {
         const publicNote = document.getElementById('publicAuthNote');
         const privateNote = document.getElementById('privateAuthNote');
 
         if (!member) {
-          publicNote.textContent = 'Sign in with Netlify Identity to create public posts.';
-          privateNote.textContent = 'Sign in and request member access to post in private categories.';
+          publicNote.textContent = 'Sign in with a verified Netlify account to request forum access and post publicly.';
+          privateNote.textContent = 'Private spaces unlock after the guild leader authorizes your forum access.';
           return;
         }
 
-        const roleText = role.charAt(0).toUpperCase() + role.slice(1);
-        publicNote.textContent = `Signed in as ${member.email}. Role: ${roleText}.`;
+        const roleText = getRoleLabel(permissions);
+        publicNote.textContent = permissions.canUseForums
+          ? `Signed in as ${member.email}. Forum authorization is active. Role: ${roleText}.`
+          : `Signed in as ${member.email}. Verified account detected, but forum authorization has not been granted yet.`;
         privateNote.textContent = privateAccess
           ? 'Private posting enabled for your account.'
-          : 'Your account can view public forums but does not have private member posting access.';
+          : 'Your account can read public threads, but private guild forum access is not enabled.';
       }
 
       function render() {
         const member = getCurrentMember();
-        const role = getRole(member);
-        const moderator = canModerate(role);
-        const privateAccess = hasMemberAccess(member, role);
+        const permissions = guildAccess.getPermissions(member);
+        const moderator = canModerate(permissions);
+        const forumAccess = permissions.canUseForums;
+        const privateAccess = forumAccess;
 
         renderMemberBadge(member);
-        updateAuthNotes(member, role, privateAccess);
+        updateAuthNotes(member, permissions, privateAccess);
 
         const publicThreadCategory = document.getElementById('publicThreadCategory');
         const privateThreadCategory = document.getElementById('privateThreadCategory');
@@ -798,7 +743,7 @@
 
         const publicForm = document.getElementById('publicThreadForm');
         const privateForm = document.getElementById('privateThreadForm');
-        publicForm.querySelector('button[type="submit"]').disabled = !member;
+        publicForm.querySelector('button[type="submit"]').disabled = !forumAccess;
         privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
 
         const privateGate = document.getElementById('privateGate');
@@ -814,11 +759,11 @@
         renderCategoryManager('private', moderator && privateAccess);
 
         renderCategoryFilters('public', forumState.public.categories);
-        renderThreads('public', role, member, privateAccess);
+        renderThreads('public', permissions, member, privateAccess);
 
         if (privateAccess) {
           renderCategoryFilters('private', forumState.private.categories);
-          renderThreads('private', role, member, privateAccess);
+          renderThreads('private', permissions, member, privateAccess);
         }
       }
 
@@ -956,7 +901,7 @@
       document.getElementById('publicThreadForm').addEventListener('submit', (event) => {
         event.preventDefault();
         const member = getCurrentMember();
-        if (!member) {
+        if (!guildAccess.getPermissions(member).canUseForums) {
           window.location.href = '/login/';
           return;
         }
@@ -973,8 +918,7 @@
       document.getElementById('privateThreadForm').addEventListener('submit', (event) => {
         event.preventDefault();
         const member = getCurrentMember();
-        const role = getRole(member);
-        if (!hasMemberAccess(member, role)) {
+        if (!guildAccess.getPermissions(member).canUseForums) {
           window.location.href = '/login/';
           return;
         }
@@ -992,8 +936,8 @@
         const categoryForm = document.getElementById(`${spaceKey}CategoryForm`);
         categoryForm.addEventListener('submit', (event) => {
           event.preventDefault();
-          const role = getRole(getCurrentMember());
-          if (!canModerate(role)) {
+          const permissions = guildAccess.getPermissions(getCurrentMember());
+          if (!canModerate(permissions)) {
             return;
           }
 
@@ -1019,8 +963,8 @@
             return;
           }
 
-          const role = getRole(getCurrentMember());
-          if (!canModerate(role)) {
+          const permissions = guildAccess.getPermissions(getCurrentMember());
+          if (!canModerate(permissions)) {
             return;
           }
 
@@ -1047,7 +991,7 @@
 
           const action = button.dataset.action;
           const member = getCurrentMember();
-          const role = getRole(member);
+          const permissions = guildAccess.getPermissions(member);
 
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
@@ -1081,7 +1025,7 @@
             return;
           }
 
-          if (!canModerate(role)) {
+          if (!canModerate(permissions)) {
             return;
           }
 
@@ -1124,12 +1068,16 @@
         if (window.netlifyIdentity) {
           window.netlifyIdentity.logout();
         }
-        localStorage.removeItem(MEMBER_STORAGE_KEY);
+        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
         render();
       });
 
       window.addEventListener('storage', (event) => {
-        if (event.key === STORAGE_KEY || event.key === MEMBER_STORAGE_KEY) {
+        if (
+          event.key === STORAGE_KEY ||
+          event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
+          event.key === guildAccess.DIRECTORY_STORAGE_KEY
+        ) {
           const latestState = readState();
           forumState.public = latestState.public;
           forumState.private = latestState.private;
@@ -1139,9 +1087,12 @@
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => render());
+        window.netlifyIdentity.on('login', () => {
+          guildAccess.ensureMemberRecord(getCurrentMember());
+          render();
+        });
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(MEMBER_STORAGE_KEY);
+          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
           render();
         });
       }

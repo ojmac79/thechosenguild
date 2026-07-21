@@ -105,7 +105,44 @@
     document.body.appendChild(container);
   }
 
-  window.addEventListener("DOMContentLoaded", placeRelics);
+  function injectOwnerNavigation() {
+    const nav = document.querySelector('.site-nav');
+    if (!nav || nav.querySelector('[data-guild-management-link], a[href="/guild-management/"]')) {
+      return;
+    }
+
+    const storedMember = window.localStorage.getItem('theChosenCurrentMember');
+    if (!storedMember) {
+      return;
+    }
+
+    let parsedMember = null;
+    try {
+      parsedMember = JSON.parse(storedMember);
+    } catch (error) {
+      parsedMember = null;
+    }
+
+    const email = String(parsedMember && parsedMember.email ? parsedMember.email : '').trim().toLowerCase();
+    if (email !== 'ojmac79@gmail.com') {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.className = 'site-nav__link';
+    link.href = '/guild-management/';
+    link.dataset.guildManagementLink = 'true';
+    link.textContent = 'Guild Management';
+    if (window.location.pathname.startsWith('/guild-management')) {
+      link.classList.add('active');
+    }
+    nav.appendChild(link);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    placeRelics();
+    injectOwnerNavigation();
+  });
   window.addEventListener("resize", () => {
     window.clearTimeout(window.__chosenRelicResizeTimer);
     window.__chosenRelicResizeTimer = window.setTimeout(placeRelics, 180);
