@@ -366,7 +366,7 @@
       }
 
       function getSearchDomain() {
-        const hostname = String(window.location.hostname || '').toLowerCase();
+        const hostname = (window.location.hostname || '').toLowerCase();
         if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
           return 'thechosenguild.netlify.app';
         }
@@ -385,10 +385,11 @@
 
         setActiveSearchScope('site');
         window.open(siteSearchUrl, '_blank', 'noopener,noreferrer');
-        window.setTimeout(() => {
+
+        if (window.confirm('Search the wider web for this query as well?')) {
           setActiveSearchScope('web');
           window.open(webSearchUrl, '_blank', 'noopener,noreferrer');
-        }, 250);
+        }
       }
 
       heroSearchForm.addEventListener('submit', (event) => {
