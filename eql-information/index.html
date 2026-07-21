@@ -152,6 +152,13 @@
           Searchable outline of publicly available EverQuest Legends information: class combinations, game systems,
           developer details, patch notes, and trusted resources.
         </p>
+        <div class="resource-section__header">
+          <h2 class="resource-section__title">Page Content</h2>
+          <button id="toggleContentEdit" class="btn-torch" type="button">Enable Content Editing</button>
+        </div>
+        <p id="contentEditNotice" class="resource-notice" aria-live="polite">
+          Sign in to enable page-wide content editing.
+        </p>
 
         <div class="eql-search">
           <input id="eqlSearch" class="eql-search__input" type="search" placeholder="Search class combos, systems, developers, patch notes..." aria-label="Search EQL info" autocomplete="off" />
@@ -288,8 +295,8 @@
 
         <section aria-label="Resources Archive" style="margin-top: 2rem;">
           <p class="hero__eyebrow">The Archives</p>
-          <h2 class="page-title" contenteditable="true">Resources</h2>
-          <p class="page-subtitle" contenteditable="true">Guides, tools, and lore compiled by the guild for the guild.</p>
+          <h2 class="page-title">Resources</h2>
+          <p class="page-subtitle">Guides, tools, and lore compiled by the guild for the guild.</p>
 
           <div class="thumbnail-strip" aria-label="EverQuest imagery">
             <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1511512578047-dfb367046420?auto=format&fit=crop&w=600&q=80" alt="Fantasy landscape" /></div>
@@ -299,7 +306,7 @@
 
           <section class="resource-section" aria-label="Resource links">
             <div class="resource-section__header">
-              <h2 class="resource-section__title" contenteditable="true">Shared Links</h2>
+              <h2 class="resource-section__title">Shared Links</h2>
               <button id="resourceAddLink" class="btn-torch" type="button">Add Link</button>
             </div>
 
@@ -749,9 +756,34 @@
       renderResources();
     </script>
     <script>
-      document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary span, .page label span').forEach((element) => {
-        element.setAttribute('contenteditable', 'true');
+      const toggleContentEditButton = document.getElementById('toggleContentEdit');
+      const contentEditNotice = document.getElementById('contentEditNotice');
+      const contentEditableTargets = Array.from(
+        document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary span, .page label span')
+      );
+      let contentEditingEnabled = false;
+
+      function setContentEditingState(enabled) {
+        contentEditingEnabled = enabled;
+        contentEditableTargets.forEach((element) => {
+          element.setAttribute('contenteditable', enabled ? 'true' : 'false');
+        });
+        toggleContentEditButton.textContent = enabled ? 'Disable Content Editing' : 'Enable Content Editing';
+      }
+
+      toggleContentEditButton.addEventListener('click', () => {
+        const currentMember = typeof readCurrentMember === 'function' ? readCurrentMember() : null;
+        if (!currentMember) {
+          contentEditNotice.textContent = 'Sign in to enable page-wide content editing.';
+          return;
+        }
+        setContentEditingState(!contentEditingEnabled);
+        contentEditNotice.textContent = contentEditingEnabled
+          ? 'Content editing is enabled for this session.'
+          : 'Content editing is disabled.';
       });
+
+      setContentEditingState(false);
     </script>
     <script src="../scripts/site-decor.js"></script>
   </body>
