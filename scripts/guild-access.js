@@ -3,6 +3,14 @@
   const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
   const OWNER_EMAIL = 'ojmac79@gmail.com';
   const ACTIVE_STATUSES = new Set(['active', 'probation']);
+  const MEMBER_ACTIVITY_REFRESH_MS = 5 * 60 * 1000;
+  const LEVEL_ORDER = Object.freeze({
+    leader: 0,
+    officer: 1,
+    member: 2,
+    applicant: 3,
+    retired: 4
+  });
 
   function nowIso() {
     return new Date().toISOString();
@@ -301,7 +309,7 @@
 
     const existing = findRecordByEmail(sanitizedMember.email);
     const existingLastSeen = existing && existing.lastSeenAt ? Date.parse(existing.lastSeenAt) : NaN;
-    const shouldRefreshLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > 5 * 60 * 1000;
+    const shouldRefreshLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > MEMBER_ACTIVITY_REFRESH_MS;
     const needsWrite =
       !existing ||
       !existing.verifiedNetlify ||
@@ -329,14 +337,14 @@
       return null;
     }
     const email = typeof memberOrEmail === 'string' ? memberOrEmail : memberOrEmail.email;
-    const existing = findRecordByEmail(email);
-    if (existing) {
-      return existing;
-    }
-
     const normalizedEmail = normalizeEmail(email);
     if (!normalizedEmail) {
       return null;
+    }
+
+    const existing = findRecordByEmail(normalizedEmail);
+    if (existing) {
+      return existing;
     }
 
     if (normalizedEmail === OWNER_EMAIL) {
@@ -418,6 +426,7 @@
 
   window.TheChosenGuildAccess = {
     OWNER_EMAIL,
+    LEVEL_ORDER,
     DIRECTORY_STORAGE_KEY,
     CURRENT_MEMBER_STORAGE_KEY,
     normalizeEmail,

@@ -328,14 +328,14 @@
       function getFilteredMembers() {
         const directory = guildAccess.readDirectory();
         const query = guildAccess.normalizeEmail(memberSearch.value) || memberSearch.value.trim().toLowerCase();
+        const queryLower = query.toLowerCase();
         const standing = memberStatusFilter.value;
         const level = memberLevelFilter.value;
 
         return directory.members
           .slice()
           .sort((a, b) => {
-            const levelOrder = { leader: 0, officer: 1, member: 2, applicant: 3, retired: 4 };
-            const rankDiff = (levelOrder[a.level] ?? 99) - (levelOrder[b.level] ?? 99);
+            const rankDiff = (guildAccess.LEVEL_ORDER[a.level] ?? 99) - (guildAccess.LEVEL_ORDER[b.level] ?? 99);
             if (rankDiff !== 0) {
               return rankDiff;
             }
@@ -354,7 +354,7 @@
             const haystack = [record.name, record.email, record.title, record.notes, record.level, record.status]
               .join(' ')
               .toLowerCase();
-            return haystack.includes(query.toLowerCase());
+            return haystack.includes(queryLower);
           });
       }
 
