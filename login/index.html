@@ -61,6 +61,23 @@
             <p id="memberAccessBody">Sign in to verify your Netlify account and see whether forums or roster access has been granted.</p>
             <div class="guild-access-summary__links" id="memberAccessLinks"></div>
           </div>
+
+          <div class="panel guild-access-summary" id="avatarSettingsPanel" hidden>
+            <h2 class="resource-section__title">Avatar Settings</h2>
+            <p class="forum2-note">Enter the URL of an image to use as your site avatar. Leave blank to use your Netlify account avatar.</p>
+            <div id="avatarMessage" class="auth-message" aria-live="polite"></div>
+            <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
+              <img id="avatarPreview" class="site-footer__member-avatar" style="width:48px;height:48px;" alt="Avatar preview" src="" />
+              <div class="resource-field" style="flex:1;min-width:0;">
+                <label for="avatarUrlInput">Avatar image URL</label>
+                <input id="avatarUrlInput" class="forum2-inline-form__input" type="url" placeholder="https://example.com/avatar.png" maxlength="500" />
+              </div>
+            </div>
+            <div class="resource-form__actions">
+              <button class="btn-primary" type="button" id="saveAvatarButton">Save Avatar</button>
+              <button class="btn-torch" type="button" id="clearAvatarButton">Reset to Default</button>
+            </div>
+          </div>
         </div>
       </main>
 
@@ -130,6 +147,86 @@
       const footerMemberEmail = document.getElementById('footerMemberEmail');
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
+      const avatarSettingsPanel = document.getElementById('avatarSettingsPanel');
+      const avatarUrlInput = document.getElementById('avatarUrlInput');
+      const avatarPreview = document.getElementById('avatarPreview');
+      const avatarMessage = document.getElementById('avatarMessage');
+      const saveAvatarButton = document.getElementById('saveAvatarButton');
+      const clearAvatarButton = document.getElementById('clearAvatarButton');
+
+      let currentMemberForAvatar = null;
+
+      function getMemberAvatarFallback(member) {
+        return `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+      }
+
+      function updateAvatarPreview() {
+        const url = avatarUrlInput.value.trim();
+        if (!url) {
+          if (currentMemberForAvatar) {
+            avatarPreview.src = getMemberAvatarFallback(currentMemberForAvatar);
+          }
+          return;
+        }
+        try {
+          const parsed = new URL(url);
+          if (parsed.protocol === 'https:' || parsed.protocol === 'http:') {
+            avatarPreview.src = parsed.href;
+          }
+        } catch (e) {
+          // invalid URL — leave preview unchanged
+        }
+      }
+
+      function applyAvatarUpdate(member, statusText) {
+        // Strip the cached avatar so sanitizeMember re-derives it from the avatar map
+        const updatedMember = guildAccess.saveCurrentMember({ ...member, avatar: '' });
+        currentMemberForAvatar = updatedMember;
+        renderMemberBadge(updatedMember);
+        avatarPreview.src = updatedMember.avatar || getMemberAvatarFallback(updatedMember);
+        avatarMessage.textContent = statusText;
+        avatarMessage.className = 'auth-message auth-message--success';
+      }
+
+      function renderAvatarSettings(member) {
+        if (!member) {
+          avatarSettingsPanel.hidden = true;
+          currentMemberForAvatar = null;
+          return;
+        }
+        currentMemberForAvatar = member;
+        const customAvatar = guildAccess.getCustomAvatar(member.email);
+        avatarUrlInput.value = customAvatar;
+        avatarPreview.src = member.avatar || getMemberAvatarFallback(member);
+        avatarMessage.textContent = '';
+        avatarMessage.className = 'auth-message';
+        avatarSettingsPanel.hidden = false;
+      }
+
+      avatarUrlInput.addEventListener('input', updateAvatarPreview);
+
+      saveAvatarButton.addEventListener('click', () => {
+        if (!currentMemberForAvatar) {
+          return;
+        }
+        const url = avatarUrlInput.value.trim();
+        const saved = guildAccess.setCustomAvatar(currentMemberForAvatar.email, url);
+        if (!saved && url) {
+          avatarMessage.textContent = 'Please enter a valid URL starting with https:// or http://';
+          avatarMessage.className = 'auth-message auth-message--error';
+          return;
+        }
+        applyAvatarUpdate(currentMemberForAvatar, url ? 'Avatar updated.' : 'Avatar cleared.');
+      });
+
+      clearAvatarButton.addEventListener('click', () => {
+        if (!currentMemberForAvatar) {
+          return;
+        }
+        guildAccess.setCustomAvatar(currentMemberForAvatar.email, '');
+        avatarUrlInput.value = '';
+        applyAvatarUpdate(currentMemberForAvatar, 'Avatar reset to default.');
+      });
 
       function randomizeThumbnailCards() {
         const cards = Array.from(document.querySelectorAll('.thumbnail-card img'));
@@ -174,7 +271,7 @@
           return;
         }
 
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.src = member.avatar || getMemberAvatarFallback(member);
         footerMemberAvatar.alt = `${member.name || member.email} avatar`;
         footerMemberName.textContent = member.name || member.email;
         footerMemberEmail.textContent = member.email || 'Netlify member';
@@ -233,6 +330,7 @@
           signupButton.hidden = false;
           logoutButton.hidden = true;
           renderAccessSummary(null);
+          renderAvatarSettings(null);
           return;
         }
 
@@ -245,6 +343,7 @@
         signupButton.hidden = true;
         logoutButton.hidden = false;
         renderAccessSummary(member);
+        renderAvatarSettings(member);
         showMessage(`Signed in as ${member.email}.`, 'success');
       }
 

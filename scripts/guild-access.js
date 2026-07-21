@@ -1,6 +1,7 @@
 (function () {
   const DIRECTORY_STORAGE_KEY = 'theChosenGuildDirectoryV1';
   const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+  const MEMBER_AVATARS_STORAGE_KEY = 'theChosenMemberAvatarsV1';
   const OWNER_EMAIL = 'ojmac79@gmail.com';
   const ACTIVE_STATUSES = new Set(['active', 'probation']);
   const MEMBER_ACTIVITY_REFRESH_MS = 5 * 60 * 1000;
@@ -131,6 +132,50 @@
     return normalized;
   }
 
+  function readAvatarMap() {
+    try {
+      const parsed = JSON.parse(localStorage.getItem(MEMBER_AVATARS_STORAGE_KEY) || 'null');
+      return (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) ? parsed : {};
+    } catch (error) {
+      return {};
+    }
+  }
+
+  function getCustomAvatar(email) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) {
+      return '';
+    }
+    const map = readAvatarMap();
+    return cleanText(map[normalizedEmail] || '', 500);
+  }
+
+  function setCustomAvatar(email, url) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail) {
+      return false;
+    }
+    const cleaned = cleanText(String(url || ''), 500);
+    if (cleaned) {
+      try {
+        const parsedUrl = new URL(cleaned);
+        if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
+          return false;
+        }
+      } catch (e) {
+        return false;
+      }
+    }
+    const map = readAvatarMap();
+    if (cleaned) {
+      map[normalizedEmail] = cleaned;
+    } else {
+      delete map[normalizedEmail];
+    }
+    localStorage.setItem(MEMBER_AVATARS_STORAGE_KEY, JSON.stringify(map));
+    return true;
+  }
+
   function sanitizeMember(user) {
     if (!user || !user.email) {
       return null;
@@ -139,6 +184,11 @@
     if (!normalizedEmail) {
       return null;
     }
+    const netlifyAvatar = cleanText(
+      (user.user_metadata && user.user_metadata.avatar_url) || user.avatar_url || user.avatar || '',
+      500
+    );
+    const customAvatar = getCustomAvatar(normalizedEmail);
     return {
       id: user.id || normalizedEmail,
       name: cleanText(
@@ -148,10 +198,7 @@
         80
       ),
       email: normalizedEmail,
-      avatar: cleanText(
-        (user.user_metadata && user.user_metadata.avatar_url) || user.avatar_url || user.avatar || '',
-        500
-      )
+      avatar: customAvatar || netlifyAvatar
     };
   }
 
@@ -442,6 +489,7 @@
     LEVEL_ORDER,
     DIRECTORY_STORAGE_KEY,
     CURRENT_MEMBER_STORAGE_KEY,
+    MEMBER_AVATARS_STORAGE_KEY,
     normalizeEmail,
     sanitizeMember,
     readDirectory,
@@ -457,6 +505,8 @@
     getPermissions,
     getMemberLabel,
     getDashboardStats,
+    getCustomAvatar,
+    setCustomAvatar,
     clone
   };
 
