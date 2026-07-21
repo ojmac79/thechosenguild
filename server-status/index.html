@@ -522,7 +522,7 @@
           return;
         }
         setStatusEditingState(!statusEditingEnabled);
-        if (!statusEditingEnabled) {
+        if (statusEditingEnabled) {
           saveStatusContent();
         }
         statusEditNotice.textContent = statusEditingEnabled

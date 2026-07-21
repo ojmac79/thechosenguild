@@ -157,7 +157,7 @@
           <button id="toggleContentEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
         </div>
         <p id="contentEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
-          Sign in to enable page-wide content editing.
+          Public view is enabled. Owner sign-in is required to edit page content.
         </p>
 
         <div class="eql-search">
@@ -598,8 +598,8 @@
 
         if (!resources.length) {
           resourceList.innerHTML = '<li class="panel resource-item resource-item--empty">No shared links are currently available.</li>';
-          resourceNotice.textContent = currentMember
-            ? 'Owner sign-in is required to add, edit, or remove links from the archive.'
+          resourceNotice.textContent = isOwner(currentMember)
+            ? 'Owner access enabled: you can add, edit, and delete shared links.'
             : 'Public view is enabled. Owner sign-in is required to add, edit, or remove links.';
           return;
         }
