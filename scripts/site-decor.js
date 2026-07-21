@@ -1,50 +1,71 @@
 (function () {
-  const relicCatalog = {
+  const relicCatalog = Object.freeze({
     sword: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/2694.svg",
     axe: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1fa93.svg",
+    shield: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f6e1.svg",
     staff: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1fa84.svg",
-    dagger: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f5e1.svg"
-  };
+    dagger: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f5e1.svg",
+    crystal: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f52e.svg"
+  });
 
-  const routeProfiles = {
-    home: { sword: 1, axe: 1, staff: 5, dagger: 2 },
-    forums: { sword: 4, axe: 4, staff: 1, dagger: 2 },
-    stories: { sword: 2, axe: 1, staff: 5, dagger: 3 },
-    roster: { sword: 4, axe: 3, staff: 1, dagger: 2 },
-    discord: { sword: 2, axe: 2, staff: 2, dagger: 3 },
-    eqlInformation: { sword: 1, axe: 1, staff: 4, dagger: 3 },
-    login: { sword: 1, axe: 1, staff: 4, dagger: 2 },
-    default: { sword: 2, axe: 2, staff: 2, dagger: 2 }
-  };
+  const routeProfiles = Object.freeze({
+    home: { sword: 2, axe: 1, shield: 3, staff: 5, dagger: 2, crystal: 2 },
+    forums: { sword: 4, axe: 4, shield: 3, staff: 1, dagger: 2, crystal: 1 },
+    stories: { sword: 2, axe: 1, shield: 1, staff: 5, dagger: 3, crystal: 4 },
+    roster: { sword: 4, axe: 3, shield: 4, staff: 1, dagger: 2, crystal: 1 },
+    discord: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 3, crystal: 2 },
+    eqlInformation: { sword: 1, axe: 1, shield: 1, staff: 4, dagger: 3, crystal: 5 },
+    login: { sword: 1, axe: 1, shield: 2, staff: 4, dagger: 2, crystal: 3 },
+    default: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 2, crystal: 2 }
+  });
+  // Route zones mirror iconic Norrath locations to give each section a distinct EverQuest mood.
+  const routeZones = Object.freeze({
+    home: "qeynos",
+    forums: "knowledge",
+    stories: "luclin",
+    roster: "commonlands",
+    discord: "felwithe",
+    eqlInformation: "library",
+    login: "nexus",
+    default: "norrath"
+  });
 
   function randomInRange(min, max) {
     return Math.random() * (max - min) + min;
   }
 
-  function getRouteProfile() {
+  function getRouteKey() {
     const path = window.location.pathname;
     if (path === "/") {
-      return routeProfiles.home;
+      return "home";
     }
     if (path.startsWith("/forums")) {
-      return routeProfiles.forums;
+      return "forums";
     }
     if (path.startsWith("/stories")) {
-      return routeProfiles.stories;
+      return "stories";
     }
     if (path.startsWith("/roster")) {
-      return routeProfiles.roster;
+      return "roster";
     }
     if (path.startsWith("/discord")) {
-      return routeProfiles.discord;
+      return "discord";
     }
     if (path.startsWith("/eql-information")) {
-      return routeProfiles.eqlInformation;
+      return "eqlInformation";
     }
     if (path.startsWith("/login")) {
-      return routeProfiles.login;
+      return "login";
     }
-    return routeProfiles.default;
+    return "default";
+  }
+
+  function getRouteProfile() {
+    return routeProfiles[getRouteKey()] || routeProfiles.default;
+  }
+
+  function getRouteZone() {
+    return routeZones[getRouteKey()] || routeZones.default;
   }
 
   function buildWeightedPool(profile) {
@@ -76,7 +97,7 @@
 
     const profile = getRouteProfile();
     const relicPool = buildWeightedPool(profile);
-    const count = window.innerWidth < 800 ? 6 : 10;
+    const count = window.innerWidth < 800 ? 8 : 14;
 
     for (let i = 0; i < count; i += 1) {
       const relic = document.createElement("img");
@@ -158,6 +179,7 @@
   }
 
   window.addEventListener("DOMContentLoaded", () => {
+    document.body.setAttribute("data-eq-zone", getRouteZone());
     placeRelics();
     injectOwnerNavigation();
   });
