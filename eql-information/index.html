@@ -355,7 +355,7 @@
       </footer>
     </div>
 
-        <script>
+    <script>
       const eqlSearch = document.getElementById('eqlSearch');
       const eqlMatchCount = document.getElementById('eqlMatchCount');
       const eqlSections = Array.from(document.querySelectorAll('.eql-outline__section'));
@@ -385,7 +385,7 @@
       runEqlSearch();
     </script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-<script>
+    <script>
       const RESOURCE_STORAGE_KEY = 'theChosenResources';
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
       const thumbnailOptions = [
@@ -760,7 +760,7 @@
       const contentEditNotice = document.getElementById('contentEditNotice');
       const contentEditableTargets = Array.from(
         document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary span, .page label span')
-      );
+      ).filter((element) => !element.closest('#resourceList, .resource-section__editor'));
       let contentEditingEnabled = false;
 
       function setContentEditingState(enabled) {
