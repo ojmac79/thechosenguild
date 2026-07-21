@@ -471,13 +471,21 @@
         });
       }
 
+      let rosterPollTimer = null;
+
       renderRoster();
       if (rosterData.needsSync(rosterData.readSnapshot())) {
         syncRoster(false);
       }
-      window.setInterval(() => {
+      rosterPollTimer = window.setInterval(() => {
         syncRoster(false);
       }, rosterData.SYNC_INTERVAL_MS);
+      window.addEventListener('beforeunload', () => {
+        if (rosterPollTimer) {
+          window.clearInterval(rosterPollTimer);
+          rosterPollTimer = null;
+        }
+      });
     </script>
   </body>
 </html>
