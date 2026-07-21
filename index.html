@@ -58,10 +58,11 @@
             </p>
             <button class="hero__edit" id="heroEditButton" type="button" onclick="editHeroTagline()" hidden>Edit</button>
           </div>
-          <form class="search-console">
+          <form class="search-console" id="heroSearchForm">
             <div class="search-console__row">
               <input
                 class="search-console__input"
+                id="heroSearchInput"
                 type="text"
                 placeholder="Search guild news and announcements…"
               />
@@ -70,10 +71,11 @@
               </button>
             </div>
             <div class="search-console__scope">
-              <button type="button" class="scope-btn active">This Site</button>
-              <button type="button" class="scope-btn">The Web</button>
+              <button type="button" class="scope-btn active" id="heroScopeSite">This Site</button>
+              <button type="button" class="scope-btn" id="heroScopeWeb">The Web</button>
             </div>
           </form>
+          <div id="heroSearchResults" class="panel empty-state" role="region" aria-live="polite" aria-label="Search results" hidden></div>
         </section>
 
         <div class="divider-rune" aria-hidden="true">✦</div>
@@ -185,6 +187,28 @@
       const footerMemberEmail = document.getElementById('footerMemberEmail');
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
+      const heroSearchForm = document.getElementById('heroSearchForm');
+      const heroSearchInput = document.getElementById('heroSearchInput');
+      const heroScopeSite = document.getElementById('heroScopeSite');
+      const heroScopeWeb = document.getElementById('heroScopeWeb');
+      const heroSearchResults = document.getElementById('heroSearchResults');
+      const siteSearchPages = [
+        { path: '/', title: 'News' },
+        { path: '/forums/', title: 'Forums' },
+        { path: '/roster/', title: 'Roster' },
+        { path: '/discord/', title: 'Discord' },
+        { path: '/eql-information/', title: 'EQL Information' },
+        { path: '/lore/', title: 'Lore' },
+        { path: '/server-status/', title: 'Status' },
+        { path: '/stories/', title: 'Stories' },
+        { path: '/login/', title: 'Login' },
+        { path: '/guild-management/', title: 'Guild Management' }
+      ];
+      const siteSearchContentCache = new Map();
+      const SEARCH_INDEX_REMOVAL_SELECTOR = 'script, style, noscript, nav, header, footer';
+      const MAX_SITE_RESULTS = 5;
+      const SNIPPET_CHARS_BEFORE_MATCH = 70;
+      const SNIPPET_CHARS_AFTER_MATCH = 90;
       let editingPostId = null;
 
       function isOwner(member) {
@@ -354,6 +378,159 @@
           heroTagline.textContent = nextText.trim();
         }
       }
+
+      function setActiveSearchScope(scope) {
+        heroScopeSite.classList.toggle('active', scope === 'site');
+        heroScopeWeb.classList.toggle('active', scope === 'web');
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function normalizeSearchValue(value) {
+        return String(value || '')
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function createSearchSnippet(text, query) {
+        const normalizedText = normalizeSearchValue(text);
+        const normalizedQuery = normalizeSearchValue(query);
+        const matchIndex = normalizedText.indexOf(normalizedQuery);
+        if (matchIndex < 0) {
+          return '';
+        }
+
+        const start = Math.max(0, matchIndex - SNIPPET_CHARS_BEFORE_MATCH);
+        const end = Math.min(text.length, matchIndex + normalizedQuery.length + SNIPPET_CHARS_AFTER_MATCH);
+        const prefix = start > 0 ? '…' : '';
+        const suffix = end < text.length ? '…' : '';
+        return `${prefix}${text.slice(start, end).trim()}${suffix}`;
+      }
+
+      async function readPageSearchText(path) {
+        if (siteSearchContentCache.has(path)) {
+          return siteSearchContentCache.get(path);
+        }
+
+        try {
+          const response = await fetch(path, { credentials: 'same-origin' });
+          if (!response.ok) {
+            siteSearchContentCache.set(path, '');
+            return '';
+          }
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          doc.querySelectorAll(SEARCH_INDEX_REMOVAL_SELECTOR).forEach((element) => element.remove());
+          const content = String(doc.body && doc.body.textContent ? doc.body.textContent : '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          siteSearchContentCache.set(path, content);
+          return content;
+        } catch (error) {
+          siteSearchContentCache.set(path, '');
+          return '';
+        }
+      }
+
+      async function searchEntireSite(query) {
+        const normalizedQuery = normalizeSearchValue(query);
+        if (!normalizedQuery) {
+          return [];
+        }
+
+        const matches = [];
+        for (const page of siteSearchPages) {
+          const pageText = await readPageSearchText(page.path);
+          if (!normalizeSearchValue(pageText).includes(normalizedQuery)) {
+            continue;
+          }
+
+          matches.push({
+            ...page,
+            snippet: createSearchSnippet(pageText, query)
+          });
+
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
+        }
+
+        return matches;
+      }
+
+      function renderSiteSearchResults(results, query) {
+        heroSearchResults.hidden = false;
+
+        if (!results.length) {
+          heroSearchResults.innerHTML = `
+              <h2 class="news-section__title">No site matches found</h2>
+            <p>No matches were found on this site for “${escapeHtml(query)}”.</p>
+            <button type="button" class="btn-torch" id="heroSearchWebFallback">Search the Web Instead</button>
+          `;
+          const webFallbackButton = document.getElementById('heroSearchWebFallback');
+          if (webFallbackButton) {
+            webFallbackButton.addEventListener('click', () => runWebSearch(query));
+          }
+          return;
+        }
+
+        heroSearchResults.innerHTML = `
+          <h2 class="news-section__title">Site search results</h2>
+          <p><strong>Found ${results.length}</strong> matching page${results.length === 1 ? '' : 's'} on this site for “${escapeHtml(query)}”:</p>
+          <ul>
+            ${results
+              .map((result) => `<li><a href="${escapeHtml(result.path)}">${escapeHtml(result.title)}</a>${result.snippet ? ` — ${escapeHtml(result.snippet)}` : ''}</li>`)
+              .join('')}
+          </ul>
+        `;
+      }
+
+      function runWebSearch(query) {
+        const webSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(String(query || '').trim())}`;
+        window.open(webSearchUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      async function runHeroSearch(query) {
+        const searchQuery = String(query || '').trim();
+        if (!searchQuery) {
+          heroSearchResults.hidden = true;
+          heroSearchResults.innerHTML = '';
+          return;
+        }
+
+        setActiveSearchScope('site');
+        const matches = await searchEntireSite(searchQuery);
+        renderSiteSearchResults(matches, searchQuery);
+
+        if (!matches.length) {
+          setActiveSearchScope('web');
+        }
+      }
+
+      heroScopeSite.addEventListener('click', () => {
+        setActiveSearchScope('site');
+      });
+
+      heroScopeWeb.addEventListener('click', () => {
+        setActiveSearchScope('web');
+      });
+
+      heroSearchForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (heroScopeWeb.classList.contains('active')) {
+          runWebSearch(heroSearchInput.value);
+          return;
+        }
+        await runHeroSearch(heroSearchInput.value);
+      });
 
       newPostButton.addEventListener('click', () => {
         const currentMember = readCurrentMember();
