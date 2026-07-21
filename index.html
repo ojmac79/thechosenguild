@@ -58,10 +58,11 @@
             </p>
             <button class="hero__edit" id="heroEditButton" type="button" onclick="editHeroTagline()" hidden>Edit</button>
           </div>
-          <form class="search-console">
+          <form class="search-console" id="heroSearchForm">
             <div class="search-console__row">
               <input
                 class="search-console__input"
+                id="heroSearchInput"
                 type="text"
                 placeholder="Search guild news and announcements…"
               />
@@ -70,8 +71,8 @@
               </button>
             </div>
             <div class="search-console__scope">
-              <button type="button" class="scope-btn active">This Site</button>
-              <button type="button" class="scope-btn">The Web</button>
+              <button type="button" class="scope-btn active" id="heroScopeSite">This Site</button>
+              <button type="button" class="scope-btn" id="heroScopeWeb">The Web</button>
             </div>
           </form>
         </section>
@@ -185,6 +186,10 @@
       const footerMemberEmail = document.getElementById('footerMemberEmail');
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
+      const heroSearchForm = document.getElementById('heroSearchForm');
+      const heroSearchInput = document.getElementById('heroSearchInput');
+      const heroScopeSite = document.getElementById('heroScopeSite');
+      const heroScopeWeb = document.getElementById('heroScopeWeb');
       let editingPostId = null;
 
       function isOwner(member) {
@@ -354,6 +359,42 @@
           heroTagline.textContent = nextText.trim();
         }
       }
+
+      function setActiveSearchScope(scope) {
+        heroScopeSite.classList.toggle('active', scope === 'site');
+        heroScopeWeb.classList.toggle('active', scope === 'web');
+      }
+
+      function getSearchDomain() {
+        const hostname = String(window.location.hostname || '').toLowerCase();
+        if (!hostname || hostname === 'localhost' || hostname === '127.0.0.1') {
+          return 'thechosenguild.netlify.app';
+        }
+        return hostname;
+      }
+
+      function runHeroSearch(query) {
+        const searchQuery = String(query || '').trim();
+        if (!searchQuery) {
+          return;
+        }
+
+        const siteQuery = `site:${getSearchDomain()} ${searchQuery}`;
+        const siteSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(siteQuery)}`;
+        const webSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(searchQuery)}`;
+
+        setActiveSearchScope('site');
+        window.open(siteSearchUrl, '_blank', 'noopener,noreferrer');
+        window.setTimeout(() => {
+          setActiveSearchScope('web');
+          window.open(webSearchUrl, '_blank', 'noopener,noreferrer');
+        }, 250);
+      }
+
+      heroSearchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        runHeroSearch(heroSearchInput.value);
+      });
 
       newPostButton.addEventListener('click', () => {
         const currentMember = readCurrentMember();
