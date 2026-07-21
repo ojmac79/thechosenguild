@@ -75,7 +75,7 @@
               <button type="button" class="scope-btn" id="heroScopeWeb">The Web</button>
             </div>
           </form>
-          <div id="heroSearchResults" class="panel empty-state" role="region" aria-live="polite" aria-labelledby="heroSearchResultsHeading" hidden></div>
+          <div id="heroSearchResults" class="panel empty-state" role="region" aria-live="polite" aria-label="Search results" hidden></div>
         </section>
 
         <div class="divider-rune" aria-hidden="true">✦</div>
@@ -205,6 +205,8 @@
         { path: '/guild-management/', title: 'Guild Management' }
       ];
       const siteSearchContentCache = new Map();
+      const SEARCH_INDEX_REMOVAL_SELECTOR = 'script, style, noscript, nav, header, footer';
+      const MAX_SITE_RESULTS = 5;
       const SNIPPET_CHARS_BEFORE_MATCH = 70;
       const SNIPPET_CHARS_AFTER_MATCH = 90;
       let editingPostId = null;
@@ -426,7 +428,7 @@
           }
           const html = await response.text();
           const doc = new DOMParser().parseFromString(html, 'text/html');
-          doc.querySelectorAll('script, style, noscript, nav, header, footer').forEach((element) => element.remove());
+          doc.querySelectorAll(SEARCH_INDEX_REMOVAL_SELECTOR).forEach((element) => element.remove());
           const content = String(doc.body && doc.body.textContent ? doc.body.textContent : '')
             .replace(/\s+/g, ' ')
             .trim();
@@ -444,21 +446,24 @@
           return [];
         }
 
-        const matches = await Promise.all(
-          siteSearchPages.map(async (page) => {
-            const pageText = await readPageSearchText(page.path);
-            if (!normalizeSearchValue(pageText).includes(normalizedQuery)) {
-              return null;
-            }
+        const matches = [];
+        for (const page of siteSearchPages) {
+          const pageText = await readPageSearchText(page.path);
+          if (!normalizeSearchValue(pageText).includes(normalizedQuery)) {
+            continue;
+          }
 
-            return {
-              ...page,
-              snippet: createSearchSnippet(pageText, query)
-            };
-          })
-        );
+          matches.push({
+            ...page,
+            snippet: createSearchSnippet(pageText, query)
+          });
 
-        return matches.filter(Boolean);
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
+        }
+
+        return matches;
       }
 
       function renderSiteSearchResults(results, query) {
@@ -466,7 +471,7 @@
 
         if (!results.length) {
           heroSearchResults.innerHTML = `
-              <h2 class="news-section__title" id="heroSearchResultsHeading">No site matches found</h2>
+              <h2 class="news-section__title">No site matches found</h2>
             <p>No matches were found on this site for “${escapeHtml(query)}”.</p>
             <button type="button" class="btn-torch" id="heroSearchWebFallback">Search the Web Instead</button>
           `;
@@ -478,7 +483,7 @@
         }
 
         heroSearchResults.innerHTML = `
-          <h2 class="news-section__title" id="heroSearchResultsHeading">Site search results</h2>
+          <h2 class="news-section__title">Site search results</h2>
           <p><strong>Found ${results.length}</strong> matching page${results.length === 1 ? '' : 's'} on this site for “${escapeHtml(query)}”:</p>
           <ul>
             ${results
