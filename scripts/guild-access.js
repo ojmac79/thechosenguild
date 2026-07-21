@@ -187,7 +187,7 @@
 
   function buildPermissions(member, record, authenticated) {
     const email = normalizeEmail(member && member.email);
-    const isOwner = Boolean(authenticated && record && record.email === OWNER_EMAIL);
+    const isOwner = Boolean(authenticated && email === OWNER_EMAIL);
     const status = record ? record.status : authenticated ? 'pending' : 'guest';
     const statusAllowsAccess = Boolean(record && (ACTIVE_STATUSES.has(status) || isOwner));
 
