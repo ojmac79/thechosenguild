@@ -105,7 +105,62 @@
     document.body.appendChild(container);
   }
 
-  window.addEventListener("DOMContentLoaded", placeRelics);
+  function injectOwnerNavigation() {
+    const nav = document.querySelector('.site-nav');
+    if (!nav || nav.querySelector('[data-guild-management-link]')) {
+      return;
+    }
+
+    const guildAccess = window.TheChosenGuildAccess;
+    if (!guildAccess) {
+      return;
+    }
+
+    const storedMember = window.localStorage.getItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+    if (!storedMember) {
+      return;
+    }
+
+    let parsedMember = null;
+    let parsedDirectory = null;
+    try {
+      parsedMember = JSON.parse(storedMember);
+    } catch (error) {
+      parsedMember = null;
+    }
+
+    const email = String(parsedMember && parsedMember.email ? parsedMember.email : '').trim().toLowerCase();
+    if (!email) {
+      return;
+    }
+
+    try {
+      parsedDirectory = JSON.parse(window.localStorage.getItem(guildAccess.DIRECTORY_STORAGE_KEY) || 'null');
+    } catch (error) {
+      parsedDirectory = null;
+    }
+
+    const members = Array.isArray(parsedDirectory && parsedDirectory.members) ? parsedDirectory.members : [];
+    const matchingRecord = members.find((member) => String(member && member.email ? member.email : '').trim().toLowerCase() === email);
+    if (!matchingRecord || !matchingRecord.access || matchingRecord.access.management !== true) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.className = 'site-nav__link';
+    link.href = '/guild-management/';
+    link.dataset.guildManagementLink = 'true';
+    link.textContent = 'Guild Management';
+    if (window.location.pathname.startsWith('/guild-management/')) {
+      link.classList.add('active');
+    }
+    nav.appendChild(link);
+  }
+
+  window.addEventListener("DOMContentLoaded", () => {
+    placeRelics();
+    injectOwnerNavigation();
+  });
   window.addEventListener("resize", () => {
     window.clearTimeout(window.__chosenRelicResizeTimer);
     window.__chosenRelicResizeTimer = window.setTimeout(placeRelics, 180);
