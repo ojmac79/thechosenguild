@@ -759,8 +759,8 @@
       const toggleContentEditButton = document.getElementById('toggleContentEdit');
       const contentEditNotice = document.getElementById('contentEditNotice');
       const contentEditableTargets = Array.from(
-        document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary span, .page label span')
-      ).filter((element) => !element.closest('#resourceList, .resource-section__editor'));
+        document.querySelectorAll('.page :is(h1, h2, h3, p, li, a, summary span, label span):not(#resourceList *):not(.resource-section__editor *)')
+      );
       let contentEditingEnabled = false;
 
       function setContentEditingState(enabled) {
@@ -772,7 +772,7 @@
       }
 
       toggleContentEditButton.addEventListener('click', () => {
-        const currentMember = typeof readCurrentMember === 'function' ? readCurrentMember() : null;
+        const currentMember = readCurrentMember();
         if (!currentMember) {
           contentEditNotice.textContent = 'Sign in to enable page-wide content editing.';
           return;
