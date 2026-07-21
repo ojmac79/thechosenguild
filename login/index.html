@@ -64,7 +64,7 @@
 
           <div class="panel guild-access-summary" id="avatarSettingsPanel" hidden>
             <h2 class="resource-section__title">Avatar Settings</h2>
-            <p class="forum2-note">Upload an image from your device or enter a URL. Uploaded images are resized to 128&times;128 px to fit the site.</p>
+            <p class="forum2-note">Upload an image from your device or enter a URL. Uploaded images are resized to 128x128 px to fit the site.</p>
             <div id="avatarMessage" class="auth-message" aria-live="polite"></div>
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
               <img id="avatarPreview" class="site-footer__member-avatar" style="width:48px;height:48px;" alt="Avatar preview" src="" />
@@ -201,6 +201,7 @@
        * The image is cropped to a square (centre-crop) then scaled to AVATAR_SIZE.
        */
       const AVATAR_SIZE = 128;
+      const AVATAR_JPEG_QUALITY = 0.85; // Good visual quality at a compact file size.
       function resizeImageToDataUrl(img) {
         const canvas = document.createElement('canvas');
         canvas.width = AVATAR_SIZE;
@@ -212,7 +213,7 @@
         const sx = Math.round((srcW - side) / 2);
         const sy = Math.round((srcH - side) / 2);
         ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
-        return canvas.toDataURL('image/jpeg', 0.85);
+        return canvas.toDataURL('image/jpeg', AVATAR_JPEG_QUALITY);
       }
 
       // Trigger the hidden file picker when the Upload button is clicked.
@@ -227,7 +228,7 @@
           return;
         }
         if (!file.type.startsWith('image/')) {
-          avatarMessage.textContent = 'Please select a valid image file (JPEG, PNG, GIF, WebP, etc.).';
+          avatarMessage.textContent = 'Please select a valid image file.';
           avatarMessage.className = 'auth-message auth-message--error';
           avatarFileInput.value = '';
           return;
@@ -281,7 +282,7 @@
         avatarFileInput.value = '';
         const customAvatar = guildAccess.getCustomAvatar(member.email);
         // Only populate the URL input for remote (non-data) URLs.
-        avatarUrlInput.value = customAvatar.startsWith('data:') ? '' : customAvatar;
+        avatarUrlInput.value = customAvatar.startsWith('data:image/') ? '' : customAvatar;
         avatarPreview.src = member.avatar || getMemberAvatarFallback(member);
         avatarMessage.textContent = '';
         avatarMessage.className = 'auth-message';
@@ -298,7 +299,7 @@
         const url = pendingUploadDataUrl || avatarUrlInput.value.trim();
         const saved = guildAccess.setCustomAvatar(currentMemberForAvatar.email, url);
         if (!saved && url) {
-          avatarMessage.textContent = 'Please enter a valid URL starting with https:// or http://';
+          avatarMessage.textContent = 'Please enter a valid URL starting with https:// or http://, or upload a valid image file.';
           avatarMessage.className = 'auth-message auth-message--error';
           return;
         }

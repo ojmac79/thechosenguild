@@ -161,6 +161,14 @@
     // Data URLs from canvas uploads are stored verbatim (no length cap applied).
     // Remote URLs are cleaned and validated as before.
     const isDataUrl = raw.startsWith('data:image/');
+    if (isDataUrl) {
+      // Validate that the data URL has an allowed image MIME type.
+      const allowedImageTypes = ['data:image/jpeg', 'data:image/png', 'data:image/gif', 'data:image/webp', 'data:image/svg+xml'];
+      const hasAllowedType = allowedImageTypes.some((prefix) => raw.startsWith(prefix + ',') || raw.startsWith(prefix + ';'));
+      if (!hasAllowedType) {
+        return false;
+      }
+    }
     const cleaned = isDataUrl ? raw : cleanText(raw, 500);
     if (cleaned && !isDataUrl) {
       try {
