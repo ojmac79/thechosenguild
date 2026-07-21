@@ -126,11 +126,11 @@
 
     <script src="../../scripts/site-decor.js"></script>
     <script src="../../scripts/guild-access.js"></script>
+    <script src="../../scripts/roster-data.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const STORIES_KEY = 'theChosenStories';
       const MEMBER_KEY = 'theChosenCurrentMember';
-      const ROSTER_KEY = 'theChosenRosterEntries';
       const FORUM_KEY = 'theChosenForumStateV2';
       const OWNER_EMAIL = 'ojmac79@gmail.com';
       const STORIES_PAGE_SIZE = 3;
@@ -233,28 +233,17 @@
 
       // ── Roster lookup ───────────────────────────────────────────────────────
       function getRosterInfoForEmail(email) {
-        if (!email) {
+        if (!email || !window.TheChosenRosterData) {
           return null;
         }
-        try {
-          const entries = JSON.parse(localStorage.getItem(ROSTER_KEY) || 'null');
-          if (!Array.isArray(entries)) {
-            return null;
-          }
-          const match = entries.find(
-            (entry) => entry.ownerEmail && entry.ownerEmail.toLowerCase() === email.toLowerCase()
-          );
-          if (!match) {
-            return null;
-          }
-          const classes = [match.classOne, match.classTwo, match.classThree].filter(Boolean).join(' / ');
-          return {
-            characterName: `${match.firstName || ''} ${match.lastName || ''}`.trim(),
-            classes
-          };
-        } catch (_) {
+        const match = window.TheChosenRosterData.findAssignedCharacterByEmail(email);
+        if (!match) {
           return null;
         }
+        return {
+          characterName: match.characterName || '',
+          classes: match.classSummary || ''
+        };
       }
 
       // ── Storage ─────────────────────────────────────────────────────────────

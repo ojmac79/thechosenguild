@@ -379,6 +379,54 @@ a { color: inherit; text-decoration: none; }
 .roster-entry__main { display: grid; gap: 0.25rem; }
 .roster-entry__name { margin: 0; font-size: 1.05rem; }
 .roster-entry__meta { margin: 0; color: var(--muted); font-size: 0.92rem; }
+.roster-sync,
+.roster-toolbar,
+.roster-owner-panel { display: grid; gap: 1rem; margin-top: 1.25rem; }
+.roster-sync__top,
+.roster-toolbar__top {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.roster-sync__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  color: var(--muted);
+}
+.roster-filter-grid { width: 100%; }
+.resource-field select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 0.8rem 0.9rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font: inherit;
+}
+.roster-grid { margin-top: 1.25rem; }
+.roster-card { display: grid; gap: 1rem; }
+.roster-card__top { align-items: center; }
+.roster-card__name { margin: 0; }
+.roster-card__subtitle { margin: 0.25rem 0 0; }
+.roster-card__meta { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.roster-card__assignment { display: grid; gap: 0.75rem; }
+.roster-card__assignment-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 0.75rem;
+  align-items: end;
+}
+.roster-card__assignment-field { margin: 0; }
+.roster-card__assignment-note,
+.roster-card__source {
+  margin: 0;
+  color: var(--muted);
+}
+.roster-card__actions { justify-content: flex-start; }
 .discord-wrap {
   display: grid;
   gap: 0.9rem;
@@ -882,6 +930,8 @@ a { color: inherit; text-decoration: none; }
   .roster-row { grid-template-columns: 1fr 1fr; }
   .roster-row--head { display: none; }
   .roster-entry { flex-direction: column; }
+  .roster-sync__meta,
+  .roster-card__assignment-row { grid-template-columns: 1fr; }
   .stories-compact-form__row { grid-template-columns: 1fr; }
   .stories-compact-form__row--forum { grid-template-columns: 1fr; }
   .story-card__images--2,
@@ -889,5 +939,6 @@ a { color: inherit; text-decoration: none; }
   .story-card__image { height: 120px; }
   .guild-metrics,
   .guild-filter-grid,
-  .guild-member-card__meta { grid-template-columns: 1fr; }
+  .guild-member-card__meta,
+  .roster-card__meta { grid-template-columns: 1fr; }
 }
