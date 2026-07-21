@@ -4,72 +4,78 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>The Chosen — Discord</title>
+    <meta
+      name="description"
+      content="Full-screen Discord integration for The Chosen guild using WidgetBot."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../../styles.css" />
+    <link rel="stylesheet" href="../styles.css" />
     <style>
-      .discord-hero {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 1.5rem;
-        padding: 3rem 1.5rem 2rem;
-        text-align: center;
-      }
-      .discord-hero__icon {
-        font-size: 4rem;
-        line-height: 1;
-        filter: drop-shadow(0 0 18px rgba(88, 101, 242, 0.6));
-      }
-      .discord-features {
+      .discord-page {
+        flex: 1;
+        width: min(1400px, 100%);
+        max-width: 1400px;
+        margin: 0 auto;
+        padding: 1.5rem;
         display: grid;
-        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 1.25rem;
-        margin: 2rem 0;
-        width: 100%;
-        max-width: 760px;
+        grid-template-rows: auto 1fr;
+        gap: 1rem;
+        min-height: 0;
       }
-      .discord-feature {
-        background: rgba(255, 255, 255, 0.04);
-        border: 1px solid rgba(255, 215, 0, 0.15);
-        border-radius: 8px;
-        padding: 1.25rem 1rem;
-        text-align: center;
-      }
-      .discord-feature__icon {
-        font-size: 1.75rem;
-        display: block;
-        margin-bottom: 0.5rem;
-      }
-      .discord-feature__title {
-        font-family: 'Cinzel', serif;
-        font-size: 0.85rem;
-        font-weight: 600;
-        color: #ffd700;
-        margin-bottom: 0.35rem;
-        letter-spacing: 0.05em;
-      }
-      .discord-feature__desc {
-        font-size: 0.82rem;
-        color: rgba(255, 255, 255, 0.6);
-        line-height: 1.5;
-      }
-      .discord-cta {
+
+      .discord-topbar {
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        padding: 1rem 1.25rem;
+        background: var(--panel);
         display: flex;
         flex-wrap: wrap;
-        gap: 1rem;
-        justify-content: center;
-        margin-top: 1rem;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
       }
-      .discord-cta__note {
-        width: 100%;
+
+      .discord-topbar__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.3rem, 2.4vw, 1.8rem);
+        color: #fff7dd;
+      }
+
+      .discord-topbar__status {
+        margin: 0.35rem 0 0;
+        color: var(--muted);
         font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.4);
-        margin-top: 0.5rem;
+      }
+
+      .discord-shell {
+        border: 1px solid var(--border);
+        border-radius: 20px;
+        background: var(--panel);
+        overflow: hidden;
+        min-height: calc(100vh - 260px);
+        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+      }
+
+      .discord-shell widgetbot {
+        display: block;
+        width: 100%;
+        height: 100%;
+      }
+
+      @media (max-width: 960px) {
+        .discord-page {
+          padding: 1rem;
+        }
+
+        .discord-shell {
+          min-height: calc(100vh - 240px);
+        }
       }
     </style>
   </head>
@@ -101,45 +107,31 @@
         </div>
       </header>
 
-      <main class="page">
-        <div class="discord-hero">
-          <div class="discord-hero__icon" aria-hidden="true">🎙️</div>
-          <p class="hero__eyebrow">Voice of the Guild</p>
-          <h1 class="page-title">Join Us on Discord</h1>
-          <p class="page-subtitle">
-            The Chosen guild lives and breathes in our Discord server — raid
-            planning, lore debates, real-time callouts, and the occasional
-            late-night Norrath story. Click the chat button in the corner to
-            jump right in, or hit the button below to join permanently.
-          </p>
-
-          <div class="discord-features">
-            <div class="discord-feature">
-              <span class="discord-feature__icon" aria-hidden="true">⚔️</span>
-              <div class="discord-feature__title">Raid Coordination</div>
-              <div class="discord-feature__desc">Strategy threads, sign-ups, and live voice during progression nights.</div>
-            </div>
-            <div class="discord-feature">
-              <span class="discord-feature__icon" aria-hidden="true">📢</span>
-              <div class="discord-feature__title">Guild Announcements</div>
-              <div class="discord-feature__desc">Officer posts, patch notes, and event scheduling in one place.</div>
-            </div>
-            <div class="discord-feature">
-              <span class="discord-feature__icon" aria-hidden="true">🏰</span>
-              <div class="discord-feature__title">Community Channels</div>
-              <div class="discord-feature__desc">Class discussion, crafting tips, off-topic banter, and more.</div>
-            </div>
+      <main class="discord-page">
+        <section class="discord-topbar" aria-label="Discord page header">
+          <div>
+            <p class="hero__eyebrow">Voice of the Guild</p>
+            <h1 class="discord-topbar__title">Live Discord Hall</h1>
+            <p id="discordStatus" class="discord-topbar__status">Connecting to guild chat...</p>
           </div>
+          <a
+            class="btn-torch"
+            href="https://discord.gg/Chsm6MvG"
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            Join in Discord App
+          </a>
+        </section>
 
-          <div class="discord-cta">
-            <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
-              Join Our Discord
-            </a>
-            <p class="discord-cta__note">
-              💬 Already a member? Use the chat widget in the bottom-right corner to browse the server right here.
-            </p>
-          </div>
-        </div>
+        <section class="discord-shell" aria-label="Embedded guild Discord">
+          <widgetbot
+            id="guildDiscordEmbed"
+            server="1525890254169440256"
+            width="100%"
+            height="100%"
+          ></widgetbot>
+        </section>
       </main>
 
       <footer class="site-footer">
@@ -160,20 +152,28 @@
       </footer>
     </div>
 
-    <!-- WidgetBot Crate — live Discord chat overlay -->
-    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer></script>
-    <script>
-      window.addEventListener('load', function () {
-        new Crate({
-          server: '1525890254169440256'
-        });
-      });
-    </script>
-
-    <script src="../../scripts/site-decor.js"></script>
-    <script src="../../scripts/guild-access.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/html-embed"></script>
+    <script src="../scripts/site-decor.js"></script>
+    <script src="../scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
+      const DISCORD_SERVER_ID = '1525890254169440256';
+      const discordStatus = document.getElementById('discordStatus');
+      const guildDiscordEmbed = document.getElementById('guildDiscordEmbed');
+
+      guildDiscordEmbed.on('ready', () => {
+        discordStatus.textContent = 'Connected. Pick a channel and join the guild conversation.';
+      });
+
+      guildDiscordEmbed.on('signIn', (member) => {
+        const memberName = member && member.name ? member.name : 'Guild member';
+        discordStatus.textContent = `Signed in as ${memberName}.`;
+      });
+
+      guildDiscordEmbed.on('error', () => {
+        discordStatus.textContent = `Unable to load Discord embed for server ${DISCORD_SERVER_ID}.`;
+      });
+
       const footerMember = document.getElementById('footerMember');
       const footerMemberMenu = document.getElementById('footerMemberMenu');
       const footerMemberAvatar = document.getElementById('footerMemberAvatar');
