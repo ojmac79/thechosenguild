@@ -198,6 +198,10 @@
         return guildAccess.getPermissions(member);
       }
 
+      function isSameEmail(left, right) {
+        return rosterData.normalizeEmail(left) === rosterData.normalizeEmail(right);
+      }
+
       function renderMemberBadge(member) {
         if (!member) {
           footerMember.hidden = true;
@@ -290,7 +294,7 @@
 
       function buildAssignmentOptions(entry, currentMember, permissions) {
         if (!permissions.canManageGuild) {
-          if (entry.assignedEmail && currentMember && rosterData.normalizeEmail(entry.assignedEmail) === rosterData.normalizeEmail(currentMember.email)) {
+          if (entry.assignedEmail && currentMember && isSameEmail(entry.assignedEmail, currentMember.email)) {
             return '<p class="roster-card__assignment-note">Linked to your verified Netlify account.</p>';
           }
           return '';
@@ -300,7 +304,7 @@
         const options = ['<option value="">Not assigned</option>']
           .concat(
             members.map((record) => {
-              const selected = rosterData.normalizeEmail(record.email) === rosterData.normalizeEmail(entry.assignedEmail) ? ' selected' : '';
+              const selected = isSameEmail(record.email, entry.assignedEmail) ? ' selected' : '';
               const label = `${record.name || record.email} — ${record.email}`;
               return `<option value="${escapeHtml(record.email)}"${selected}>${escapeHtml(label)}</option>`;
             })

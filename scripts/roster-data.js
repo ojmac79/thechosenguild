@@ -4,9 +4,14 @@
   const DAYBREAK_SERVICE_ID_STORAGE_KEY = 'theChosenDaybreakServiceId';
   const GUILD_NAME = 'The Chosen';
   const WORLD_NAME = 'Qeynos';
-  const SYNC_INTERVAL_MS = 86400000; // 24 hours in milliseconds
-  const RANDOM_ID_SLICE_END = 9;
+  const DEFAULT_SYNC_INTERVAL_MS = 86400000; // 24 hours in milliseconds
+  const RANDOM_ID_SUFFIX_LENGTH = 7;
   const OFFICIAL_SOURCE_URL = 'https://census.daybreakgames.com/';
+
+  function getSyncIntervalMs() {
+    const configured = Number(window.TheChosenRosterSyncIntervalMs || DEFAULT_SYNC_INTERVAL_MS);
+    return Number.isFinite(configured) && configured > 0 ? configured : DEFAULT_SYNC_INTERVAL_MS;
+  }
 
   function getServiceId() {
     const configured =
@@ -41,6 +46,8 @@
       }
     ]);
   }
+
+  const SYNC_INTERVAL_MS = getSyncIntervalMs();
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -270,6 +277,10 @@
     ]);
   }
 
+  function isValidCharacterRecord(characterName, classes, level, rank) {
+    return Boolean(characterName && (classes.length > 0 || level != null || rank));
+  }
+
   function buildSearchBlob(entry) {
     return [
       entry.characterName,
@@ -297,7 +308,7 @@
       id: String(
         input && input.id
           ? input.id
-          : extractCharacterId(input || {}, name) || `roster-${Date.now()}-${Math.random().toString(36).slice(2, RANDOM_ID_SLICE_END)}`
+          : extractCharacterId(input || {}, name) || `roster-${Date.now()}-${Math.random().toString(36).slice(2, 2 + RANDOM_ID_SUFFIX_LENGTH)}`
       ),
       characterId: String(input && input.characterId ? input.characterId : extractCharacterId(input || {}, name) || ''),
       characterName: name,
@@ -513,10 +524,6 @@
     });
 
     return sortEntries(entries);
-  }
-
-  function isValidCharacterRecord(characterName, classes, level, rank) {
-    return Boolean(characterName && (classes.length > 0 || level != null || rank));
   }
 
   async function fetchOfficialRoster() {
