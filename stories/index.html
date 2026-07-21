@@ -287,7 +287,6 @@
           // Use first public category (General)
           const categoryId = publicSpace.categories[0].id;
           const storyUrl = window.location.origin + '/stories/';
-          const threadBody = `${escapeHtml(summary)}\n\n→ Read the full story on the Stories page: ${storyUrl}`;
           const thread = {
             id: buildId('pub-thread'),
             categoryId,
@@ -480,7 +479,7 @@
                   ${actionButtons ? `<div class="resource-item__actions">${actionButtons}</div>` : ''}
                 </div>
                 ${imagesHtml}
-                <p class="story-card__body">${escapeHtml(story.body).replaceAll('\n', '<br />')}</p>
+                <p class="story-card__body">${escapeHtml(story.body)}</p>
               </article>
             `;
           })
