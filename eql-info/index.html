@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — EQL Info</title>
+    <meta
+      name="description"
+      content="Searchable EverQuest Legends information hub with class combinations, developer information, patch notes, and key resources."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .eql-search {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin-top: 1.25rem;
+      }
+      .eql-search__input {
+        flex: 1;
+        min-width: 240px;
+        padding: 0.8rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+      }
+      .eql-search__input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .eql-search__meta {
+        color: var(--muted);
+        font-size: 0.82rem;
+      }
+      .eql-outline {
+        margin-top: 1.6rem;
+        display: grid;
+        gap: 0.9rem;
+      }
+      .eql-outline__section {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        overflow: hidden;
+      }
+      .eql-outline__section > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 0.9rem 1rem;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+      }
+      .eql-outline__section > summary::-webkit-details-marker { display: none; }
+      .eql-outline__section[open] > summary {
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+      }
+      .eql-outline__body {
+        padding: 0.9rem 1rem 1.1rem;
+      }
+      .eql-outline__body h3 {
+        margin: 0.8rem 0 0.35rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.96rem;
+      }
+      .eql-outline__body p,
+      .eql-outline__body li {
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.9rem;
+      }
+      .eql-outline__body ul {
+        margin: 0.25rem 0 0.75rem 1.1rem;
+        padding: 0;
+      }
+      .eql-outline__body a {
+        color: var(--text);
+        text-decoration: underline;
+        text-decoration-color: var(--border);
+      }
+      .eql-outline__body a:hover {
+        color: var(--accent);
+      }
+      .eql-tag {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.2rem 0.5rem;
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        color: var(--accent);
+      }
+      .eql-note {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.8rem 0.9rem;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        font-size: 0.86rem;
+      }
+      .eql-hidden {
+        display: none;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link active" href="/eql-info/">EQL Info</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Reference Archive</p>
+        <h1 class="page-title">EQL Info</h1>
+        <p class="page-subtitle">
+          Searchable outline of publicly available EverQuest Legends information: class combinations, game systems,
+          developer details, patch notes, and trusted resources.
+        </p>
+
+        <div class="eql-search">
+          <input id="eqlSearch" class="eql-search__input" type="search" placeholder="Search class combos, systems, developers, patch notes..." aria-label="Search EQL info" autocomplete="off" />
+          <span id="eqlMatchCount" class="eql-search__meta" aria-live="polite"></span>
+        </div>
+
+        <p class="eql-note">
+          This page compiles public references and community documentation as of July 2026. EQL rules and details can
+          change quickly; always verify against official patch notes.
+        </p>
+
+        <div class="eql-outline" id="eqlOutline">
+          <details class="eql-outline__section" data-search="overview everquest legends eql project scope">
+            <summary>
+              <span>1) EverQuest Legends Overview</span>
+              <span class="eql-tag">Core</span>
+            </summary>
+            <div class="eql-outline__body">
+              <p>
+                Public descriptions present EverQuest Legends (EQL) as a classic-inspired EverQuest experience with
+                modernized systems and quality-of-life updates.
+              </p>
+              <h3>Known focus areas</h3>
+              <ul>
+                <li>Classic world framing and progression-focused gameplay.</li>
+                <li>Solo-friendly and small-group friendly progression options.</li>
+                <li>Build diversity through expanded class combination mechanics.</li>
+              </ul>
+              <h3>Primary sources</h3>
+              <ul>
+                <li><a href="https://www.everquestlegends.com/" target="_blank" rel="noopener noreferrer">EverQuest Legends Official Site</a></li>
+                <li><a href="https://www.eqprogression.com/legends/faq/" target="_blank" rel="noopener noreferrer">EQProgression Legends FAQ (community reference)</a></li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="eql-outline__section" data-search="classes combinations trio multiclass race class matrix builds">
+            <summary>
+              <span>2) Classes and Class Combinations</span>
+              <span class="eql-tag">Builds</span>
+            </summary>
+            <div class="eql-outline__body">
+              <h3>Class pool (publicly referenced)</h3>
+              <p>
+                Community references describe a broad class pool based on core EverQuest archetypes (tank, healer,
+                caster, melee DPS, support), including classic and expansion-era classes.
+              </p>
+              <ul>
+                <li>Examples: Warrior, Paladin, Shadow Knight, Cleric, Shaman, Druid, Ranger, Bard.</li>
+                <li>Examples: Wizard, Magician, Enchanter, Necromancer, Rogue, Monk, Berserker, Beastlord.</li>
+              </ul>
+              <h3>Combination model</h3>
+              <ul>
+                <li>Public guides describe a trio/multiclass structure (primary + secondary + tertiary classes).</li>
+                <li>Community tools commonly cite 560+ potential trio combinations depending on restrictions and version.</li>
+                <li>Race-based restrictions are commonly reported for primary class selection, with broader flexibility later.</li>
+              </ul>
+              <h3>Combination planning resources</h3>
+              <ul>
+                <li><a href="https://everquestlegends.wiki/" target="_blank" rel="noopener noreferrer">EverQuest Legends Wiki (community)</a></li>
+                <li><a href="https://eqlbuilds.com/" target="_blank" rel="noopener noreferrer">EQL Builds Planner</a></li>
+                <li><a href="https://eql.quest/" target="_blank" rel="noopener noreferrer">EQL Companion</a></li>
+                <li><a href="https://wiki.project1999.com/Sortable_Race_Class_Matrix" target="_blank" rel="noopener noreferrer">Project 1999 Race/Class Matrix (classic baseline)</a></li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="eql-outline__section" data-search="developer development studio daybreak darkpaw game jawn official">
+            <summary>
+              <span>3) Developer Information</span>
+              <span class="eql-tag">Studio</span>
+            </summary>
+            <div class="eql-outline__body">
+              <h3>Publicly reported development structure</h3>
+              <ul>
+                <li>EverQuest IP operations remain associated with Daybreak / Darkpaw public communications.</li>
+                <li>EQL community reporting identifies collaboration with Game Jawn for Legends development.</li>
+              </ul>
+              <h3>Official communications</h3>
+              <ul>
+                <li><a href="https://www.everquest.com/news/eq-note-to-the-community" target="_blank" rel="noopener noreferrer">A Note to the EverQuest Community</a></li>
+                <li><a href="https://www.daybreakgames.com/press" target="_blank" rel="noopener noreferrer">Daybreak Press</a></li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="eql-outline__section" data-search="patch notes updates changes release notes eql notes news">
+            <summary>
+              <span>4) Patch Notes and Update History</span>
+              <span class="eql-tag">Updates</span>
+            </summary>
+            <div class="eql-outline__body">
+              <h3>Where to track updates</h3>
+              <ul>
+                <li><a href="https://www.everquestlegends.com/patch-notes" target="_blank" rel="noopener noreferrer">EQL Patch Notes / News (official)</a></li>
+                <li><a href="https://www.everquest.com/home/update-notes" target="_blank" rel="noopener noreferrer">EverQuest Mainline Update Notes</a></li>
+              </ul>
+              <h3>Community patch archives</h3>
+              <ul>
+                <li><a href="https://eqlwiki.com/Patch_notes" target="_blank" rel="noopener noreferrer">EQL Wiki Patch Notes Archive</a></li>
+                <li><a href="https://eqlegends.wiki/guide/updates/" target="_blank" rel="noopener noreferrer">EQ Legends Community Updates Roundups</a></li>
+              </ul>
+            </div>
+          </details>
+
+          <details class="eql-outline__section" data-search="resources links wiki guides progression forums tools news">
+            <summary>
+              <span>5) Resource Links</span>
+              <span class="eql-tag">Links</span>
+            </summary>
+            <div class="eql-outline__body">
+              <h3>Official and high-traffic references</h3>
+              <ul>
+                <li><a href="https://www.everquestlegends.com/" target="_blank" rel="noopener noreferrer">EverQuest Legends Official Site</a></li>
+                <li><a href="https://www.eqprogression.com/legends/" target="_blank" rel="noopener noreferrer">EQProgression Legends Hub</a></li>
+                <li><a href="https://everquestlegends.wiki/" target="_blank" rel="noopener noreferrer">EverQuest Legends Wiki</a></li>
+              </ul>
+              <h3>Build and planning tools</h3>
+              <ul>
+                <li><a href="https://eqlbuilds.com/" target="_blank" rel="noopener noreferrer">EQL Builds</a></li>
+                <li><a href="https://eql.quest/" target="_blank" rel="noopener noreferrer">EQL Companion</a></li>
+              </ul>
+              <h3>Broader EverQuest references</h3>
+              <ul>
+                <li><a href="https://wiki.project1999.com/" target="_blank" rel="noopener noreferrer">Project 1999 Wiki (classic knowledge base)</a></li>
+                <li><a href="https://www.eqresource.com/" target="_blank" rel="noopener noreferrer">EQResource</a></li>
+                <li><a href="https://everquest.allakhazam.com/" target="_blank" rel="noopener noreferrer">Allakhazam EverQuest</a></li>
+                <li><a href="https://www.almarsguides.com/EQ/" target="_blank" rel="noopener noreferrer">Almar's EverQuest Guides</a></li>
+              </ul>
+            </div>
+          </details>
+        </div>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Information archive maintained by the guild council.</p>
+        <p><a class="site-footer__support" href="/">Back to Hall</a></p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+      </footer>
+    </div>
+
+    <script>
+      const eqlSearch = document.getElementById('eqlSearch');
+      const eqlMatchCount = document.getElementById('eqlMatchCount');
+      const eqlSections = Array.from(document.querySelectorAll('.eql-outline__section'));
+
+      function runEqlSearch() {
+        const query = eqlSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
+
+        eqlSections.forEach((section) => {
+          const searchableText = `${section.dataset.search || ''} ${section.textContent || ''}`.toLowerCase();
+          const matches = !query || searchableText.includes(query);
+          section.classList.toggle('eql-hidden', !matches);
+          if (matches) {
+            visibleCount += 1;
+            if (query) {
+              section.open = true;
+            }
+          }
+        });
+
+        eqlMatchCount.textContent = query
+          ? `${visibleCount} section${visibleCount === 1 ? '' : 's'} matched`
+          : `${eqlSections.length} sections available`;
+      }
+
+      eqlSearch.addEventListener('input', runEqlSearch);
+      runEqlSearch();
+    </script>
+    <script src="../scripts/site-decor.js"></script>
+  </body>
+</html>
