@@ -351,10 +351,7 @@
             if (!query) {
               return true;
             }
-            const haystack = [record.name, record.email, record.title, record.notes, record.level, record.status]
-              .join(' ')
-              .toLowerCase();
-            return haystack.includes(queryLower);
+            return String(record.searchBlob || '').includes(queryLower);
           });
       }
 
@@ -465,10 +462,16 @@
         }
 
         const leader = email === guildAccess.OWNER_EMAIL;
+        let nextLevel = memberLevel.value;
+        if (leader) {
+          nextLevel = 'leader';
+        } else if (nextLevel === 'leader') {
+          nextLevel = 'officer';
+        }
         const saved = guildAccess.upsertRecord({
           email,
           name: memberName.value.trim(),
-          level: leader ? 'leader' : (memberLevel.value === 'leader' ? 'officer' : memberLevel.value),
+          level: nextLevel,
           title: memberTitle.value.trim() || (leader ? 'Guild Leader' : ''),
           status: leader ? 'active' : memberStatus.value,
           notes: memberNotes.value.trim(),

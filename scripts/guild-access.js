@@ -11,6 +11,7 @@
     applicant: 3,
     retired: 4
   });
+  let fallbackIdCounter = 0;
 
   function nowIso() {
     return new Date().toISOString();
@@ -28,7 +29,8 @@
     if (window.crypto && typeof window.crypto.randomUUID === 'function') {
       return `${prefix}-${window.crypto.randomUUID()}`;
     }
-    return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+    fallbackIdCounter += 1;
+    return `${prefix}-${Date.now()}-${fallbackIdCounter}`;
   }
 
   function cleanText(value, maxLength) {
@@ -114,6 +116,17 @@
       normalized.level = 'officer';
       normalized.access.management = false;
     }
+
+    normalized.searchBlob = [
+      normalized.name,
+      normalized.email,
+      normalized.title,
+      normalized.level,
+      normalized.status,
+      normalized.notes
+    ]
+      .join(' ')
+      .toLowerCase();
 
     return normalized;
   }

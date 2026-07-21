@@ -707,17 +707,17 @@
       }
 
       function updateAuthNotes(member, permissions, privateAccess) {
-        const publicNote = document.getElementById('publicAuthNote');
+        const publicAuthNote = document.getElementById('publicAuthNote');
         const privateNote = document.getElementById('privateAuthNote');
 
         if (!member) {
-          publicNote.textContent = 'Sign in with a verified Netlify account to request forum access and post publicly.';
+          publicAuthNote.textContent = 'Sign in with a verified Netlify account to request forum access and post publicly.';
           privateNote.textContent = 'Private spaces unlock after the guild leader authorizes your forum access.';
           return;
         }
 
         const roleText = getRoleLabel(permissions);
-        publicNote.textContent = permissions.canUseForums
+        publicAuthNote.textContent = permissions.canUseForums
           ? `Signed in as ${member.email}. Forum authorization is active. Role: ${roleText}.`
           : `Signed in as ${member.email}. Verified account detected, but forum authorization has not been granted yet.`;
         privateNote.textContent = privateAccess

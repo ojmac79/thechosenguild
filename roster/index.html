@@ -252,7 +252,7 @@
         if (!member) {
           rosterGateMessage.textContent = 'Sign in with a verified Netlify account, then ask the guild leader to authorize your roster access.';
         } else if (!permissions.canUseRoster) {
-          rosterGateMessage.textContent = `Signed in as ${member.email}. Your account is verified, but roster access is still locked.`;
+          rosterGateMessage.textContent = `Welcome, ${member.name || 'guild member'}. Your account is verified, but roster access is still locked.`;
         }
 
         if (!permissions.canUseRoster) {

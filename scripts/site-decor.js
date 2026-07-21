@@ -117,6 +117,7 @@
     }
 
     let parsedMember = null;
+    let parsedDirectory = null;
     try {
       parsedMember = JSON.parse(storedMember);
     } catch (error) {
@@ -124,7 +125,19 @@
     }
 
     const email = String(parsedMember && parsedMember.email ? parsedMember.email : '').trim().toLowerCase();
-    if (email !== 'ojmac79@gmail.com') {
+    if (!email) {
+      return;
+    }
+
+    try {
+      parsedDirectory = JSON.parse(window.localStorage.getItem('theChosenGuildDirectoryV1') || 'null');
+    } catch (error) {
+      parsedDirectory = null;
+    }
+
+    const members = Array.isArray(parsedDirectory && parsedDirectory.members) ? parsedDirectory.members : [];
+    const matchingRecord = members.find((member) => String(member && member.email ? member.email : '').trim().toLowerCase() === email);
+    if (!matchingRecord || !matchingRecord.access || matchingRecord.access.management !== true) {
       return;
     }
 
