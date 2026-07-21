@@ -689,6 +689,7 @@
 
         resourceForm.reset();
         clearEditingState();
+        randomizeThumbnailCards();
         renderResources();
         resourceNotice.textContent = successMessage;
       });
@@ -759,7 +760,7 @@
       const toggleContentEditButton = document.getElementById('toggleContentEdit');
       const contentEditNotice = document.getElementById('contentEditNotice');
       const contentEditableTargets = Array.from(
-        document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary span, .page label span')
+        document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary > span:first-child, .page label span')
       ).filter((element) => !element.closest('[data-noneditable="true"]'));
       let contentEditingEnabled = false;
 
