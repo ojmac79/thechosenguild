@@ -152,11 +152,11 @@
           Searchable outline of publicly available EverQuest Legends information: class combinations, game systems,
           developer details, patch notes, and trusted resources.
         </p>
-        <div class="resource-section__header">
+        <div class="resource-section__header" data-noneditable="true">
           <h2 class="resource-section__title">Page Content</h2>
-          <button id="toggleContentEdit" class="btn-torch" type="button">Enable Content Editing</button>
+          <button id="toggleContentEdit" class="btn-torch" type="button" aria-pressed="false">Enable Content Editing</button>
         </div>
-        <p id="contentEditNotice" class="resource-notice" aria-live="polite">
+        <p id="contentEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
           Sign in to enable page-wide content editing.
         </p>
 
@@ -310,8 +310,8 @@
               <button id="resourceAddLink" class="btn-torch" type="button">Add Link</button>
             </div>
 
-            <ul id="resourceList" class="resource-list"></ul>
-            <div class="resource-section__editor">
+            <ul id="resourceList" class="resource-list" data-noneditable="true"></ul>
+            <div class="resource-section__editor" data-noneditable="true">
               <p id="resourceNotice" class="resource-notice" aria-live="polite"></p>
               <form id="resourceForm" class="panel resource-form">
                 <div class="resource-form__row">
@@ -759,8 +759,8 @@
       const toggleContentEditButton = document.getElementById('toggleContentEdit');
       const contentEditNotice = document.getElementById('contentEditNotice');
       const contentEditableTargets = Array.from(
-        document.querySelectorAll('.page :is(h1, h2, h3, p, li, a, summary span, label span):not(#resourceList *):not(.resource-section__editor *)')
-      );
+        document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary span, .page label span')
+      ).filter((element) => !element.closest('[data-noneditable="true"]'));
       let contentEditingEnabled = false;
 
       function setContentEditingState(enabled) {
@@ -769,6 +769,7 @@
           element.setAttribute('contenteditable', enabled ? 'true' : 'false');
         });
         toggleContentEditButton.textContent = enabled ? 'Disable Content Editing' : 'Enable Content Editing';
+        toggleContentEditButton.setAttribute('aria-pressed', enabled ? 'true' : 'false');
       }
 
       toggleContentEditButton.addEventListener('click', () => {
