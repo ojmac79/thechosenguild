@@ -1,32 +1,49 @@
 (function () {
   const SNAPSHOT_STORAGE_KEY = 'theChosenRosterSnapshotV2';
   const LEGACY_STORAGE_KEY = 'theChosenRosterEntries';
+  const DAYBREAK_SERVICE_ID_STORAGE_KEY = 'theChosenDaybreakServiceId';
   const GUILD_NAME = 'The Chosen';
   const WORLD_NAME = 'Qeynos';
-  const SYNC_INTERVAL_MS = 24 * 60 * 60 * 1000;
+  const HOURS_PER_DAY = 24;
+  const MINUTES_PER_HOUR = 60;
+  const SECONDS_PER_MINUTE = 60;
+  const MS_PER_SECOND = 1000;
+  const SYNC_INTERVAL_MS = HOURS_PER_DAY * MINUTES_PER_HOUR * SECONDS_PER_MINUTE * MS_PER_SECOND;
   const OFFICIAL_SOURCE_URL = 'https://census.daybreakgames.com/';
-  const SOURCE_ATTEMPTS = Object.freeze([
-    {
-      label: 'EQ2 guild members',
-      url: 'https://census.daybreakgames.com/s:example/get/eq2/guild_member?guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500'
-    },
-    {
-      label: 'EQ2 guild characters',
-      url: 'https://census.daybreakgames.com/s:example/get/eq2/character?guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500'
-    },
-    {
-      label: 'EQ2 guild details',
-      url: 'https://census.daybreakgames.com/s:example/get/eq2/guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10'
-    },
-    {
-      label: 'EQL guild details',
-      url: 'https://census.daybreakgames.com/s:example/get/eql:guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10'
-    },
-    {
-      label: 'EQ Legends guild details',
-      url: 'https://census.daybreakgames.com/s:example/get/eq_legends:guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10'
-    }
-  ]);
+
+  function getServiceId() {
+    const configured =
+      window.TheChosenDaybreakServiceId ||
+      localStorage.getItem(DAYBREAK_SERVICE_ID_STORAGE_KEY) ||
+      's:example';
+    return String(configured || 's:example').trim() || 's:example';
+  }
+
+  function buildSourceAttempts() {
+    const serviceId = encodeURIComponent(getServiceId());
+    return Object.freeze([
+      {
+        label: 'EQ2 guild members',
+        url: `https://census.daybreakgames.com/${serviceId}/get/eq2/guild_member?guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500`
+      },
+      {
+        label: 'EQ2 guild characters',
+        url: `https://census.daybreakgames.com/${serviceId}/get/eq2/character?guild.name.lower=the%20chosen&guild.world.name=Qeynos&c:limit=500`
+      },
+      {
+        label: 'EQ2 guild details',
+        url: `https://census.daybreakgames.com/${serviceId}/get/eq2/guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10`
+      },
+      {
+        label: 'EQL guild details',
+        url: `https://census.daybreakgames.com/${serviceId}/get/eql:guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10`
+      },
+      {
+        label: 'EQ Legends guild details',
+        url: `https://census.daybreakgames.com/${serviceId}/get/eq_legends:guild?name.lower=the%20chosen&world.name=Qeynos&c:limit=10`
+      }
+    ]);
+  }
 
   function clone(value) {
     return JSON.parse(JSON.stringify(value));
@@ -445,7 +462,7 @@
         const level = extractLevel(record);
         const rank = extractRank(record);
         const characterId = extractCharacterId(record, characterName);
-        if (!characterName || (!classes.length && level == null && !rank)) {
+        if (!isValidCharacterRecord(characterName, classes, level, rank)) {
           return null;
         }
         return normalizeEntry({
@@ -501,10 +518,14 @@
     return sortEntries(entries);
   }
 
+  function isValidCharacterRecord(characterName, classes, level, rank) {
+    return Boolean(characterName && (classes.length || level != null || rank));
+  }
+
   async function fetchOfficialRoster() {
     let lastError = 'No official roster entries were returned.';
 
-    for (const attempt of SOURCE_ATTEMPTS) {
+    for (const attempt of buildSourceAttempts()) {
       try {
         const response = await fetch(attempt.url, {
           headers: { Accept: 'application/json' }
@@ -656,8 +677,9 @@
     GUILD_NAME,
     WORLD_NAME,
     OFFICIAL_SOURCE_URL,
-    SOURCE_ATTEMPTS,
+    SOURCE_ATTEMPTS: buildSourceAttempts(),
     SYNC_INTERVAL_MS,
+    DAYBREAK_SERVICE_ID_STORAGE_KEY,
     clone,
     normalizeEmail,
     normalizeEntry,

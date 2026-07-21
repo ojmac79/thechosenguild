@@ -67,7 +67,7 @@
             <div>
               <h2 class="resource-section__title">Roster Sync</h2>
               <p class="forum2-note">
-                Source: <a class="site-footer__support" href="https://census.daybreakgames.com/" target="_blank" rel="noopener noreferrer">Daybreak Census</a>
+                Source: <a class="site-footer__support" href="https://census.daybreakgames.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit Daybreak Census API documentation">Daybreak Census</a>
                 &middot; Guild: The Chosen &middot; World: Qeynos
               </p>
             </div>
@@ -415,6 +415,10 @@
         }
 
         const entryId = (saveButton || clearButton).dataset.saveAssignment || (saveButton || clearButton).dataset.clearAssignment;
+        if (!entryId) {
+          setNotice(rosterAssignmentNotice, 'That character could not be identified for assignment.', 'error');
+          return;
+        }
         const select = rosterList.querySelector(`[data-assignment-select="${CSS.escape(entryId)}"]`);
         const email = clearButton ? '' : (select ? select.value : '');
         const updated = rosterData.assignCharacter(entryId, email);
