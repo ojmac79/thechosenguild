@@ -12,7 +12,7 @@
     stories: { sword: 2, axe: 1, staff: 5, dagger: 3 },
     roster: { sword: 4, axe: 3, staff: 1, dagger: 2 },
     discord: { sword: 2, axe: 2, staff: 2, dagger: 3 },
-    resources: { sword: 1, axe: 1, staff: 4, dagger: 3 },
+    eqlInformation: { sword: 1, axe: 1, staff: 4, dagger: 3 },
     login: { sword: 1, axe: 1, staff: 4, dagger: 2 },
     default: { sword: 2, axe: 2, staff: 2, dagger: 2 }
   };
@@ -38,8 +38,8 @@
     if (path.startsWith("/discord")) {
       return routeProfiles.discord;
     }
-    if (path.startsWith("/resources")) {
-      return routeProfiles.resources;
+    if (path.startsWith("/eql-information")) {
+      return routeProfiles.eqlInformation;
     }
     if (path.startsWith("/login")) {
       return routeProfiles.login;
