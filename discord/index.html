@@ -3,11 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Chosen — Discord</title>
-    <meta
-      name="description"
-      content="Full-screen Discord integration for The Chosen guild using WidgetBot."
-    />
+    <title>The Chosen - Discord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -15,69 +11,6 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../styles.css" />
-    <style>
-      .discord-page {
-        flex: 1;
-        width: min(1400px, 100%);
-        max-width: 1400px;
-        margin: 0 auto;
-        padding: 1.5rem;
-        display: grid;
-        grid-template-rows: auto 1fr;
-        gap: 1rem;
-        min-height: 0;
-      }
-
-      .discord-topbar {
-        border: 1px solid var(--border);
-        border-radius: 18px;
-        padding: 1rem 1.25rem;
-        background: var(--panel);
-        display: flex;
-        flex-wrap: wrap;
-        align-items: center;
-        justify-content: space-between;
-        gap: 0.75rem;
-      }
-
-      .discord-topbar__title {
-        margin: 0;
-        font-family: 'Cinzel', serif;
-        font-size: clamp(1.3rem, 2.4vw, 1.8rem);
-        color: #fff7dd;
-      }
-
-      .discord-topbar__status {
-        margin: 0.35rem 0 0;
-        color: var(--muted);
-        font-size: 0.8rem;
-      }
-
-      .discord-shell {
-        border: 1px solid var(--border);
-        border-radius: 20px;
-        background: var(--panel);
-        overflow: hidden;
-        min-height: calc(100vh - 260px);
-        box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
-      }
-
-      .discord-shell widgetbot {
-        display: block;
-        width: 100%;
-        height: 100%;
-      }
-
-      @media (max-width: 960px) {
-        .discord-page {
-          padding: 1rem;
-        }
-
-        .discord-shell {
-          min-height: calc(100vh - 240px);
-        }
-      }
-    </style>
   </head>
   <body>
     <div class="chosen-shell">
@@ -107,141 +40,23 @@
         </div>
       </header>
 
-      <main class="discord-page">
-        <section class="discord-topbar" aria-label="Discord page header">
-          <div>
-            <p class="hero__eyebrow">Voice of the Guild</p>
-            <h1 class="discord-topbar__title">Live Discord Hall</h1>
-            <p id="discordStatus" class="discord-topbar__status">Connecting to guild chat...</p>
-          </div>
-          <a
-            class="btn-torch"
-            href="https://discord.gg/Chsm6MvG"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Join in Discord App
-          </a>
-        </section>
-
-        <section class="discord-shell" aria-label="Embedded guild Discord">
-          <widgetbot
-            id="guildDiscordEmbed"
-            server="1525890254169440256"
-            width="100%"
-            height="100%"
-          ></widgetbot>
-        </section>
+      <main class="page">
+        <p class="hero__eyebrow">Voice of the Guild</p>
+        <h1 class="page-title">Discord</h1>
+        <p class="page-subtitle">Guild chat now runs through WidgetBot Crate.</p>
       </main>
 
       <footer class="site-footer">
-        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
-        <div id="footerMember" class="site-footer__member" hidden>
-          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
-          <div>
-            <div id="footerMemberName" class="site-footer__member-name"></div>
-            <div id="footerMemberEmail" class="site-footer__member-email"></div>
-          </div>
-        </div>
-        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
-          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
-          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
-        </div>
+        <p>The Chosen - forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
         <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
       </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/html-embed"></script>
-    <script src="../scripts/site-decor.js"></script>
-    <script src="../scripts/guild-access.js"></script>
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-    <script>
-      const DISCORD_SERVER_ID = '1525890254169440256';
-      const discordStatus = document.getElementById('discordStatus');
-      const guildDiscordEmbed = document.getElementById('guildDiscordEmbed');
-
-      guildDiscordEmbed.on('ready', () => {
-        discordStatus.textContent = 'Connected. Pick a channel and join the guild conversation.';
-      });
-
-      guildDiscordEmbed.on('signIn', (member) => {
-        const memberName = member && member.name ? member.name : 'Guild member';
-        discordStatus.textContent = `Signed in as ${memberName}.`;
-      });
-
-      guildDiscordEmbed.on('error', () => {
-        discordStatus.textContent = `Unable to load Discord embed for server ${DISCORD_SERVER_ID}.`;
-      });
-
-      const footerMember = document.getElementById('footerMember');
-      const footerMemberMenu = document.getElementById('footerMemberMenu');
-      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
-      const footerMemberName = document.getElementById('footerMemberName');
-      const footerMemberEmail = document.getElementById('footerMemberEmail');
-      const footerAccountButton = document.getElementById('footerAccountButton');
-      const footerLogoutButton = document.getElementById('footerLogoutButton');
-
-      function getCurrentMember() {
-        const stored = localStorage.getItem('theChosenCurrentMember');
-        if (stored) {
-          try {
-            return JSON.parse(stored);
-          } catch (error) {
-            return null;
-          }
-        }
-
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          const user = window.netlifyIdentity.currentUser();
-          const member = {
-            id: user.id || user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email,
-            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-          };
-          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
-          return member;
-        }
-
-        return null;
-      }
-
-      function renderMemberBadge(member) {
-        if (!member) {
-          footerMember.hidden = true;
-          footerMemberMenu.hidden = true;
-          return;
-        }
-
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
-        footerMemberAvatar.alt = `${member.name || member.email} avatar`;
-        footerMemberName.textContent = member.name || member.email;
-        footerMemberEmail.textContent = member.email || 'Netlify member';
-        footerMember.hidden = false;
-        footerMemberMenu.hidden = false;
-      }
-
-      footerAccountButton.addEventListener('click', () => {
-        window.location.href = '/login/';
-      });
-      footerLogoutButton.addEventListener('click', () => {
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.logout();
-        }
-        localStorage.removeItem('theChosenCurrentMember');
-        renderMemberBadge(null);
-      });
-
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderMemberBadge(getCurrentMember()));
-        window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem('theChosenCurrentMember');
-          renderMemberBadge(null);
-        });
-      }
-      renderMemberBadge(getCurrentMember());
+    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer>
+      new Crate({
+        server: '1525890254169440256'
+      })
     </script>
   </body>
 </html>
