@@ -11,6 +11,67 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../../styles.css" />
+    <style>
+      .discord-hero {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 1.5rem;
+        padding: 3rem 1.5rem 2rem;
+        text-align: center;
+      }
+      .discord-hero__icon {
+        font-size: 4rem;
+        line-height: 1;
+        filter: drop-shadow(0 0 18px rgba(88, 101, 242, 0.6));
+      }
+      .discord-features {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 1.25rem;
+        margin: 2rem 0;
+        width: 100%;
+        max-width: 760px;
+      }
+      .discord-feature {
+        background: rgba(255, 255, 255, 0.04);
+        border: 1px solid rgba(255, 215, 0, 0.15);
+        border-radius: 8px;
+        padding: 1.25rem 1rem;
+        text-align: center;
+      }
+      .discord-feature__icon {
+        font-size: 1.75rem;
+        display: block;
+        margin-bottom: 0.5rem;
+      }
+      .discord-feature__title {
+        font-family: 'Cinzel', serif;
+        font-size: 0.85rem;
+        font-weight: 600;
+        color: #ffd700;
+        margin-bottom: 0.35rem;
+        letter-spacing: 0.05em;
+      }
+      .discord-feature__desc {
+        font-size: 0.82rem;
+        color: rgba(255, 255, 255, 0.6);
+        line-height: 1.5;
+      }
+      .discord-cta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 1rem;
+        justify-content: center;
+        margin-top: 1rem;
+      }
+      .discord-cta__note {
+        width: 100%;
+        font-size: 0.8rem;
+        color: rgba(255, 255, 255, 0.4);
+        margin-top: 0.5rem;
+      }
+    </style>
   </head>
   <body>
     <div class="chosen-shell">
@@ -41,22 +102,43 @@
       </header>
 
       <main class="page">
-        <p class="hero__eyebrow">Voice of the Guild</p>
-        <h1 class="page-title">Meet Us on Discord</h1>
-        <p class="page-subtitle">
-          Join the live server feed and hop straight into The Chosen community.
-        </p>
-
-        <div class="panel discord-wrap">
-          <p class="discord-wrap__intro">
-            Guild server widget
+        <div class="discord-hero">
+          <div class="discord-hero__icon" aria-hidden="true">🎙️</div>
+          <p class="hero__eyebrow">Voice of the Guild</p>
+          <h1 class="page-title">Join Us on Discord</h1>
+          <p class="page-subtitle">
+            The Chosen guild lives and breathes in our Discord server — raid
+            planning, lore debates, real-time callouts, and the occasional
+            late-night Norrath story. Click the chat button in the corner to
+            jump right in, or hit the button below to join permanently.
           </p>
-          <div class="discord-widget">
-            <iframe src="https://discord.com/widget?id=1525890254169440256&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+
+          <div class="discord-features">
+            <div class="discord-feature">
+              <span class="discord-feature__icon" aria-hidden="true">⚔️</span>
+              <div class="discord-feature__title">Raid Coordination</div>
+              <div class="discord-feature__desc">Strategy threads, sign-ups, and live voice during progression nights.</div>
+            </div>
+            <div class="discord-feature">
+              <span class="discord-feature__icon" aria-hidden="true">📢</span>
+              <div class="discord-feature__title">Guild Announcements</div>
+              <div class="discord-feature__desc">Officer posts, patch notes, and event scheduling in one place.</div>
+            </div>
+            <div class="discord-feature">
+              <span class="discord-feature__icon" aria-hidden="true">🏰</span>
+              <div class="discord-feature__title">Community Channels</div>
+              <div class="discord-feature__desc">Class discussion, crafting tips, off-topic banter, and more.</div>
+            </div>
           </div>
-          <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
-            Join Our Discord
-          </a>
+
+          <div class="discord-cta">
+            <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
+              Join Our Discord
+            </a>
+            <p class="discord-cta__note">
+              💬 Already a member? Use the chat widget in the bottom-right corner to browse the server right here.
+            </p>
+          </div>
         </div>
       </main>
 
@@ -77,6 +159,16 @@
         <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
       </footer>
     </div>
+
+    <!-- WidgetBot Crate — live Discord chat overlay -->
+    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer></script>
+    <script>
+      window.addEventListener('load', function () {
+        new Crate({
+          server: '1525890254169440256'
+        });
+      });
+    </script>
 
     <script src="../../scripts/site-decor.js"></script>
     <script src="../../scripts/guild-access.js"></script>
