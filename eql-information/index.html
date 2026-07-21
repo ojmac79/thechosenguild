@@ -780,11 +780,11 @@
         if (!canEdit && contentEditingEnabled) {
           setContentEditingState(false);
         }
-        window.updateEqlContentEditAccess = updateContentEditAccess;
         contentEditNotice.textContent = canEdit
           ? 'Owner access enabled. Use the button to enable page-wide content editing.'
           : 'Public view is enabled. Owner sign-in is required to edit page content.';
       }
+      window.updateEqlContentEditAccess = updateContentEditAccess;
 
       function setContentEditingState(enabled) {
         contentEditingEnabled = enabled;
