@@ -262,6 +262,7 @@
         const query = rosterSearch.value.trim().toLowerCase();
         const assignment = rosterAssignmentFilter.value;
         const sort = rosterSort.value;
+        const compareByName = (left, right) => left.characterName.localeCompare(right.characterName, undefined, { sensitivity: 'base' });
 
         return snapshot.entries
           .filter((entry) => {
@@ -278,12 +279,12 @@
           })
           .sort((left, right) => {
             if (sort === 'level-desc') {
-              return (right.level || 0) - (left.level || 0) || left.characterName.localeCompare(right.characterName, undefined, { sensitivity: 'base' });
+              return (right.level || 0) - (left.level || 0) || compareByName(left, right);
             }
             if (sort === 'level-asc') {
-              return (left.level || 0) - (right.level || 0) || left.characterName.localeCompare(right.characterName, undefined, { sensitivity: 'base' });
+              return (left.level || 0) - (right.level || 0) || compareByName(left, right);
             }
-            return left.characterName.localeCompare(right.characterName, undefined, { sensitivity: 'base' });
+            return compareByName(left, right);
           });
       }
 
@@ -474,13 +475,24 @@
 
       let rosterPollTimer = null;
 
-      renderRoster();
-      if (rosterData.needsSync()) {
-        syncRoster(false);
+      function startRosterPolling() {
+        if (rosterPollTimer) {
+          window.clearInterval(rosterPollTimer);
+        }
+        rosterPollTimer = window.setInterval(() => {
+          syncRoster(false);
+        }, rosterData.SYNC_INTERVAL_MS);
       }
-      rosterPollTimer = window.setInterval(() => {
-        syncRoster(false);
-      }, rosterData.SYNC_INTERVAL_MS);
+
+      async function initializeRosterPage() {
+        renderRoster();
+        if (rosterData.needsSync()) {
+          await syncRoster(false);
+        }
+        startRosterPolling();
+      }
+
+      initializeRosterPage();
       window.addEventListener('beforeunload', () => {
         if (rosterPollTimer) {
           window.clearInterval(rosterPollTimer);

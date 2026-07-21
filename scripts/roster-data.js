@@ -5,6 +5,7 @@
   const GUILD_NAME = 'The Chosen';
   const WORLD_NAME = 'Qeynos';
   const SYNC_INTERVAL_MS = 86400000; // 24 hours in milliseconds
+  const RANDOM_ID_SLICE_END = 9;
   const OFFICIAL_SOURCE_URL = 'https://census.daybreakgames.com/';
 
   function getServiceId() {
@@ -296,7 +297,7 @@
       id: String(
         input && input.id
           ? input.id
-          : extractCharacterId(input || {}, name) || `roster-${Date.now()}-${Math.random().toString(36).slice(2, 9)}`
+          : extractCharacterId(input || {}, name) || `roster-${Date.now()}-${Math.random().toString(36).slice(2, RANDOM_ID_SLICE_END)}`
       ),
       characterId: String(input && input.characterId ? input.characterId : extractCharacterId(input || {}, name) || ''),
       characterName: name,
@@ -515,7 +516,7 @@
   }
 
   function isValidCharacterRecord(characterName, classes, level, rank) {
-    return Boolean(characterName && (classes.length || level != null || rank));
+    return Boolean(characterName && (classes.length > 0 || level != null || rank));
   }
 
   async function fetchOfficialRoster() {
@@ -649,11 +650,7 @@
     });
 
     if (guildAccess && memberRecord && typeof guildAccess.upsertRecord === 'function') {
-      guildAccess.upsertRecord({
-        ...memberRecord,
-        verifiedNetlify: memberRecord.verifiedNetlify,
-        access: memberRecord.access
-      });
+      guildAccess.upsertRecord({ ...memberRecord });
     }
 
     return next.entries.find((entry) => entry.id === entryId) || null;
