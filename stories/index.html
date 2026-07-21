@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Stories</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../../styles.css" />
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/eql-info/">EQL Info</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link active" href="/stories/">Stories</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Tales of Norrath</p>
+        <h1 class="page-title">Guild Stories</h1>
+        <p class="page-subtitle">Chronicles, memories, and adventures penned by the members of The Chosen. Open for all to read; members may share their own tales.</p>
+
+        <!-- Compact story submission form (members only) -->
+        <section class="panel stories-form-panel" id="storiesFormPanel" aria-label="Submit a story">
+          <div class="stories-form-panel__header">
+            <h2 class="resource-section__title">Share a Tale</h2>
+            <p id="storiesAuthNote" class="resource-notice" aria-live="polite"></p>
+          </div>
+
+          <form id="storyForm" class="stories-compact-form" hidden>
+            <div class="stories-compact-form__row">
+              <label class="resource-field">
+                <span>Title</span>
+                <input id="storyTitle" type="text" maxlength="120" placeholder="Name your tale…" required />
+              </label>
+              <label class="resource-field">
+                <span>Photos (up to 3, max 500 KB each)</span>
+                <input id="storyImages" type="file" accept="image/*" multiple />
+              </label>
+            </div>
+            <div id="storyImagePreviews" class="stories-image-previews" hidden></div>
+            <label class="resource-field">
+              <span>Story</span>
+              <textarea id="storyBody" rows="4" placeholder="Tell your tale…" required></textarea>
+            </label>
+            <div class="stories-compact-form__row stories-compact-form__row--forum">
+              <label class="stories-checkbox-label">
+                <input id="storyPostToForum" type="checkbox" />
+                <span>Also post to the Public Forum</span>
+              </label>
+              <label class="resource-field stories-forum-summary" id="storySummaryWrap" hidden>
+                <span>Forum summary (brief teaser)</span>
+                <input id="storyForumSummary" type="text" maxlength="200" placeholder="A short teaser for the forum post…" />
+              </label>
+            </div>
+            <div class="auth-actions stories-form__actions">
+              <button class="btn-primary" type="submit" id="storySaveButton">Post Story</button>
+              <button class="btn-torch" type="button" id="storyCancelEdit" hidden>Cancel Edit</button>
+            </div>
+          </form>
+        </section>
+
+        <div class="divider-rune" aria-hidden="true">✦</div>
+
+        <!-- Search bar -->
+        <div class="stories-search-wrap">
+          <input
+            class="search-console__input stories-search"
+            id="storiesSearch"
+            type="search"
+            placeholder="Search stories by title or text…"
+            aria-label="Search stories"
+          />
+        </div>
+
+        <!-- Story list -->
+        <section class="stories-list-wrap" aria-label="Guild stories">
+          <div id="storiesList" class="stories-list"></div>
+          <div class="stories-archive-row" id="storiesArchiveRow" hidden>
+            <button type="button" class="btn-torch stories-show-all" id="storiesShowAll">Show All Stories</button>
+          </div>
+        </section>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <div id="footerMember" class="site-footer__member" hidden>
+          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
+          <div>
+            <div id="footerMemberName" class="site-footer__member-name"></div>
+            <div id="footerMemberEmail" class="site-footer__member-email"></div>
+          </div>
+        </div>
+        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
+          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
+          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
+        </div>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+      </footer>
+    </div>
+
+    <script src="../../scripts/site-decor.js"></script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      const STORIES_KEY = 'theChosenStories';
+      const MEMBER_KEY = 'theChosenCurrentMember';
+      const ROSTER_KEY = 'theChosenRosterEntries';
+      const FORUM_KEY = 'theChosenForumStateV2';
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
+      const STORIES_PAGE_SIZE = 3;
+
+      let pendingImageDataUrls = [];
+      let editingStoryId = null;
+      let showingAll = false;
+
+      // ── DOM refs ────────────────────────────────────────────────────────────
+      const storyForm = document.getElementById('storyForm');
+      const storyTitle = document.getElementById('storyTitle');
+      const storyBody = document.getElementById('storyBody');
+      const storyImages = document.getElementById('storyImages');
+      const storyImagePreviews = document.getElementById('storyImagePreviews');
+      const storyPostToForum = document.getElementById('storyPostToForum');
+      const storySummaryWrap = document.getElementById('storySummaryWrap');
+      const storyForumSummary = document.getElementById('storyForumSummary');
+      const storySaveButton = document.getElementById('storySaveButton');
+      const storyCancelEdit = document.getElementById('storyCancelEdit');
+      const storiesAuthNote = document.getElementById('storiesAuthNote');
+      const storiesList = document.getElementById('storiesList');
+      const storiesSearch = document.getElementById('storiesSearch');
+      const storiesArchiveRow = document.getElementById('storiesArchiveRow');
+      const storiesShowAll = document.getElementById('storiesShowAll');
+      const footerMember = document.getElementById('footerMember');
+      const footerMemberMenu = document.getElementById('footerMemberMenu');
+      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
+      const footerMemberName = document.getElementById('footerMemberName');
+      const footerMemberEmail = document.getElementById('footerMemberEmail');
+      const footerAccountButton = document.getElementById('footerAccountButton');
+      const footerLogoutButton = document.getElementById('footerLogoutButton');
+
+      // ── Utilities ───────────────────────────────────────────────────────────
+      function escapeHtml(text) {
+        return String(text)
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function buildId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return `${prefix}-${window.crypto.randomUUID()}`;
+        }
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
+      function formatDate(isoString) {
+        const date = new Date(isoString);
+        if (isNaN(date.getTime())) {
+          return '';
+        }
+        return date.toLocaleString(undefined, {
+          year: 'numeric', month: 'short', day: 'numeric',
+          hour: '2-digit', minute: '2-digit'
+        });
+      }
+
+      // ── Auth & member ───────────────────────────────────────────────────────
+      function getCurrentMember() {
+        const stored = localStorage.getItem(MEMBER_KEY);
+        if (stored) {
+          try {
+            const parsed = JSON.parse(stored);
+            if (parsed && parsed.email) {
+              return parsed;
+            }
+          } catch (_) {
+            // fall through
+          }
+        }
+        if (window.netlifyIdentity && window.netlifyIdentity.currentUser) {
+          const user = window.netlifyIdentity.currentUser();
+          if (user && user.email) {
+            const member = {
+              id: user.id || user.email,
+              name: user.user_metadata?.full_name || user.email.split('@')[0],
+              email: user.email,
+              avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
+            };
+            localStorage.setItem(MEMBER_KEY, JSON.stringify(member));
+            return member;
+          }
+        }
+        return null;
+      }
+
+      function isOwner(member) {
+        return Boolean(member && member.email && member.email.toLowerCase() === OWNER_EMAIL.toLowerCase());
+      }
+
+      function canEditStory(story, member) {
+        if (!member) {
+          return false;
+        }
+        return isOwner(member) || story.authorId === member.id || story.authorEmail === member.email;
+      }
+
+      // ── Roster lookup ───────────────────────────────────────────────────────
+      function getRosterInfoForEmail(email) {
+        if (!email) {
+          return null;
+        }
+        try {
+          const entries = JSON.parse(localStorage.getItem(ROSTER_KEY) || 'null');
+          if (!Array.isArray(entries)) {
+            return null;
+          }
+          const match = entries.find(
+            (entry) => entry.ownerEmail && entry.ownerEmail.toLowerCase() === email.toLowerCase()
+          );
+          if (!match) {
+            return null;
+          }
+          const classes = [match.classOne, match.classTwo, match.classThree].filter(Boolean).join(' / ');
+          return {
+            characterName: `${match.firstName || ''} ${match.lastName || ''}`.trim(),
+            classes
+          };
+        } catch (_) {
+          return null;
+        }
+      }
+
+      // ── Storage ─────────────────────────────────────────────────────────────
+      function readStories() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(STORIES_KEY) || 'null');
+          if (Array.isArray(stored)) {
+            return stored;
+          }
+        } catch (_) {
+          // fall through
+        }
+        return [];
+      }
+
+      function writeStories(stories) {
+        localStorage.setItem(STORIES_KEY, JSON.stringify(stories));
+      }
+
+      // ── Forum cross-post ────────────────────────────────────────────────────
+      function postStoryToForum(story, summary) {
+        try {
+          const rawState = JSON.parse(localStorage.getItem(FORUM_KEY) || 'null');
+          if (!rawState || !rawState.public) {
+            return null;
+          }
+          const publicSpace = rawState.public;
+          if (!Array.isArray(publicSpace.categories) || !publicSpace.categories.length) {
+            return null;
+          }
+          // Use first public category (General)
+          const categoryId = publicSpace.categories[0].id;
+          const storyUrl = window.location.origin + '/stories/';
+          const threadBody = `${escapeHtml(summary)}\n\n→ Read the full story on the Stories page: ${storyUrl}`;
+          const thread = {
+            id: buildId('pub-thread'),
+            categoryId,
+            title: story.title,
+            body: `${summary}\n\n→ Read the full story on the Stories page: ${storyUrl}`,
+            authorName: story.authorName,
+            authorEmail: story.authorEmail,
+            authorAvatar: story.authorAvatar || '',
+            createdAt: Date.now(),
+            isPinned: false,
+            isLocked: false
+          };
+          if (!Array.isArray(publicSpace.threads)) {
+            publicSpace.threads = [];
+          }
+          publicSpace.threads.push(thread);
+          localStorage.setItem(FORUM_KEY, JSON.stringify(rawState));
+          return thread.id;
+        } catch (_) {
+          return null;
+        }
+      }
+
+      // ── Image handling ──────────────────────────────────────────────────────
+      function readFileAsDataUrl(file) {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.onload = (event) => resolve(event.target.result);
+          reader.onerror = () => reject(new Error('Failed to read file.'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      function renderImagePreviews(dataUrls) {
+        if (!dataUrls.length) {
+          storyImagePreviews.hidden = true;
+          storyImagePreviews.innerHTML = '';
+          return;
+        }
+        storyImagePreviews.hidden = false;
+        storyImagePreviews.innerHTML = dataUrls
+          .map(
+            (url, index) => `
+              <div class="story-img-preview">
+                <img src="${escapeHtml(url)}" alt="Story image ${index + 1}" />
+                <button type="button" class="story-img-remove" data-index="${index}" aria-label="Remove image ${index + 1}">✕</button>
+              </div>
+            `
+          )
+          .join('');
+      }
+
+      storyImages.addEventListener('change', async () => {
+        const files = Array.from(storyImages.files).slice(0, 3 - pendingImageDataUrls.length);
+        const MAX_SIZE = 500 * 1024;
+        const oversized = files.filter((file) => file.size > MAX_SIZE);
+        if (oversized.length) {
+          storiesAuthNote.textContent = `One or more images exceed 500 KB. Please choose smaller files.`;
+          storyImages.value = '';
+          return;
+        }
+        storiesAuthNote.textContent = '';
+        const dataUrls = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
+        pendingImageDataUrls = pendingImageDataUrls.concat(dataUrls).slice(0, 3);
+        storyImages.value = '';
+        renderImagePreviews(pendingImageDataUrls);
+      });
+
+      storyImagePreviews.addEventListener('click', (event) => {
+        const removeButton = event.target.closest('[data-index]');
+        if (!removeButton) {
+          return;
+        }
+        const index = parseInt(removeButton.getAttribute('data-index'), 10);
+        pendingImageDataUrls.splice(index, 1);
+        renderImagePreviews(pendingImageDataUrls);
+      });
+
+      storyPostToForum.addEventListener('change', () => {
+        storySummaryWrap.hidden = !storyPostToForum.checked;
+        if (!storyPostToForum.checked) {
+          storyForumSummary.value = '';
+        }
+      });
+
+      // ── Form reset ──────────────────────────────────────────────────────────
+      function resetForm() {
+        editingStoryId = null;
+        pendingImageDataUrls = [];
+        storyForm.reset();
+        storyImagePreviews.hidden = true;
+        storyImagePreviews.innerHTML = '';
+        storySummaryWrap.hidden = true;
+        storySaveButton.textContent = 'Post Story';
+        storyCancelEdit.hidden = true;
+        storiesAuthNote.textContent = '';
+      }
+
+      // ── Render ──────────────────────────────────────────────────────────────
+      function renderMemberBadge(member) {
+        if (!member) {
+          footerMember.hidden = true;
+          footerMemberMenu.hidden = true;
+          return;
+        }
+        const displayName = member.name || member.email || 'Guild Member';
+        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt = `${displayName} avatar`;
+        footerMemberName.textContent = displayName;
+        footerMemberEmail.textContent = member.email || 'Netlify member';
+        footerMember.hidden = false;
+        footerMemberMenu.hidden = false;
+      }
+
+      function setNoticeForMember(member) {
+        if (!member) {
+          storiesAuthNote.textContent = 'Sign in to share your own story.';
+          storyForm.hidden = true;
+          return;
+        }
+        storyForm.hidden = false;
+        storiesAuthNote.textContent = isOwner(member)
+          ? 'Owner access: you can edit or delete any story.'
+          : 'Member access: you may post stories and edit your own.';
+      }
+
+      function renderStories() {
+        const member = getCurrentMember();
+        renderMemberBadge(member);
+        setNoticeForMember(member);
+
+        const query = storiesSearch.value.trim().toLowerCase();
+        let stories = readStories()
+          .slice()
+          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+
+        if (query) {
+          stories = stories.filter(
+            (story) =>
+              story.title.toLowerCase().includes(query) ||
+              story.body.toLowerCase().includes(query)
+          );
+        }
+
+        if (!stories.length) {
+          storiesArchiveRow.hidden = true;
+          storiesList.innerHTML = `<div class="panel empty-state"><p>${query ? 'No stories match your search.' : 'No tales have been recorded yet. Be the first to share one.'}</p></div>`;
+          return;
+        }
+
+        const visibleStories = showingAll ? stories : stories.slice(0, STORIES_PAGE_SIZE);
+        const hasMore = stories.length > STORIES_PAGE_SIZE;
+
+        storiesArchiveRow.hidden = showingAll || !hasMore || Boolean(query);
+        if (!showingAll && hasMore && !query) {
+          storiesShowAll.textContent = `Show All Stories (${stories.length - STORIES_PAGE_SIZE} more in archive)`;
+        }
+
+        storiesList.innerHTML = visibleStories
+          .map((story) => {
+            const rosterInfo = getRosterInfoForEmail(story.authorEmail);
+            const characterLine = rosterInfo
+              ? `<span class="story-card__character">${escapeHtml(rosterInfo.characterName)}${rosterInfo.classes ? ` · ${escapeHtml(rosterInfo.classes)}` : ''}</span>`
+              : '';
+
+            const imagesHtml = story.images && story.images.length
+              ? `<div class="story-card__images story-card__images--${story.images.length}">
+                  ${story.images.map((url, i) => `<img class="story-card__image" src="${escapeHtml(url)}" alt="Story image ${i + 1}" loading="lazy" />`).join('')}
+                </div>`
+              : '';
+
+            const actionButtons = canEditStory(story, member)
+              ? `<button class="resource-item__edit" type="button" data-edit-story="${escapeHtml(story.id)}">Edit</button>
+                 <button class="resource-item__delete" type="button" data-delete-story="${escapeHtml(story.id)}">Delete</button>`
+              : '';
+
+            return `
+              <article class="panel story-card" id="story-${escapeHtml(story.id)}">
+                <div class="story-card__header">
+                  <div class="story-card__header-main">
+                    <h2 class="story-card__title">${escapeHtml(story.title)}</h2>
+                    <div class="story-card__meta">
+                      <img class="story-card__avatar" src="${escapeHtml(story.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(story.authorName || story.authorEmail || 'Member')}&background=ff7b7b&color=14070b`)}" alt="${escapeHtml(story.authorName || '')} avatar" />
+                      <span class="story-card__author">${escapeHtml(story.authorName || story.authorEmail || 'Member')}</span>
+                      ${characterLine}
+                      <time class="story-card__time" datetime="${escapeHtml(story.createdAt)}">${escapeHtml(formatDate(story.createdAt))}</time>
+                      ${story.updatedAt && story.updatedAt !== story.createdAt ? `<span class="story-card__edited">(edited ${escapeHtml(formatDate(story.updatedAt))})</span>` : ''}
+                    </div>
+                  </div>
+                  ${actionButtons ? `<div class="resource-item__actions">${actionButtons}</div>` : ''}
+                </div>
+                ${imagesHtml}
+                <p class="story-card__body">${escapeHtml(story.body).replaceAll('\n', '<br />')}</p>
+              </article>
+            `;
+          })
+          .join('');
+      }
+
+      // ── Populate form for editing ───────────────────────────────────────────
+      function populateFormForEdit(story) {
+        editingStoryId = story.id;
+        storyTitle.value = story.title;
+        storyBody.value = story.body;
+        pendingImageDataUrls = story.images ? story.images.slice() : [];
+        renderImagePreviews(pendingImageDataUrls);
+        storySaveButton.textContent = 'Update Story';
+        storyCancelEdit.hidden = false;
+        storyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+
+      // ── Form submission ─────────────────────────────────────────────────────
+      storyForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const member = getCurrentMember();
+        if (!member) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const title = storyTitle.value.trim();
+        const body = storyBody.value.trim();
+        if (!title || !body) {
+          return;
+        }
+
+        const stories = readStories();
+
+        if (editingStoryId) {
+          const index = stories.findIndex((story) => story.id === editingStoryId);
+          if (index >= 0 && canEditStory(stories[index], member)) {
+            stories[index] = {
+              ...stories[index],
+              title,
+              body,
+              images: pendingImageDataUrls.slice(),
+              updatedAt: new Date().toISOString()
+            };
+          }
+        } else {
+          const shouldPostToForum = storyPostToForum.checked;
+          const summary = storyForumSummary.value.trim();
+
+          const newStory = {
+            id: buildId('story'),
+            title,
+            body,
+            images: pendingImageDataUrls.slice(),
+            authorId: member.id,
+            authorEmail: member.email,
+            authorName: member.name || member.email.split('@')[0],
+            authorAvatar: member.avatar || '',
+            createdAt: new Date().toISOString(),
+            updatedAt: new Date().toISOString(),
+            forumPostId: null
+          };
+
+          if (shouldPostToForum && summary) {
+            const forumPostId = postStoryToForum(newStory, summary);
+            if (forumPostId) {
+              newStory.forumPostId = forumPostId;
+            }
+          }
+
+          stories.push(newStory);
+        }
+
+        writeStories(stories);
+        resetForm();
+        showingAll = false;
+        renderStories();
+      });
+
+      // ── List interactions (edit/delete) ─────────────────────────────────────
+      storiesList.addEventListener('click', (event) => {
+        const member = getCurrentMember();
+        const editButton = event.target.closest('[data-edit-story]');
+        const deleteButton = event.target.closest('[data-delete-story]');
+        if (!editButton && !deleteButton) {
+          return;
+        }
+
+        const storyId = (editButton || deleteButton).getAttribute(
+          editButton ? 'data-edit-story' : 'data-delete-story'
+        );
+        const stories = readStories();
+        const story = stories.find((item) => item.id === storyId);
+        if (!story || !canEditStory(story, member)) {
+          return;
+        }
+
+        if (editButton) {
+          populateFormForEdit(story);
+          return;
+        }
+
+        const remaining = stories.filter((item) => item.id !== storyId);
+        writeStories(remaining);
+        if (editingStoryId === storyId) {
+          resetForm();
+        }
+        renderStories();
+      });
+
+      // ── Search ──────────────────────────────────────────────────────────────
+      let searchTimer = null;
+      storiesSearch.addEventListener('input', () => {
+        clearTimeout(searchTimer);
+        searchTimer = setTimeout(() => {
+          showingAll = false;
+          renderStories();
+        }, 250);
+      });
+
+      // ── Show all ────────────────────────────────────────────────────────────
+      storiesShowAll.addEventListener('click', () => {
+        showingAll = true;
+        storiesArchiveRow.hidden = true;
+        renderStories();
+      });
+
+      // ── Cancel edit ─────────────────────────────────────────────────────────
+      storyCancelEdit.addEventListener('click', () => {
+        resetForm();
+        renderStories();
+      });
+
+      // ── Footer auth ─────────────────────────────────────────────────────────
+      footerAccountButton.addEventListener('click', () => {
+        window.location.href = '/login/';
+      });
+
+      footerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.logout();
+        }
+        localStorage.removeItem(MEMBER_KEY);
+        resetForm();
+        renderMemberBadge(null);
+        renderStories();
+      });
+
+      // ── Netlify Identity ────────────────────────────────────────────────────
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => renderStories());
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem(MEMBER_KEY);
+          resetForm();
+          renderMemberBadge(null);
+          renderStories();
+        });
+      }
+
+      // ── Initial render ──────────────────────────────────────────────────────
+      renderStories();
+    </script>
+  </body>
+</html>
