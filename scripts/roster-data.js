@@ -20,11 +20,19 @@
       localStorage.getItem(DAYBREAK_SERVICE_ID_STORAGE_KEY) ||
       DEFAULT_DAYBREAK_SERVICE_ID;
     const trimmed = String(configured || DEFAULT_DAYBREAK_SERVICE_ID).trim();
-    return /^s:[\w.-]+$/i.test(trimmed) ? trimmed : DEFAULT_DAYBREAK_SERVICE_ID;
+    return /^s:[a-z0-9]+$/i.test(trimmed) ? trimmed : DEFAULT_DAYBREAK_SERVICE_ID;
+  }
+
+  function sanitizeCollection(value) {
+    const collection = String(value || '').trim();
+    if (!/^[a-z0-9_:/-]+$/i.test(collection)) {
+      throw new Error('Invalid Census collection path.');
+    }
+    return collection;
   }
 
   function buildCensusUrl(collection, query) {
-    return `https://census.daybreakgames.com/${getServiceId()}/json/get/${collection}?${query}`;
+    return `https://census.daybreakgames.com/${getServiceId()}/json/get/${sanitizeCollection(collection)}?${query}`;
   }
 
   function buildQuery(params) {
