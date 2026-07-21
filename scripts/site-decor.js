@@ -18,6 +18,7 @@
     login: { sword: 1, axe: 1, shield: 2, staff: 4, dagger: 2, crystal: 3 },
     default: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 2, crystal: 2 }
   });
+  // Route zones mirror iconic Norrath locations to give each section a distinct EverQuest mood.
   const routeZones = Object.freeze({
     home: "qeynos",
     forums: "knowledge",

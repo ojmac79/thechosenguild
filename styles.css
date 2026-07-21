@@ -14,6 +14,7 @@
   --accent-strong: var(--accent-strong-base);
   --border: rgba(226, 183, 104, 0.35);
   --arcane: var(--arcane-base);
+  --arcane-border: color-mix(in srgb, var(--arcane) 24%, transparent);
   --button-text: #251507;
 }
 
@@ -57,7 +58,7 @@ a { color: inherit; text-decoration: none; }
   border-radius: 22px;
   pointer-events: none;
   z-index: -1;
-  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--arcane) 24%, transparent), 0 0 40px rgba(0, 0, 0, 0.45);
+  box-shadow: inset 0 0 0 1px var(--arcane-border), 0 0 40px rgba(0, 0, 0, 0.45);
 }
 
 .floating-relics {
@@ -283,7 +284,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   padding: 1.25rem;
   box-shadow:
     inset 0 1px 0 rgba(255,255,255,0.06),
-    inset 0 0 0 1px color-mix(in srgb, var(--arcane) 24%, transparent),
+    inset 0 0 0 1px var(--arcane-border),
     0 12px 28px rgba(0,0,0,0.3);
 }
 .empty-state { text-align: center; color: var(--muted); }
