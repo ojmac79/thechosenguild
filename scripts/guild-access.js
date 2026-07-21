@@ -484,11 +484,12 @@
 
   function getPermissions(member) {
     const normalizedEmail = normalizeEmail(member && member.email);
+    const normalizedCachedEmail = normalizeEmail(cachedSelfContext && cachedSelfContext.member && cachedSelfContext.member.email);
     if (
       normalizedEmail &&
       cachedSelfContext.member &&
       cachedSelfContext.authenticated &&
-      normalizeEmail(cachedSelfContext.member.email) === normalizedEmail
+      normalizedCachedEmail === normalizedEmail
     ) {
       return clone(cachedSelfContext.permissions);
     }
