@@ -464,11 +464,11 @@
           return;
         }
 
-        const leader = email === guildAccess.OWNER_EMAIL || memberLevel.value === 'leader';
+        const leader = email === guildAccess.OWNER_EMAIL;
         const saved = guildAccess.upsertRecord({
           email,
           name: memberName.value.trim(),
-          level: leader ? 'leader' : memberLevel.value,
+          level: leader ? 'leader' : (memberLevel.value === 'leader' ? 'officer' : memberLevel.value),
           title: memberTitle.value.trim() || (leader ? 'Guild Leader' : ''),
           status: leader ? 'active' : memberStatus.value,
           notes: memberNotes.value.trim(),

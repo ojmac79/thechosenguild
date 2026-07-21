@@ -102,6 +102,9 @@
       normalized.level = 'leader';
       normalized.status = 'active';
       normalized.title = normalized.title || 'Guild Leader';
+    } else if (normalized.level === 'leader') {
+      normalized.level = 'officer';
+      normalized.access.management = false;
     }
 
     return normalized;
@@ -284,7 +287,6 @@
 
     if (identityMember) {
       saveCurrentMember(identityMember);
-      ensureMemberRecord(identityMember);
       return identityMember;
     }
 
@@ -298,6 +300,18 @@
     }
 
     const existing = findRecordByEmail(sanitizedMember.email);
+    const existingLastSeen = existing && existing.lastSeenAt ? Date.parse(existing.lastSeenAt) : NaN;
+    const shouldRefreshLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > 5 * 60 * 1000;
+    const needsWrite =
+      !existing ||
+      !existing.verifiedNetlify ||
+      existing.name !== (sanitizedMember.name || existing.name) ||
+      shouldRefreshLastSeen;
+
+    if (!needsWrite) {
+      return existing;
+    }
+
     const nextRecord = normalizeRecord({
       ...(existing || defaultRecord(sanitizedMember.email)),
       email: sanitizedMember.email,
