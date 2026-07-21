@@ -205,13 +205,6 @@
     };
   }
 
-  cachedSelfContext = {
-    authenticated: false,
-    member: null,
-    record: null,
-    permissions: buildPermissions(null, null, false)
-  };
-
   function readStoredMember() {
     const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);
     if (!stored) {
@@ -404,6 +397,12 @@
   async function loadDirectory(options) {
     const force = Boolean(options && options.force);
     if (!cachedDirectory) {
+      cachedSelfContext = {
+        authenticated: false,
+        member: null,
+        record: null,
+        permissions: buildPermissions(null, null, false)
+      };
       cachedDirectory = readCachedDirectoryStorage();
     }
     if (!force && hasLoadedDirectoryFromServer) {

@@ -409,6 +409,6 @@ exports.handler = async (event, context) => {
 
     return response(405, { error: 'Method not allowed.' });
   } catch (error) {
-    return response(500, { error: error?.message || 'Unexpected server error.' });
+    return response(500, { error: 'Unexpected server error.' });
   }
 };
