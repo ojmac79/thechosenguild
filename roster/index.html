@@ -249,10 +249,10 @@
         rosterGate.hidden = permissions.canUseRoster;
         rosterList.hidden = !permissions.canUseRoster;
 
-        if (!member) {
-          rosterGateMessage.textContent = 'Sign in with a verified Netlify account, then ask the guild leader to authorize your roster access.';
-        } else if (!permissions.canUseRoster) {
-          rosterGateMessage.textContent = `Welcome, ${member.name || 'guild member'}. Your account is verified, but roster access is still locked.`;
+        if (!permissions.canUseRoster) {
+          rosterGateMessage.textContent = member
+            ? `Welcome, ${member.name || 'guild member'}. Your account is verified, but roster access is still locked.`
+            : 'Sign in with a verified Netlify account, then ask the guild leader to authorize your roster access.';
         }
 
         if (!permissions.canUseRoster) {

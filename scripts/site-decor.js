@@ -111,7 +111,12 @@
       return;
     }
 
-    const storedMember = window.localStorage.getItem('theChosenCurrentMember');
+    const guildAccess = window.TheChosenGuildAccess;
+    if (!guildAccess) {
+      return;
+    }
+
+    const storedMember = window.localStorage.getItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
     if (!storedMember) {
       return;
     }
@@ -130,7 +135,7 @@
     }
 
     try {
-      parsedDirectory = JSON.parse(window.localStorage.getItem('theChosenGuildDirectoryV1') || 'null');
+      parsedDirectory = JSON.parse(window.localStorage.getItem(guildAccess.DIRECTORY_STORAGE_KEY) || 'null');
     } catch (error) {
       parsedDirectory = null;
     }

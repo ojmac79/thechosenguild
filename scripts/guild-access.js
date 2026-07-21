@@ -322,12 +322,12 @@
 
     const existing = findRecordByEmail(sanitizedMember.email);
     const existingLastSeen = existing && existing.lastSeenAt ? Date.parse(existing.lastSeenAt) : NaN;
-    const shouldRefreshLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > MEMBER_ACTIVITY_REFRESH_MS;
+    const shouldUpdateLastSeen = !Number.isFinite(existingLastSeen) || Date.now() - existingLastSeen > MEMBER_ACTIVITY_REFRESH_MS;
     const needsWrite =
       !existing ||
       !existing.verifiedNetlify ||
       existing.name !== (sanitizedMember.name || existing.name) ||
-      shouldRefreshLastSeen;
+      shouldUpdateLastSeen;
 
     if (!needsWrite) {
       return existing;

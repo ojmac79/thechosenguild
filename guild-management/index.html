@@ -328,7 +328,6 @@
       function getFilteredMembers() {
         const directory = guildAccess.readDirectory();
         const query = guildAccess.normalizeEmail(memberSearch.value) || memberSearch.value.trim().toLowerCase();
-        const queryLower = query.toLowerCase();
         const standing = memberStatusFilter.value;
         const level = memberLevelFilter.value;
 
@@ -351,7 +350,7 @@
             if (!query) {
               return true;
             }
-            return String(record.searchBlob || '').includes(queryLower);
+            return String(record.searchBlob || '').includes(query);
           });
       }
 
