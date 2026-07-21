@@ -43,7 +43,20 @@
       <main class="page">
         <p class="hero__eyebrow">Voice of the Guild</p>
         <h1 class="page-title">Discord</h1>
-        <p class="page-subtitle">Guild chat now runs through WidgetBot Crate.</p>
+        <p class="page-subtitle">Join the guild server and chat with the community in real time.</p>
+        <section class="card discord-wrap" aria-label="Discord server widget">
+          <p class="discord-wrap__intro">Live member list and chat access via the official Discord widget.</p>
+          <div class="discord-widget">
+            <iframe
+              src="https://discord.com/widget?id=1525890254169440256&theme=dark"
+              width="350"
+              height="500"
+              allowtransparency="true"
+              frameborder="0"
+              sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+            ></iframe>
+          </div>
+        </section>
       </main>
 
       <footer class="site-footer">
@@ -53,10 +66,5 @@
       </footer>
     </div>
 
-    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer>
-      new Crate({
-        server: '1525890254169440256'
-      })
-    </script>
   </body>
 </html>
