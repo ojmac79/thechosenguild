@@ -1,0 +1,1368 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Multi-Classing Guide</title>
+    <meta
+      name="description"
+      content="A comprehensive guide to the most popular EverQuest Legends trio class combinations: benefits, downsides, and playstyle summaries for every major build."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      /* ── Multi-Classing page ── */
+      .mc-intro {
+        margin: 1.25rem 0 0.5rem;
+        color: var(--muted);
+        font-size: 0.96rem;
+        line-height: 1.7;
+        max-width: 72ch;
+      }
+
+      .mc-search-bar {
+        display: flex;
+        gap: 0.75rem;
+        align-items: center;
+        flex-wrap: wrap;
+        margin: 1.4rem 0 0.5rem;
+      }
+      .mc-search-bar__input {
+        flex: 1;
+        min-width: 240px;
+        padding: 0.8rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+        font-size: 0.95rem;
+      }
+      .mc-search-bar__input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .mc-search-bar__clear {
+        padding: 0.55rem 1.1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.88rem;
+        transition: color 0.15s;
+      }
+      .mc-search-bar__clear:hover { color: var(--text); }
+      .mc-match-count {
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-width: 110px;
+        flex-shrink: 0;
+      }
+
+      /* Category filter pills */
+      .mc-filters {
+        display: flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+        margin: 0.6rem 0 1.4rem;
+      }
+      .mc-filter-btn {
+        padding: 0.3rem 0.85rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        font-size: 0.8rem;
+        letter-spacing: 0.04em;
+        text-transform: uppercase;
+        transition: background 0.15s, color 0.15s, border-color 0.15s;
+      }
+      .mc-filter-btn:hover,
+      .mc-filter-btn.active {
+        background: rgba(226, 183, 104, 0.12);
+        color: var(--accent);
+        border-color: var(--accent);
+      }
+
+      /* Combination cards */
+      .mc-grid {
+        display: grid;
+        gap: 0.9rem;
+        margin-top: 0.4rem;
+      }
+      .mc-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        overflow: hidden;
+        transition: border-color 0.2s;
+      }
+      .mc-card:hover {
+        border-color: rgba(226, 183, 104, 0.55);
+      }
+      .mc-card > summary {
+        list-style: none;
+        cursor: pointer;
+        padding: 1rem 1.1rem;
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 0.75rem;
+        user-select: none;
+      }
+      .mc-card > summary::-webkit-details-marker { display: none; }
+      .mc-card[open] > summary {
+        border-bottom: 1px solid var(--border);
+        background: rgba(255, 255, 255, 0.03);
+      }
+
+      .mc-card__title-group {
+        display: flex;
+        flex-direction: column;
+        gap: 0.2rem;
+      }
+      .mc-card__name {
+        font-family: 'Cinzel', serif;
+        font-size: 1.02rem;
+        color: var(--text);
+      }
+      .mc-card__classes {
+        font-size: 0.8rem;
+        color: var(--accent);
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+      }
+
+      .mc-card__badge-row {
+        display: flex;
+        gap: 0.4rem;
+        flex-shrink: 0;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        align-items: center;
+      }
+      .mc-badge {
+        display: inline-flex;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.65rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+        white-space: nowrap;
+      }
+      .mc-badge--role { border-color: rgba(114, 160, 216, 0.4); color: var(--arcane); }
+      .mc-badge--tier { border-color: rgba(226, 183, 104, 0.5); color: var(--accent); }
+
+      .mc-chevron {
+        color: var(--muted);
+        font-size: 0.85rem;
+        transition: transform 0.2s;
+        flex-shrink: 0;
+      }
+      .mc-card[open] .mc-chevron { transform: rotate(180deg); }
+
+      /* Card body */
+      .mc-card__body {
+        padding: 1rem 1.15rem 1.25rem;
+      }
+      .mc-card__body h3 {
+        margin: 0.85rem 0 0.3rem;
+        font-family: 'Cinzel', serif;
+        font-size: 0.92rem;
+        color: var(--text);
+      }
+      .mc-card__body h3:first-child { margin-top: 0; }
+      .mc-card__body p {
+        margin: 0 0 0.5rem;
+        color: var(--muted);
+        line-height: 1.65;
+        font-size: 0.9rem;
+      }
+      .mc-card__body ul {
+        margin: 0.2rem 0 0.6rem 1.15rem;
+        padding: 0;
+      }
+      .mc-card__body li {
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.9rem;
+        margin-bottom: 0.15rem;
+      }
+      .mc-card__body strong { color: var(--text); font-weight: 600; }
+
+      .mc-verdict {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 0.7rem;
+        margin-top: 0.9rem;
+      }
+      @media (max-width: 560px) {
+        .mc-verdict { grid-template-columns: 1fr; }
+      }
+      .mc-verdict__box {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 0.65rem 0.8rem;
+        background: rgba(0, 0, 0, 0.2);
+      }
+      .mc-verdict__label {
+        font-family: 'Cinzel', serif;
+        font-size: 0.7rem;
+        text-transform: uppercase;
+        letter-spacing: 0.12em;
+        margin-bottom: 0.35rem;
+      }
+      .mc-verdict__label--pro { color: #7bca8a; }
+      .mc-verdict__label--con { color: #d97b7b; }
+      .mc-verdict__box ul {
+        margin: 0 0 0 1rem;
+        padding: 0;
+      }
+      .mc-verdict__box li {
+        font-size: 0.86rem;
+        color: var(--muted);
+        line-height: 1.5;
+        margin-bottom: 0.1rem;
+      }
+
+      .mc-difficulty {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.8rem;
+        color: var(--muted);
+        margin-top: 0.6rem;
+      }
+      .mc-difficulty__pip {
+        width: 8px; height: 8px;
+        border-radius: 50%;
+        background: var(--border);
+      }
+      .mc-difficulty__pip.filled { background: var(--accent); }
+
+      .mc-hidden { display: none !important; }
+
+      .mc-empty-state {
+        text-align: center;
+        padding: 2.5rem 1rem;
+        color: var(--muted);
+        font-size: 0.95rem;
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+      }
+
+      /* System explanation box */
+      .mc-system-box {
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.9rem 1.1rem;
+        background: rgba(114, 160, 216, 0.05);
+        margin: 1.2rem 0 1.6rem;
+      }
+      .mc-system-box h2 {
+        font-family: 'Cinzel', serif;
+        font-size: 0.95rem;
+        margin: 0 0 0.5rem;
+        color: var(--text);
+      }
+      .mc-system-box p, .mc-system-box li {
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.6;
+      }
+      .mc-system-box ul {
+        margin: 0.25rem 0 0 1.1rem;
+        padding: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">Stories</a>
+            <a class="site-nav__link active" href="/multiclassing/">Multi-Classing</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Class Combination Reference</p>
+        <h1 class="page-title">Multi-Classing</h1>
+        <p class="page-subtitle">
+          A deep-dive into the most popular EverQuest Legends trio combinations — curated from community guides,
+          build planners, and player experience. Each entry covers role synergy, standout abilities, benefits,
+          and downsides.
+        </p>
+
+        <div class="mc-system-box">
+          <h2>How the Trio System Works</h2>
+          <p>
+            EverQuest Legends lets every character combine <strong>three full classes</strong>. You choose a primary
+            class at character creation, unlock your secondary at level 5, and your tertiary at level 10. All three
+            contribute their complete toolkit — spells, combat skills, gear proficiencies, passives, and AAs.
+          </p>
+          <ul>
+            <li>Your effective level is determined by the <strong>lowest</strong> of your three class levels, so level them evenly.</li>
+            <li>Secondary and tertiary classes can be swapped early; the primary is a longer commitment.</li>
+            <li>Strong trios typically cover <strong>tank, healer, and DPS/control</strong> — but many hybrid and theme builds break this mold.</li>
+            <li>Race restrictions apply to the primary class; later picks are more flexible.</li>
+          </ul>
+        </div>
+
+        <!-- Search and filter -->
+        <div class="mc-search-bar">
+          <input
+            id="mcSearch"
+            class="mc-search-bar__input"
+            type="search"
+            placeholder="Search by class name, role, or playstyle…"
+            aria-label="Search multiclassing combinations"
+            autocomplete="off"
+          />
+          <button id="mcClear" class="mc-search-bar__clear" type="button" aria-label="Clear search">Clear</button>
+          <span id="mcMatchCount" class="mc-match-count" aria-live="polite"></span>
+        </div>
+        <div class="mc-filters" role="group" aria-label="Filter by category">
+          <button class="mc-filter-btn active" data-filter="all">All Builds</button>
+          <button class="mc-filter-btn" data-filter="melee">Melee</button>
+          <button class="mc-filter-btn" data-filter="caster">Caster</button>
+          <button class="mc-filter-btn" data-filter="pet">Pet</button>
+          <button class="mc-filter-btn" data-filter="charm">Charm</button>
+          <button class="mc-filter-btn" data-filter="utility">Utility</button>
+          <button class="mc-filter-btn" data-filter="beginner">Beginner-Friendly</button>
+          <button class="mc-filter-btn" data-filter="solo">Solo-Strong</button>
+        </div>
+
+        <!-- Combination cards -->
+        <div class="mc-grid" id="mcGrid">
+
+          <!-- 1 -->
+          <details class="mc-card"
+            data-search="shadow knight shaman monk sk melee lifetap slow dps tank healer solo group"
+            data-categories="melee solo beginner">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Iron Fang</span>
+                <span class="mc-card__classes">Shadow Knight · Shaman · Monk</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Heal / DPS</span>
+                <span class="mc-badge mc-badge--tier">S-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                Widely considered the single most popular trio in EverQuest Legends, the Iron Fang covers every
+                core role in a tight, self-sufficient package. The Shadow Knight acts as a durable self-sustaining
+                tank through lifetaps and harm touch; the Shaman brings slow (the most powerful debuff in the game),
+                healing, and Haste; while the Monk provides consistently top-tier melee DPS with Feign Death for
+                safe pulling.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Lifetap + Slow:</strong> Combining SK's self-heals with Shaman slow makes the character nearly unkillable on most content.</li>
+                <li><strong>Feign Death (Monk):</strong> Allows safe pulling with no need for a separate puller and instant wipe recovery.</li>
+                <li><strong>Haste + Melee Proc Stacking:</strong> Shaman Haste amplifies Monk's already high hand-to-hand DPS significantly.</li>
+                <li><strong>Mana Sustain:</strong> SK lifetaps return mana; Shaman has mana-efficient healing tools, making this build great for long sessions.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>All-around solo progression through nearly any tier of content.</li>
+                <li>Group tank role when raid-level gear is not yet available.</li>
+                <li>Safe dungeon crawling and camp holding thanks to FD.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Extremely durable; hard to die</li>
+                    <li>No charm dependency — reliable and consistent</li>
+                    <li>Feign Death provides unmatched safety</li>
+                    <li>Excellent mana efficiency</li>
+                    <li>Beginner-friendly; forgiving play</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No crowd control beyond slow</li>
+                    <li>Burst damage ceiling is lower than charm builds</li>
+                    <li>Race restrictions may limit SK primary options</li>
+                    <li>Leveling three classes simultaneously requires patience</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">2 / 4 — Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 2 -->
+          <details class="mc-card"
+            data-search="warrior cleric monk tank healer dps classic holy trinity group melee"
+            data-categories="melee beginner">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Classic Bastion</span>
+                <span class="mc-card__classes">Warrior · Cleric · Monk</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Heal / DPS</span>
+                <span class="mc-badge mc-badge--tier">S-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The textbook "holy trinity" refined into a single character. The Warrior provides the highest
+                raw avoidance and mitigation in the game, making this the most reliable tank build for end-game
+                group and raid content. Cleric healing is the strongest in EQ — full stop — and the Monk brings
+                consistent, top-tier melee damage to round out the package.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Pure Mitigation:</strong> Warrior's defensive stances and Cleric buffs (Symbol, Avatar) make this the tankiest combination available.</li>
+                <li><strong>Complete Heal (CH) Access:</strong> The Cleric's CH chain is the cornerstone of EQ healing, and having it on your own character is game-changing.</li>
+                <li><strong>Disciplines + Monk DPS:</strong> Monk disciplines stack on top of Warrior aggro generation for a surprisingly high DPS floor.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Primary tank role in guild groups and raids.</li>
+                <li>Progression content where survivability is more important than DPS.</li>
+                <li>Reliable first character for new players learning the game.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Best-in-game mitigation and healing combo</li>
+                    <li>Extremely straightforward to play</li>
+                    <li>Highly valued in group and raid settings</li>
+                    <li>Complete Heal removes most death risk</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No slow — requires group support for harder content</li>
+                    <li>No snare or crowd control</li>
+                    <li>Weaker solo capability than SK-based builds</li>
+                    <li>Mana-intensive; relies on gear/AA for sustain</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">1 / 4 — Very Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 3 -->
+          <details class="mc-card"
+            data-search="shadow knight shaman enchanter charm dps crowd control lifetap slow utility sk enc"
+            data-categories="charm solo">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Arcane Sovereign</span>
+                <span class="mc-card__classes">Shadow Knight · Shaman · Enchanter</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Heal / Charm</span>
+                <span class="mc-badge mc-badge--tier">S-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                When piloted by an experienced player, the Arcane Sovereign is arguably the highest-output solo
+                and small-group build in the game. Enchanter Charm turns any nearby mob into a devastatingly
+                powerful pet — often doing more DPS than several players combined. Combined with the Iron Fang's
+                SK/Shaman survivability core, this trio is nearly unstoppable in the right hands.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Charm DPS:</strong> Enchanter charm on a high-damage mob frequently exceeds every other DPS source in the game by a wide margin.</li>
+                <li><strong>Mez + Slow:</strong> Between Enchanter mez and Shaman slow, almost every trash encounter can be controlled completely.</li>
+                <li><strong>SK Survivability:</strong> Lifetap keeps the character alive while the charmed pet does its work.</li>
+                <li><strong>Clarity/Mana:</strong> Enchanter mana regen buffs sustain the Shaman and SK spell rotation indefinitely.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Solo farming elite zones and named mobs far above your gear tier.</li>
+                <li>Box or duo situations where you need maximum DPS per character.</li>
+                <li>Charm-enabled encounter trivialization in group content.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Highest potential DPS of any trio when charming</li>
+                    <li>Full crowd control coverage via mez + slow</li>
+                    <li>Excellent mana sustain from Clarity</li>
+                    <li>Can solo content meant for full groups</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>Charm breaks frequently — high stress and skill ceiling</li>
+                    <li>Useless without charm-able mobs in the zone</li>
+                    <li>Very punishing when things go wrong</li>
+                    <li>Not beginner-friendly; requires deep class knowledge</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span style="margin-left:0.3rem">4 / 4 — Expert</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 4 -->
+          <details class="mc-card"
+            data-search="warrior cleric enchanter charm tank healer crowd control cc mez holy trinity"
+            data-categories="charm beginner">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Warden's Trinity</span>
+                <span class="mc-card__classes">Warrior · Cleric · Enchanter</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Heal / CC</span>
+                <span class="mc-badge mc-badge--tier">S-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The Warden's Trinity upgrades the Classic Bastion by replacing the Monk with an Enchanter,
+                adding crowd control, mana regeneration, and charm DPS to an already rock-solid tank and healer
+                foundation. This is one of the most flexible trios for group play, capable of filling multiple
+                roles and adapting to nearly any situation.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Mez Control:</strong> Enchanter mez makes multi-pull management trivial and prevents wipes on unexpected adds.</li>
+                <li><strong>Clarity:</strong> Enchanter mana regen drastically reduces downtime and keeps the Cleric's heal engine running.</li>
+                <li><strong>Charm Burst:</strong> When conditions are right, charm DPS supplements the otherwise lower damage output of Warrior/Cleric.</li>
+                <li><strong>Group Buffs:</strong> Rune, Haste, Clarity, and Symbol together create an extremely powerful support package.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Full group tank and support hybrid role.</li>
+                <li>Classic EverQuest dungeon crawling where crowd control is king.</li>
+                <li>Players who want power without the raw intensity of the SK-Shaman-Enchanter build.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Exceptional group utility and buff coverage</li>
+                    <li>Best-in-game mitigation plus CC safety net</li>
+                    <li>Clarity dramatically cuts downtime</li>
+                    <li>Charming adds a strong DPS ceiling</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No slow — significant gap vs. Shaman-based builds</li>
+                    <li>Solo capability is below SK-based trios</li>
+                    <li>Charm management adds complexity</li>
+                    <li>Less burst without a dedicated DPS class</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">2 / 4 — Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 5 -->
+          <details class="mc-card"
+            data-search="shadow knight shaman bard songs haste mana regen utility slow lifetap tank"
+            data-categories="melee utility solo">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Warsong Vanguard</span>
+                <span class="mc-card__classes">Shadow Knight · Shaman · Bard</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Heal / Utility</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The Warsong Vanguard swaps the Monk's raw melee damage for the extraordinary breadth of Bard
+                utility. Bard songs provide free mana regen, attack speed increases, movement speed, disease
+                and poison curing, and numerous other passive benefits — all while still contributing to DPS
+                via weapon procs and song damage. This trio excels at sustained, long-session play.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Song Haste + Slow:</strong> Combining Bard's Chant of Battle with Shaman slow creates an enormous DPS swing in your favor.</li>
+                <li><strong>Mana Sustain:</strong> Bard mana-regen songs combined with SK lifetap income make downtime almost nonexistent.</li>
+                <li><strong>Speed and Travel:</strong> Selo's Accelerando and movement speed songs are prized for fast zone navigation.</li>
+                <li><strong>Proc Amplification:</strong> Bard melody rotations trigger multiple song effects simultaneously, multiplying passive benefits.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Long farming sessions where sustain matters more than burst.</li>
+                <li>PvP environments where movement speed and utility are decisive.</li>
+                <li>Groups that need a versatile hybrid instead of a pure damage dealer.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Best-in-game passive utility suite</li>
+                    <li>Nearly infinite mana sustain in prolonged fights</li>
+                    <li>Superb movement speed and travel utility</li>
+                    <li>High group value — songs benefit everyone nearby</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>Noticeably lower burst DPS than Monk-based trios</li>
+                    <li>Song twisting has a learning curve</li>
+                    <li>Bard alone doesn't fill a pure DPS or healer hole</li>
+                    <li>Less optimal when mob density is low</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">3 / 4 — Moderate</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 6 -->
+          <details class="mc-card"
+            data-search="necromancer magician beastlord pet double pet solo power undead dot lifetap warder"
+            data-categories="pet solo caster">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Undying Legion</span>
+                <span class="mc-card__classes">Necromancer · Magician · Beastlord</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Pet / DoT / Sustain</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The Undying Legion is the premier pet-stacking build in EverQuest Legends. Three independent
+                pet sources — the Necromancer's undead servant, the Magician's elemental, and the Beastlord's
+                warder — combine into a miniature army. Add Necromancer DoTs and lifetap for sustain, Magician
+                pet focus gear for power, and Beastlord buffs for the whole menagerie, and you have one of the
+                strongest solo progression builds available.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Triple Pets:</strong> Three concurrently active pets dramatically increase raw damage output while keeping the player at range.</li>
+                <li><strong>Necro Lifetap:</strong> Self-healing from lifetaps keeps you alive even without a dedicated healer class.</li>
+                <li><strong>Magician Pet Focus:</strong> Mage pet focus items make all pets stronger, including the other two.</li>
+                <li><strong>Beastlord Slow:</strong> Beastlord provides a slow at lower tiers, giving some of the Shaman's survivability toolkit.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Solo grinding through mid-to-high tier content without grouping.</li>
+                <li>Players who enjoy a more indirect, macro-management playstyle.</li>
+                <li>Box setups where you need a strong self-contained character.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Exceptional solo power with three active pets</li>
+                    <li>Ranged/caster playstyle — stay out of melee range</li>
+                    <li>Necro lifetap provides surprising sustain</li>
+                    <li>Fun and unique playstyle</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>Pet management is complex and attention-demanding</li>
+                    <li>Lower group value — pets don't scale well in raids</li>
+                    <li>No hard crowd control or real tanking ability</li>
+                    <li>Pet AI can be unreliable in certain zones</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">3 / 4 — Moderate</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 7 -->
+          <details class="mc-card"
+            data-search="paladin monk berserker melee dps tank burst plate tankadin holy sustained"
+            data-categories="melee beginner">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Sunsteel Crusader</span>
+                <span class="mc-card__classes">Paladin · Monk · Berserker</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Melee / Burst</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                A pure melee powerhouse built on plate armor defense, Monk speed and disciplines, and Berserker
+                burst damage. The Paladin provides lay-on-hands emergency healing, undead-smashing stuns, and
+                stout physical defense. Monk disciplines drive consistent combat output, while Berserker's Frenzy
+                and Rampage abilities create explosive burst windows. One of the most straightforward and
+                satisfying melee builds to play.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Lay on Hands:</strong> Paladin's emergency self-heal acts as a second life in tight situations.</li>
+                <li><strong>Disciplines + Frenzy:</strong> Stacking Monk disciplines with Berserker Frenzy creates dramatic burst damage during optimal windows.</li>
+                <li><strong>Plate + Monk Defense:</strong> Paladin plate armor and Monk innate defense combine for impressive passive survivability.</li>
+                <li><strong>Undead Bonus:</strong> Paladin spells gain extra power against undead targets, giving this build a strong niche in classic EQ zones.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Front-line melee in group content where you want to both tank and deal damage.</li>
+                <li>Undead-heavy zones where Paladin class abilities shine.</li>
+                <li>Players who prefer simple, high-impact combat rotations.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>High sustained and burst melee damage</li>
+                    <li>Emergency self-heal reduces death risk</li>
+                    <li>Simple rotation; very beginner-friendly</li>
+                    <li>Strong undead bonus in classic zones</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No dedicated healer — long fights are risky</li>
+                    <li>No slow or crowd control</li>
+                    <li>Lay on Hands is on a long cooldown</li>
+                    <li>Dependent on group healing for tougher content</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">1 / 4 — Very Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 8 -->
+          <details class="mc-card"
+            data-search="shadow knight bard wizard spells burst tank utility snare travel nukes"
+            data-categories="caster utility">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Arcane Reaper</span>
+                <span class="mc-card__classes">Shadow Knight · Bard · Wizard</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Utility / Burst</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                A flexible hybrid build that blends the SK's tanking and lifetap sustain with the Bard's
+                unmatched utility suite and the Wizard's devastating burst spell damage. While less consistent
+                than pure melee builds, the Arcane Reaper excels at quick encounters — portals for fast travel,
+                root-and-nuke tactics, and situations where a single burst window is decisive.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Root + Nuke:</strong> Wizard root combined with high-damage spells allows kiting and nuking from safety.</li>
+                <li><strong>Lifetap + Song Regen:</strong> SK self-heals and Bard mana-regen songs sustain the Wizard's mana-intensive rotation.</li>
+                <li><strong>Bard Travel:</strong> Speed songs and Wizard teleportation combine for the best travel capability in the game.</li>
+                <li><strong>Feign Death (SK):</strong> Provides an emergency escape from bad pulls on top of all the utility layers.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>World travel and zone navigation — this build gets anywhere faster than any other.</li>
+                <li>Named boss encounters where burst damage windows matter.</li>
+                <li>Players who want a do-everything character rather than a pure specialist.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Enormous utility: tank, travel, burst, escape</li>
+                    <li>Top-tier spell burst damage in short windows</li>
+                    <li>Best travel speed of any trio</li>
+                    <li>FD provides unmatched safety net</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No dedicated healer — very mana dependent</li>
+                    <li>Inconsistent DPS between burst cooldowns</li>
+                    <li>No slow weakens sustained tank efficiency</li>
+                    <li>High skill ceiling to optimize rotation</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">3 / 4 — Moderate</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 9 -->
+          <details class="mc-card"
+            data-search="paladin ranger rogue hybrid off-heal snare stealth backstab melee utility"
+            data-categories="melee utility">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Verdant Knight</span>
+                <span class="mc-card__classes">Paladin · Ranger · Rogue</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Hybrid Tank / Melee</span>
+                <span class="mc-badge mc-badge--tier">B-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                A diverse hybrid combining the Paladin's healing, undead power and defense with the Ranger's
+                tracking, snare, and archery utility, and the Rogue's signature Backstab damage and sneak
+                capabilities. The Verdant Knight excels at adaptability — it can track targets, snare runners,
+                stealth through areas, and spike a weakened enemy in one seamless flow.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Track + Snare:</strong> Ranger's tracking finds targets; snare ensures nothing escapes, setting up perfect Backstab positioning.</li>
+                <li><strong>Sneak + Safe Pull:</strong> Rogue sneak combined with Ranger camouflage makes pulling and positioning much safer.</li>
+                <li><strong>Backstab Spike:</strong> Rogues deal significant burst through Backstab and Assassinate at higher levels.</li>
+                <li><strong>Paladin Off-Heal:</strong> Self-healing through lay on hands and spell lines keeps the character alive without dedicated group healing.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Open-world hunting and named-mob tracking.</li>
+                <li>Duo play where the partner needs a versatile support/DPS hybrid.</li>
+                <li>Players who enjoy a wide toolkit over a narrowly optimized build.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Excellent open-world versatility</li>
+                    <li>Tracking + snare for reliable target acquisition</li>
+                    <li>Multiple stealth and mobility tools</li>
+                    <li>Backstab spike damage in short windows</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>Jack-of-all-trades; no area of mastery</li>
+                    <li>No slow or hard CC</li>
+                    <li>Lower sustained DPS than specialist builds</li>
+                    <li>Requires precise positioning for Backstab</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">2 / 4 — Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 10 -->
+          <details class="mc-card"
+            data-search="cleric bard enchanter healing utility mez crowd control buffs unkillable support"
+            data-categories="utility charm caster">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Eternal Chorus</span>
+                <span class="mc-card__classes">Cleric · Bard · Enchanter</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Heal / Utility / CC</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The ultimate support build. The Eternal Chorus combines the best healing in the game (Cleric)
+                with the best passive utility (Bard) and the best crowd control (Enchanter) into a character
+                that makes every group dramatically safer and more efficient. When played well, this build can
+                functionally replace two roles in a six-player group, freeing up spots for additional DPS.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Mez + Heal:</strong> Enchanter mez stops dangerous adds instantly while Cleric heals the tank through the engagement.</li>
+                <li><strong>Clarity + Mana Songs:</strong> Enchanter Clarity and Bard mana-regen songs stack, giving the build virtually infinite sustain.</li>
+                <li><strong>Rune + Symbol:</strong> Both Enchanter and Cleric provide powerful pre-fight buffs that stack favorably.</li>
+                <li><strong>Charm DPS:</strong> Enchanter charm turns any scenario into an opportunity for bonus DPS when healing load permits.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Full support role in high-end group and raid content.</li>
+                <li>Box support character designed to maximize main character efficiency.</li>
+                <li>Players who derive satisfaction from keeping groups alive rather than dealing damage.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Highest group support value of any trio</li>
+                    <li>Best-in-game healing combined with CC and utility</li>
+                    <li>Virtually infinite mana through stacked regeneration</li>
+                    <li>Charm adds opportunistic DPS with no downside</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No tanking ability; must stay in back lines</li>
+                    <li>Extremely weak solo — needs a group</li>
+                    <li>Song twisting and mez timing are complex</li>
+                    <li>Low personal DPS without charm</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">3 / 4 — Moderate</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 11 -->
+          <details class="mc-card"
+            data-search="necromancer enchanter magician caster pet charm DoT undead crowd control mana"
+            data-categories="caster pet charm">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Arcane Triumvirate</span>
+                <span class="mc-card__classes">Necromancer · Enchanter · Magician</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Caster / Pet / CC</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                A pure caster fantasy combining the three most powerful arcane classes in EverQuest. Necromancer
+                provides undead command, Fear kiting, and lifetap sustain. Enchanter brings mez, charm, haste,
+                and Clarity. Magician contributes elemental pets and the Mage Summoned gear system for
+                on-demand item acquisition. Together they form a complex, high-ceiling trio with extraordinary
+                flexibility.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Fear + DoT Kiting:</strong> Necromancer Fear combined with DoT damage allows engaging content far above your gear level by keeping enemies at range.</li>
+                <li><strong>Charm Abuse:</strong> Enchanter's charm plus the Mage pet means you often have two powerful pets simultaneously.</li>
+                <li><strong>Self-Sufficient Mana:</strong> Clarity, Necro lifetap mana return, and pet-generated mechanics sustain a very active spell rotation.</li>
+                <li><strong>No Weapons Needed:</strong> Mage Summoned swords and items mean this trio never needs to camp specific gear drops for basic function.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Fear-kiting content for power leveling and solo farming.</li>
+                <li>Pulling with Fear to separate and DoT multiple mobs efficiently.</li>
+                <li>Players who enjoy complex, cerebral caster gameplay.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Highly self-sufficient gear-wise via Mage summons</li>
+                    <li>Multiple crowd control vectors (Fear, Mez, Charm)</li>
+                    <li>Necro lifetap sustains health without a healer</li>
+                    <li>Incredible depth and creative play options</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No physical tank — dies fast if pulled into melee</li>
+                    <li>Very high complexity; not beginner-friendly</li>
+                    <li>Fear kiting requires large, open spaces</li>
+                    <li>Mez + Fear can interfere with each other</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span style="margin-left:0.3rem">4 / 4 — Expert</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 12 -->
+          <details class="mc-card"
+            data-search="druid ranger bard travel speed track port utility solo outdoor wilderness"
+            data-categories="utility solo">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Faydwer Pathfinder</span>
+                <span class="mc-card__classes">Druid · Ranger · Bard</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Utility / Heal / Track</span>
+                <span class="mc-badge mc-badge--tier">B-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The Faydwer Pathfinder is less a combat build and more a lifestyle. It combines the best travel,
+                tracking, and outdoor utility available in EverQuest Legends. Druid ports and snare, Ranger
+                track, and Bard speed songs together create the ultimate explorer character. Strong solo in
+                outdoor zones, the Pathfinder becomes invaluable during multi-zone content transitions.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Port + Bard Speed:</strong> Druid ports combined with Bard speed songs make this the fastest-traveling trio in the game.</li>
+                <li><strong>Track + Snare:</strong> Ranger tracking locates every mob in the zone; Ranger and Druid snares ensure nothing escapes.</li>
+                <li><strong>Outdoor Healer:</strong> Druid heals and Bard songs provide a capable outdoor healing suite for extended solo play.</li>
+                <li><strong>Harmony (Druid):</strong> Druid Harmony reduces social aggro radius, enabling extremely safe single-pull in outdoor zones.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>World exploration and rare mob camping across multiple zones.</li>
+                <li>Port service and raid buffing roles in the guild.</li>
+                <li>Duo play as the support partner who handles navigation and crowd management.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Unrivalled travel and outdoor mobility</li>
+                    <li>Comprehensive tracking and snaring</li>
+                    <li>Self-sufficient healing in outdoor content</li>
+                    <li>Highly valued port service for the guild</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>Very weak in dungeons and indoor zones</li>
+                    <li>Low damage ceiling without a dedicated DPS class</li>
+                    <li>No tank — fragile when pulled to melee</li>
+                    <li>Ports require reagents (unless AA-removed)</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">2 / 4 — Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 13 -->
+          <details class="mc-card"
+            data-search="shadow knight rogue shaman lifetap slow backstab sneak feign death tank dps solo"
+            data-categories="melee solo">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Shadowblade</span>
+                <span class="mc-card__classes">Shadow Knight · Rogue · Shaman</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Burst / Heal</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                A dark, high-skill solo build that layers the SK's durable tanking with Rogue's explosive burst
+                from behind and Shaman's slow and healing. The Shadowblade uses sneak positioning from the Rogue
+                toolkit to set up Backstab damage while the SK's FD provides safe pulling. Shaman slow and heals
+                make this trio capable of tackling content far above its gear level.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>FD Pull + Backstab Setup:</strong> Feign Death pulling with SK allows engaging a single target, then Rogue positioning for maximum Backstab damage.</li>
+                <li><strong>Slow + Lifetap:</strong> With a mob slowed, SK lifetap heals the character back to full on virtually any hit sequence.</li>
+                <li><strong>Sneak + Safe Navigation:</strong> Rogue sneak lets this build walk through dangerous areas without aggro, making routing and pulling uniquely safe.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>Solo farming in dungeon environments where FD and sneak are both valuable.</li>
+                <li>Named mob hunting requiring precise single-target bursting.</li>
+                <li>Players who enjoy high-skill, methodical combat approaches.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>FD + Sneak = exceptional dungeon safety</li>
+                    <li>Backstab spike damage for named encounters</li>
+                    <li>Slow + lifetap: near-unkillable in solo play</li>
+                    <li>Great for stealthy, deliberate play styles</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>Requires constant repositioning behind target</li>
+                    <li>Lower AoE/sustained DPS than Monk builds</li>
+                    <li>Sneak and FD require practice to use efficiently</li>
+                    <li>Less group value than straight tanking builds</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">3 / 4 — Moderate</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- 14 -->
+          <details class="mc-card"
+            data-search="paladin shaman berserker beginner solo sustain easy plate tank heal burst melee"
+            data-categories="melee beginner solo">
+            <summary>
+              <div class="mc-card__title-group">
+                <span class="mc-card__name">The Ironbound Fury</span>
+                <span class="mc-card__classes">Paladin · Shaman · Berserker</span>
+              </div>
+              <div class="mc-card__badge-row">
+                <span class="mc-badge mc-badge--role">Tank / Heal / Burst</span>
+                <span class="mc-badge mc-badge--tier">A-Tier</span>
+                <span class="mc-chevron" aria-hidden="true">▼</span>
+              </div>
+            </summary>
+            <div class="mc-card__body">
+              <p>
+                The community's most-recommended build for new players. The Ironbound Fury stacks three layers
+                of durability — Paladin plate, lay on hands, and undead power; Shaman slow and strong healing;
+                and Berserker's ramping burst damage for long engagements. This trio is hard to kill, easy to
+                understand, and competitive at every phase of progression.
+              </p>
+              <h3>Key Synergies</h3>
+              <ul>
+                <li><strong>Slow + Heal:</strong> Shaman slow is the most powerful defensive debuff in the game, and paired with Paladin self-heals, this build rarely sees the respawn point.</li>
+                <li><strong>Frenzy Ramping:</strong> Berserker damage increases the longer a fight continues — the durability of the Paladin/Shaman core lets fights go long enough for Frenzy to hit peak damage.</li>
+                <li><strong>Plate Survivability:</strong> Full plate armor means this build can walk into most content head-on without careful preparation.</li>
+              </ul>
+              <h3>Best Use Cases</h3>
+              <ul>
+                <li>First character for players new to EverQuest Legends.</li>
+                <li>Comfortable solo play from early levels through end-game.</li>
+                <li>Low-stress group tanking when you want survivability over performance.</li>
+              </ul>
+              <div class="mc-verdict">
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--pro">Benefits</div>
+                  <ul>
+                    <li>Highest beginner survival rate of any trio</li>
+                    <li>Slow + plate + self-heal = near-unkillable</li>
+                    <li>Berserker damage rewards staying in long fights</li>
+                    <li>Intuitive, straightforward rotation</li>
+                  </ul>
+                </div>
+                <div class="mc-verdict__box">
+                  <div class="mc-verdict__label mc-verdict__label--con">Downsides</div>
+                  <ul>
+                    <li>No Feign Death or sneak utility</li>
+                    <li>Lower burst DPS ceiling than Monk builds</li>
+                    <li>Lacks crowd control for multi-mob pulls</li>
+                    <li>Can feel slow compared to faster-paced trios</li>
+                  </ul>
+                </div>
+              </div>
+              <div class="mc-difficulty">
+                Difficulty:
+                <span class="mc-difficulty__pip filled"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span class="mc-difficulty__pip"></span>
+                <span style="margin-left:0.3rem">1 / 4 — Very Easy</span>
+              </div>
+            </div>
+          </details>
+
+          <!-- empty state -->
+          <div id="mcEmptyState" class="mc-empty-state mc-hidden" role="status">
+            No combinations matched your search. Try a different term or clear the filters.
+          </div>
+
+        </div><!-- /mc-grid -->
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits">
+          <a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a>
+          &middot;
+          <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a>
+        </p>
+      </footer>
+    </div>
+
+    <script>
+      const mcSearch = document.getElementById('mcSearch');
+      const mcClear = document.getElementById('mcClear');
+      const mcMatchCount = document.getElementById('mcMatchCount');
+      const mcEmptyState = document.getElementById('mcEmptyState');
+      const mcCards = Array.from(document.querySelectorAll('.mc-card'));
+      const filterBtns = Array.from(document.querySelectorAll('.mc-filter-btn'));
+
+      let activeFilter = 'all';
+
+      function runSearch() {
+        const query = mcSearch.value.trim().toLowerCase();
+        let visible = 0;
+
+        mcCards.forEach((card) => {
+          const searchText = `${card.dataset.search || ''} ${card.textContent}`.toLowerCase();
+          const cats = (card.dataset.categories || '').split(' ');
+          const matchesFilter = activeFilter === 'all' || cats.includes(activeFilter);
+          const matchesQuery = !query || searchText.includes(query);
+          const show = matchesFilter && matchesQuery;
+          card.classList.toggle('mc-hidden', !show);
+          if (show) {
+            visible += 1;
+            if (query) card.open = true;
+          }
+        });
+
+        mcEmptyState.classList.toggle('mc-hidden', visible > 0);
+        mcMatchCount.textContent = query || activeFilter !== 'all'
+          ? `${visible} build${visible === 1 ? '' : 's'} shown`
+          : `${mcCards.length} builds available`;
+      }
+
+      mcSearch.addEventListener('input', runSearch);
+
+      mcClear.addEventListener('click', () => {
+        mcSearch.value = '';
+        activeFilter = 'all';
+        filterBtns.forEach((b) => b.classList.toggle('active', b.dataset.filter === 'all'));
+        runSearch();
+      });
+
+      filterBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+          activeFilter = btn.dataset.filter;
+          filterBtns.forEach((b) => b.classList.toggle('active', b === btn));
+          runSearch();
+        });
+      });
+
+      runSearch();
+    </script>
+  </body>
+</html>
