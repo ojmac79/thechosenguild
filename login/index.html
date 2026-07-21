@@ -65,7 +65,7 @@
 
           <div class="panel guild-access-summary" id="avatarSettingsPanel" hidden>
             <h2 class="resource-section__title">Avatar Settings</h2>
-            <p class="forum2-note">Enter the URL of an image to use as your site avatar. Leave blank to use your Netlify account avatar.</p>
+            <p class="forum2-note">Upload an image from your device or enter a URL. Uploaded images are resized to 128x128 px to fit the site.</p>
             <div id="avatarMessage" class="auth-message" aria-live="polite"></div>
             <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;margin-bottom:1rem;">
               <img id="avatarPreview" class="site-footer__member-avatar" style="width:48px;height:48px;" alt="Avatar preview" src="" />
@@ -74,7 +74,10 @@
                 <input id="avatarUrlInput" class="forum2-inline-form__input" type="url" placeholder="https://example.com/avatar.png" maxlength="500" />
               </div>
             </div>
-            <div class="resource-form__actions">
+            <div class="resource-form__actions" style="flex-wrap:wrap;">
+              <!-- hidden file input; triggered by the Upload button below -->
+              <input id="avatarFileInput" type="file" accept="image/*" aria-label="Upload avatar image" style="display:none;" />
+              <button class="btn-torch" type="button" id="uploadAvatarButton">Upload Image</button>
               <button class="btn-primary" type="button" id="saveAvatarButton">Save Avatar</button>
               <button class="btn-torch" type="button" id="clearAvatarButton">Reset to Default</button>
             </div>
@@ -154,6 +157,11 @@
       const avatarMessage = document.getElementById('avatarMessage');
       const saveAvatarButton = document.getElementById('saveAvatarButton');
       const clearAvatarButton = document.getElementById('clearAvatarButton');
+      const uploadAvatarButton = document.getElementById('uploadAvatarButton');
+      const avatarFileInput = document.getElementById('avatarFileInput');
+
+      // Pending data URL from a file upload (cleared once saved or reset).
+      let pendingUploadDataUrl = null;
 
       let currentMemberForAvatar = null;
 
@@ -163,7 +171,17 @@
 
       function updateAvatarPreview() {
         const url = avatarUrlInput.value.trim();
+        // If a file was uploaded, the preview already shows it; clear the pending
+        // upload so a manually typed URL takes precedence.
+        if (pendingUploadDataUrl && url) {
+          pendingUploadDataUrl = null;
+          avatarFileInput.value = '';
+        }
         if (!url) {
+          if (pendingUploadDataUrl) {
+            // Keep showing the upload preview — don't fall back to fallback.
+            return;
+          }
           if (currentMemberForAvatar) {
             avatarPreview.src = getMemberAvatarFallback(currentMemberForAvatar);
           }
@@ -179,6 +197,70 @@
         }
       }
 
+      /**
+       * Resize an Image element onto a canvas and return a JPEG data URL.
+       * The image is cropped to a square (centre-crop) then scaled to AVATAR_SIZE.
+       */
+      const AVATAR_SIZE = 128;
+      const AVATAR_JPEG_QUALITY = 0.85; // Good visual quality; a 128x128 JPEG at this quality is typically under 20KB.
+      function resizeImageToDataUrl(img) {
+        const canvas = document.createElement('canvas');
+        canvas.width = AVATAR_SIZE;
+        canvas.height = AVATAR_SIZE;
+        const ctx = canvas.getContext('2d');
+        const srcW = img.naturalWidth;
+        const srcH = img.naturalHeight;
+        const side = Math.min(srcW, srcH);
+        // Use Math.floor for predictable top-left-relative centre-crop positioning.
+        const sx = Math.floor((srcW - side) / 2);
+        const sy = Math.floor((srcH - side) / 2);
+        ctx.drawImage(img, sx, sy, side, side, 0, 0, AVATAR_SIZE, AVATAR_SIZE);
+        return canvas.toDataURL('image/jpeg', AVATAR_JPEG_QUALITY);
+      }
+
+      // Trigger the hidden file picker when the Upload button is clicked.
+      uploadAvatarButton.addEventListener('click', () => {
+        avatarFileInput.click();
+      });
+
+      // Handle the selected file: read it, draw onto canvas, show preview.
+      avatarFileInput.addEventListener('change', () => {
+        const file = avatarFileInput.files && avatarFileInput.files[0];
+        if (!file) {
+          return;
+        }
+        if (!file.type.startsWith('image/')) {
+          avatarMessage.textContent = 'Please select a valid image file.';
+          avatarMessage.className = 'auth-message auth-message--error';
+          avatarFileInput.value = '';
+          return;
+        }
+        const reader = new FileReader();
+        reader.onload = function (event) {
+          const img = new Image();
+          img.onload = function () {
+            const dataUrl = resizeImageToDataUrl(img);
+            pendingUploadDataUrl = dataUrl;
+            avatarUrlInput.value = '';
+            avatarPreview.src = dataUrl;
+            avatarMessage.textContent = 'Image loaded — click Save Avatar to apply.';
+            avatarMessage.className = 'auth-message';
+          };
+          img.onerror = function () {
+            avatarMessage.textContent = 'Could not read the selected image. Please try a different file.';
+            avatarMessage.className = 'auth-message auth-message--error';
+            avatarFileInput.value = '';
+          };
+          img.src = event.target.result;
+        };
+        reader.onerror = function () {
+          avatarMessage.textContent = 'Could not read the selected file. Please try again.';
+          avatarMessage.className = 'auth-message auth-message--error';
+          avatarFileInput.value = '';
+        };
+        reader.readAsDataURL(file);
+      });
+
       function applyAvatarUpdate(member, statusText) {
         // Strip the cached avatar so sanitizeMember re-derives it from the avatar map
         const updatedMember = guildAccess.saveCurrentMember({ ...member, avatar: '' });
@@ -193,11 +275,16 @@
         if (!member) {
           avatarSettingsPanel.hidden = true;
           currentMemberForAvatar = null;
+          pendingUploadDataUrl = null;
+          avatarFileInput.value = '';
           return;
         }
         currentMemberForAvatar = member;
+        pendingUploadDataUrl = null;
+        avatarFileInput.value = '';
         const customAvatar = guildAccess.getCustomAvatar(member.email);
-        avatarUrlInput.value = customAvatar;
+        // Only populate the URL input for remote (non-data) URLs.
+        avatarUrlInput.value = customAvatar.startsWith('data:image/') ? '' : customAvatar;
         avatarPreview.src = member.avatar || getMemberAvatarFallback(member);
         avatarMessage.textContent = '';
         avatarMessage.className = 'auth-message';
@@ -210,13 +297,16 @@
         if (!currentMemberForAvatar) {
           return;
         }
-        const url = avatarUrlInput.value.trim();
+        // Prefer a freshly uploaded image data URL; fall back to the typed URL.
+        const url = pendingUploadDataUrl || avatarUrlInput.value.trim();
         const saved = guildAccess.setCustomAvatar(currentMemberForAvatar.email, url);
         if (!saved && url) {
-          avatarMessage.textContent = 'Please enter a valid URL starting with https:// or http://';
+          avatarMessage.textContent = 'Please enter a valid URL starting with https:// or http://, or upload a valid image file.';
           avatarMessage.className = 'auth-message auth-message--error';
           return;
         }
+        pendingUploadDataUrl = null;
+        avatarFileInput.value = '';
         applyAvatarUpdate(currentMemberForAvatar, url ? 'Avatar updated.' : 'Avatar cleared.');
       });
 
@@ -226,6 +316,8 @@
         }
         guildAccess.setCustomAvatar(currentMemberForAvatar.email, '');
         avatarUrlInput.value = '';
+        pendingUploadDataUrl = null;
+        avatarFileInput.value = '';
         applyAvatarUpdate(currentMemberForAvatar, 'Avatar reset to default.');
       });
 

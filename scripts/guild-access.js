@@ -147,7 +147,9 @@
       return '';
     }
     const map = readAvatarMap();
-    return cleanText(map[normalizedEmail] || '', 500);
+    const stored = String(map[normalizedEmail] || '');
+    // Data URLs (canvas uploads) are stored verbatim; remote URLs are length-capped.
+    return stored.startsWith('data:image/') ? stored : cleanText(stored, 500);
   }
 
   function setCustomAvatar(email, url) {
@@ -155,8 +157,21 @@
     if (!normalizedEmail) {
       return false;
     }
-    const cleaned = cleanText(String(url || ''), 500);
-    if (cleaned) {
+    const raw = String(url || '');
+    // Data URLs from canvas uploads are stored verbatim (no length cap applied).
+    // Remote URLs are cleaned and validated as before.
+    const isDataUrl = raw.startsWith('data:image/');
+    if (isDataUrl) {
+      // Validate that the data URL has an allowed image MIME type.
+      // SVG is intentionally excluded because SVG data URLs can embed scripts (XSS risk).
+      const allowedImageTypes = ['data:image/jpeg', 'data:image/png', 'data:image/gif', 'data:image/webp'];
+      const hasAllowedType = allowedImageTypes.some((prefix) => raw.startsWith(prefix + ',') || raw.startsWith(prefix + ';'));
+      if (!hasAllowedType) {
+        return false;
+      }
+    }
+    const cleaned = isDataUrl ? raw : cleanText(raw, 500);
+    if (cleaned && !isDataUrl) {
       try {
         const parsedUrl = new URL(cleaned);
         if (parsedUrl.protocol !== 'https:' && parsedUrl.protocol !== 'http:') {
