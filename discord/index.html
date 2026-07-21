@@ -65,11 +65,18 @@
         justify-content: center;
         margin-top: 1rem;
       }
-      .discord-cta__note {
+      .discord-embed-wrap {
         width: 100%;
-        font-size: 0.8rem;
-        color: rgba(255, 255, 255, 0.4);
-        margin-top: 0.5rem;
+        max-width: 820px;
+        margin: 2rem auto 0;
+        border: 1px solid rgba(255, 215, 0, 0.2);
+        border-radius: 10px;
+        overflow: hidden;
+        box-shadow: 0 4px 32px rgba(0, 0, 0, 0.5);
+      }
+      .discord-embed-wrap widgetbot {
+        display: block;
+        width: 100%;
       }
     </style>
   </head>
@@ -109,8 +116,8 @@
           <p class="page-subtitle">
             The Chosen guild lives and breathes in our Discord server — raid
             planning, lore debates, real-time callouts, and the occasional
-            late-night Norrath story. Click the chat button in the corner to
-            jump right in, or hit the button below to join permanently.
+            late-night Norrath story. Browse the live server below or hit the
+            button to join permanently.
           </p>
 
           <div class="discord-features">
@@ -135,9 +142,14 @@
             <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
               Join Our Discord
             </a>
-            <p class="discord-cta__note">
-              💬 Already a member? Use the chat widget in the bottom-right corner to browse the server right here.
-            </p>
+          </div>
+
+          <div class="discord-embed-wrap">
+            <widgetbot
+              server="1525890254169440256"
+              width="800"
+              height="600"
+            ></widgetbot>
           </div>
         </div>
       </main>
@@ -160,15 +172,8 @@
       </footer>
     </div>
 
-    <!-- WidgetBot Crate — live Discord chat overlay -->
-    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/crate@3" async defer></script>
-    <script>
-      window.addEventListener('load', function () {
-        new Crate({
-          server: '1525890254169440256'
-        });
-      });
-    </script>
+    <!-- WidgetBot HTML embed — inline Discord server panel -->
+    <script src="https://cdn.jsdelivr.net/npm/@widgetbot/html-embed"></script>
 
     <script src="../../scripts/site-decor.js"></script>
     <script src="../../scripts/guild-access.js"></script>
