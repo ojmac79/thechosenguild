@@ -718,6 +718,11 @@ a { color: inherit; text-decoration: none; }
   text-decoration: underline;
   text-underline-offset: 0.2rem;
 }
+.site-footer__credits {
+  font-size: 0.7rem;
+  color: var(--muted);
+  margin-top: 0.4rem;
+}
 
 /* ── Stories ─────────────────────────────────────────────────────────────── */
 .stories-form-panel { display: grid; gap: 0.8rem; margin-top: 1.2rem; }
