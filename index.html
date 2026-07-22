@@ -163,6 +163,14 @@
       const NEWS_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=news';
       const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
       const DEFAULT_PUBLIC_FORUM_CATEGORY = 'pub-general';
+      const DEFAULT_PUBLIC_FORUM_CATEGORIES = Object.freeze([
+        Object.freeze({ id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' }),
+        Object.freeze({ id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' })
+      ]);
+      const DEFAULT_PRIVATE_FORUM_CATEGORIES = Object.freeze([
+        Object.freeze({ id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' }),
+        Object.freeze({ id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' })
+      ]);
       const NEWS_BADGE_LABEL = 'News';
       const ARCHIVE_BADGE_LABEL = 'Archive';
       const heroTagline = document.getElementById('heroTagline');
@@ -280,6 +288,10 @@
         return (member && (member.name || member.email)) || 'Guild Member';
       }
 
+      function getAvatarUrl(name, avatar) {
+        return avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Guild Member')}&background=ff7b7b&color=14070b`;
+      }
+
       function readPosts() {
         try {
           const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
@@ -364,18 +376,12 @@
       function defaultForumState() {
         return {
           public: {
-            categories: [
-              { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
-              { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
-            ],
+            categories: DEFAULT_PUBLIC_FORUM_CATEGORIES.map((category) => ({ ...category })),
             threads: [],
             replies: []
           },
           private: {
-            categories: [
-              { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
-              { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
-            ],
+            categories: DEFAULT_PRIVATE_FORUM_CATEGORIES.map((category) => ({ ...category })),
             threads: [],
             replies: []
           }
@@ -455,11 +461,18 @@
         const forumState = await fetchForumStateFromRemote();
         const publicCategories = Array.isArray(forumState.public && forumState.public.categories) && forumState.public.categories.length
           ? forumState.public.categories
-          : defaultForumState().public.categories;
-        const firstPublicCategory = publicCategories[0] || defaultForumState().public.categories[0];
+          : DEFAULT_PUBLIC_FORUM_CATEGORIES.map((category) => ({ ...category }));
+        const firstPublicCategory = publicCategories[0] || DEFAULT_PUBLIC_FORUM_CATEGORIES[0];
         const categoryId = publicCategories.some((category) => category.id === DEFAULT_PUBLIC_FORUM_CATEGORY)
           ? DEFAULT_PUBLIC_FORUM_CATEGORY
           : firstPublicCategory.id;
+        if (!categoryId) {
+          return {
+            ok: false,
+            forumThreadId: post.forumThreadId || '',
+            error: 'Public forum categories are unavailable.'
+          };
+        }
         const threadId = post.forumThreadId || buildId('public-thread');
         const existingIndex = Array.isArray(forumState.public.threads)
           ? forumState.public.threads.findIndex((thread) => String(thread.id || '') === threadId)
@@ -492,7 +505,8 @@
         const ok = await saveForumStateToRemote(forumState);
         return {
           ok,
-          forumThreadId: ok ? threadId : post.forumThreadId || ''
+          forumThreadId: ok ? threadId : post.forumThreadId || '',
+          error: ok ? '' : 'The public forum could not be updated.'
         };
       }
 
@@ -557,7 +571,7 @@
           return;
         }
 
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.src = getAvatarUrl(member.name || member.email, member.avatar);
         footerMemberAvatar.alt = `${member.name || member.email} avatar`;
         footerMemberName.textContent = member.name || member.email;
         footerMemberEmail.textContent = member.email || 'Netlify member';
@@ -575,7 +589,7 @@
         const editButton = canEditNews
           ? `<button class="resource-item__edit" type="button" data-edit-post="${escapeHtml(post.id)}">Edit</button>`
           : '';
-        const avatarUrl = post.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        const avatarUrl = getAvatarUrl(post.author, post.avatar);
 
         return `
           <article class="panel forum-thread">
@@ -877,6 +891,7 @@
         const isEditing = Boolean(editingPostId);
         const wantsForumPost = newsPostToForum.checked;
         let forumSyncFailed = false;
+        let forumSyncMessage = '';
         let savedPostId = '';
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
@@ -911,7 +926,6 @@
 
         let nextPosts = posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         writePosts(nextPosts);
-        const savedNewsRemotely = await savePostsToRemote(nextPosts);
 
         if (wantsForumPost) {
           const targetPost = nextPosts.find((post) => post.id === savedPostId);
@@ -925,15 +939,26 @@
                     : post
                 ));
                 writePosts(nextPosts);
-                await savePostsToRemote(nextPosts);
+              } else {
+                forumSyncFailed = true;
+                forumSyncMessage = forumResult.error || 'Public forum sync could not be completed.';
               }
             } catch (error) {
               forumSyncFailed = true;
+              forumSyncMessage = error && error.message
+                ? `Public forum sync failed: ${error.message}`
+                : 'Public forum sync could not be completed.';
               console.error('Failed to sync news to forum:', error);
               // Keep the saved news article even if the optional forum sync fails.
             }
+          } else {
+            forumSyncFailed = true;
+            forumSyncMessage = 'Public forum sync could not be completed because the news article was not found.';
+            console.error('Failed to sync news to forum: saved post was not found locally.');
           }
         }
+
+        const savedNewsRemotely = await savePostsToRemote(nextPosts);
 
         resetNewsForm();
         const savedPost = nextPosts.find((post) => post.id === savedPostId);
@@ -943,7 +968,7 @@
           statusParts.push('Server sync is pending.');
         }
         if (wantsForumPost) {
-          statusParts.push(!forumSyncFailed && postedToForum ? 'Public forum post synced.' : 'Public forum sync could not be completed.');
+          statusParts.push(!forumSyncFailed && postedToForum ? 'Public forum post synced.' : forumSyncMessage || 'Public forum sync could not be completed.');
         }
         renderNews(statusParts.join(' '));
       });
