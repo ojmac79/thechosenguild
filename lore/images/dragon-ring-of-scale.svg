@@ -1,0 +1,71 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#0a0800"/>
+      <stop offset="100%" stop-color="#120e00"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)"/>
+    </filter>
+  </defs>
+<rect width="600" height="280" fill="url(#bg)"/>
+    <circle cx="300" cy="120" r="90" fill="none" stroke="#c08010" stroke-width="2.5" opacity="0.7"/>
+  <circle cx="300" cy="120" r="98" fill="none" stroke="#c08010" stroke-width="1" opacity="0.3"/>
+  <circle cx="300" cy="120" r="65" fill="none" stroke="#c08010" stroke-width="1.5" opacity="0.5" stroke-dasharray="6 4"/>
+  <line x1="390.0" y1="120.0" x2="375.0" y2="120.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="377.9" y1="165.0" x2="365.0" y2="157.5" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="345.0" y1="197.9" x2="337.5" y2="185.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="300.0" y1="210.0" x2="300.0" y2="195.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="255.0" y1="197.9" x2="262.5" y2="185.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="222.1" y1="165.0" x2="235.0" y2="157.5" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="210.0" y1="120.0" x2="225.0" y2="120.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="222.1" y1="75.0" x2="235.0" y2="82.5" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="255.0" y1="42.1" x2="262.5" y2="55.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="300.0" y1="30.0" x2="300.0" y2="45.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="345.0" y1="42.1" x2="337.5" y2="55.0" stroke="#c08010" stroke-width="2" opacity="0.7"/>  <line x1="377.9" y1="75.0" x2="365.0" y2="82.5" stroke="#c08010" stroke-width="2" opacity="0.7"/>
+  <line x1="370.0" y1="120.0" x2="230.0" y2="120.0" stroke="#c08010" stroke-width="1" opacity="0.4"/>  <line x1="335.0" y1="180.6" x2="265.0" y2="59.4" stroke="#c08010" stroke-width="1" opacity="0.4"/>  <line x1="265.0" y1="180.6" x2="335.0" y2="59.4" stroke="#c08010" stroke-width="1" opacity="0.4"/>  <line x1="230.0" y1="120.0" x2="370.0" y2="120.0" stroke="#c08010" stroke-width="1" opacity="0.4"/>  <line x1="265.0" y1="59.4" x2="335.0" y2="180.6" stroke="#c08010" stroke-width="1" opacity="0.4"/>  <line x1="335.0" y1="59.4" x2="265.0" y2="180.6" stroke="#c08010" stroke-width="1" opacity="0.4"/>
+  <!-- dragon scale pattern -->
+  <g opacity="0.3" fill="#c08010">
+    <ellipse cx="50" cy="80" rx="18" ry="12" transform="rotate(-20 50 80)"/><ellipse cx="100" cy="110" rx="18" ry="12" transform="rotate(-20 100 110)"/><ellipse cx="150" cy="140" rx="18" ry="12" transform="rotate(-20 150 140)"/><ellipse cx="200" cy="80" rx="18" ry="12" transform="rotate(-20 200 80)"/><ellipse cx="250" cy="110" rx="18" ry="12" transform="rotate(-20 250 110)"/><ellipse cx="300" cy="140" rx="18" ry="12" transform="rotate(-20 300 140)"/><ellipse cx="350" cy="80" rx="18" ry="12" transform="rotate(-20 350 80)"/><ellipse cx="400" cy="110" rx="18" ry="12" transform="rotate(-20 400 110)"/><ellipse cx="450" cy="140" rx="18" ry="12" transform="rotate(-20 450 140)"/><ellipse cx="500" cy="80" rx="18" ry="12" transform="rotate(-20 500 80)"/><ellipse cx="550" cy="110" rx="18" ry="12" transform="rotate(-20 550 110)"/>
+    <ellipse cx="75" cy="110" rx="18" ry="12" transform="rotate(-20 75 110)"/><ellipse cx="125" cy="135" rx="18" ry="12" transform="rotate(-20 125 135)"/><ellipse cx="175" cy="160" rx="18" ry="12" transform="rotate(-20 175 160)"/><ellipse cx="225" cy="110" rx="18" ry="12" transform="rotate(-20 225 110)"/><ellipse cx="275" cy="135" rx="18" ry="12" transform="rotate(-20 275 135)"/><ellipse cx="325" cy="160" rx="18" ry="12" transform="rotate(-20 325 160)"/><ellipse cx="375" cy="110" rx="18" ry="12" transform="rotate(-20 375 110)"/><ellipse cx="425" cy="135" rx="18" ry="12" transform="rotate(-20 425 135)"/><ellipse cx="475" cy="160" rx="18" ry="12" transform="rotate(-20 475 160)"/><ellipse cx="525" cy="110" rx="18" ry="12" transform="rotate(-20 525 110)"/><ellipse cx="575" cy="135" rx="18" ry="12" transform="rotate(-20 575 135)"/>
+  </g>
+    <g transform="translate(300,110) scale(0.7)" fill="#a07010" opacity="0.85" filter="url(#glow)">
+    <!-- body -->
+    <ellipse cx="0" cy="0" rx="80" ry="35"/>
+    <!-- neck -->
+    <ellipse cx="-55" cy="-25" rx="30" ry="18" transform="rotate(-20 -55 -25)"/>
+    <!-- head -->
+    <ellipse cx="-90" cy="-48" rx="22" ry="14" transform="rotate(-30 -90 -48)"/>
+    <!-- snout -->
+    <ellipse cx="-108" cy="-52" rx="14" ry="7" transform="rotate(-15 -108 -52)"/>
+    <!-- eye -->
+    <circle cx="-95" cy="-53" r="3" fill="gold" opacity="0.9"/>
+    <!-- tail -->
+    <path d="M70,10 Q120,30 150,15 Q170,5 160,-10 Q145,-20 130,0 Q115,15 90,5 Z"/>
+    <!-- left wing -->
+    <path d="M-20,-20 Q-80,-90 -120,-100 Q-60,-60 -10,-10 Z"/>
+    <path d="M10,-30 Q-20,-110 -50,-140 Q-20,-90 20,-25 Z"/>
+    <!-- right wing -->
+    <path d="M20,-20 Q80,-90 110,-95 Q55,-55 15,-10 Z"/>
+    <path d="M30,-28 Q70,-110 100,-130 Q60,-85 25,-22 Z"/>
+    <!-- legs -->
+    <path d="M-20,25 Q-25,55 -35,70 L-30,72 Q-20,60 -15,27 Z"/>
+    <path d="M20,28 Q22,58 15,73 L20,73 Q28,60 25,27 Z"/>
+    <!-- claws left -->
+    <path d="M-35,70 L-42,80 M-35,70 L-38,82 M-35,70 L-28,80"/>
+    <!-- claws right -->
+    <path d="M15,73 L8,83 M15,73 L14,85 M15,73 L22,82"/>
+  </g>
+  <rect x="6" y="6" width="588" height="268" fill="none" stroke="#d09820" stroke-width="1" stroke-opacity="0.45" rx="6"/>
+  <rect x="10" y="10" width="580" height="260" fill="none" stroke="#d09820" stroke-width="0.5" stroke-opacity="0.23" rx="4"/>
+  <g stroke="#d09820" stroke-width="1.8" fill="none" stroke-opacity="0.7">
+    <path d="M22,22 L22,40 M22,22 L40,22"/>
+    <path d="M578,22 L578,40 M578,22 L560,22"/>
+    <path d="M22,258 L22,240 M22,258 L40,258"/>
+    <path d="M578,258 L578,240 M578,258 L560,258"/>
+  </g>
+  <line x1="80" y1="226" x2="520" y2="226" stroke="#d09820" stroke-width="0.6" stroke-opacity="0.4"/>
+  <text x="300" y="240" font-family="Georgia,serif" font-size="20" font-weight="bold"
+        fill="#d09820" text-anchor="middle" filter="url(#glow)">Ring of Scale</text>
+  <text x="300" y="260" font-family="Georgia,serif" font-size="12"
+        fill="#d09820" text-anchor="middle" opacity="0.65">Ancient Dragon Conclave · Veeshan&#39;s Peak</text>
+
+</svg>
