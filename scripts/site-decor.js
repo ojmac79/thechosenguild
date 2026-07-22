@@ -178,10 +178,44 @@
     nav.appendChild(link);
   }
 
+  function injectBillingNavigation(user) {
+    const headerAuth = document.querySelector('.site-header__auth');
+    const existing = document.querySelector('[data-usage-billing-link]');
+    const email = String(user && user.email ? user.email : '').trim().toLowerCase();
+    if (!headerAuth || email !== 'ojmac79@gmail.com') {
+      if (existing && !window.location.pathname.startsWith('/usage-billing/')) {
+        existing.remove();
+      }
+      return;
+    }
+    if (existing) {
+      return;
+    }
+
+    const link = document.createElement('a');
+    link.className = 'btn-torch';
+    link.href = '/usage-billing/';
+    link.dataset.usageBillingLink = 'true';
+    link.textContent = 'Usage / Billing';
+    headerAuth.prepend(link);
+  }
+
+  function initializeBillingNavigation() {
+    const identity = window.netlifyIdentity;
+    if (!identity) {
+      return;
+    }
+    injectBillingNavigation(identity.currentUser());
+    identity.on('init', injectBillingNavigation);
+    identity.on('login', injectBillingNavigation);
+    identity.on('logout', () => injectBillingNavigation(null));
+  }
+
   window.addEventListener("DOMContentLoaded", () => {
     document.body.setAttribute("data-eq-zone", getRouteZone());
     placeRelics();
     injectOwnerNavigation();
+    initializeBillingNavigation();
   });
   window.addEventListener("resize", () => {
     window.clearTimeout(window.__chosenRelicResizeTimer);

@@ -1006,6 +1006,69 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
 .guild-member-card__notes { margin: 0; }
 .guild-member-card__notes { color: var(--text); line-height: 1.6; }
 .guild-member-card__actions { flex-wrap: wrap; }
+.billing-toolbar,
+.billing-provider,
+.billing-usage-panel { display: grid; gap: 1rem; }
+.billing-toolbar__controls,
+.billing-provider__header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+.billing-toolbar__controls { align-items: flex-end; }
+.billing-provider-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1.25rem;
+  margin-top: 1.25rem;
+}
+.billing-provider { align-content: start; }
+.billing-provider > .btn-torch { justify-self: start; }
+.billing-details { display: grid; gap: 0.7rem; }
+.billing-definition-list { display: grid; gap: 0.55rem; margin: 0; }
+.billing-definition-list div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.45rem;
+  border-bottom: 1px solid var(--border);
+}
+.billing-definition-list dt { color: var(--muted); }
+.billing-definition-list dd { margin: 0; text-align: right; color: var(--text); }
+.billing-status--connected { color: #b7f1a5; border-color: rgba(183, 241, 165, 0.45); }
+.billing-status--warning { color: #ffd18d; border-color: rgba(255, 209, 141, 0.45); }
+.billing-status--loading { color: var(--muted); }
+.billing-usage-panel { margin-top: 1.25rem; }
+.billing-table-wrap { overflow-x: auto; }
+.billing-table { width: 100%; border-collapse: collapse; min-width: 760px; }
+.billing-table th,
+.billing-table td {
+  padding: 0.7rem;
+  text-align: left;
+  vertical-align: top;
+  border-bottom: 1px solid var(--border);
+}
+.billing-table th {
+  color: var(--accent);
+  font-family: 'Cinzel', serif;
+  font-size: 0.8rem;
+}
+.billing-table td span { color: var(--muted); font-size: 0.86rem; }
+.billing-deploy-list { display: grid; gap: 0.65rem; }
+.billing-deploy {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 0.75rem;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: rgba(10, 8, 18, 0.35);
+}
+.billing-deploy p { margin: 0.25rem 0 0; color: var(--muted); }
+.billing-metric-time { font-size: 1rem; }
 
 @media (max-width: 800px) {
   .site-header__inner { flex-direction: column; border-radius: 24px; }
@@ -1027,6 +1090,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   .story-card__images--3 { grid-template-columns: repeat(2, 1fr); }
   .story-card__image { height: 120px; }
   .guild-metrics,
+  .billing-provider-grid,
   .guild-filter-grid,
   .guild-member-card__meta,
   .roster-card__meta { grid-template-columns: 1fr; }
