@@ -198,7 +198,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   text-align: center;
   padding: 2rem 0 1rem;
 }
-.hero__eyebrow, .page-title, .hero__title, .news-section__title, .forum-section__title, .resource-section__title, .discord-members__title { font-family: 'Cinzel', 'Libre Baskerville', serif; }
+.hero__eyebrow, .page-title, .hero__title, .forum-section__title, .resource-section__title, .discord-members__title { font-family: 'Cinzel', 'Libre Baskerville', serif; }
 .hero__eyebrow {
   margin: 0 0 0.5rem;
   color: var(--accent);
@@ -288,33 +288,6 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
     0 12px 28px rgba(0,0,0,0.3);
 }
 .empty-state { text-align: center; color: var(--muted); }
-.news-section { display: grid; gap: 1rem; }
-.news-section__header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
-  margin-bottom: 0.25rem;
-}
-.news-section__title {
-  margin: 0;
-  font-family: 'Cinzel', serif;
-  font-size: 1.35rem;
-}
-.news-card { display: grid; gap: 0.7rem; }
-.news-card__content {
-  display: flex;
-  align-items: flex-start;
-  gap: 1rem;
-}
-.news-card__photo {
-  width: 120px;
-  height: 80px;
-  object-fit: cover;
-  border-radius: 14px;
-  border: 1px solid var(--border);
-  flex-shrink: 0;
-}
 .thumbnail-strip {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -335,39 +308,6 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   object-fit: cover;
   object-position: center;
   filter: grayscale(0.2) contrast(1.05);
-}
-.news-card__top { display: flex; justify-content: space-between; align-items: flex-start; gap: 1rem; }
-.news-card__eyebrow {
-  margin: 0 0 0.2rem;
-  color: var(--accent);
-  font-size: 0.8rem;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-}
-.news-card__title { margin: 0; font-size: 1.2rem; }
-.news-card__body { margin: 0; color: var(--muted); line-height: 1.6; }
-.news-card__meta-row { display: flex; flex-wrap: wrap; gap: 1rem 1.5rem; }
-.news-card__meta { margin: 0; color: var(--muted); font-size: 0.9rem; }
-.news-card__edit {
-  border: 1px solid var(--border);
-  background: transparent;
-  color: var(--text);
-  padding: 0.45rem 0.7rem;
-  border-radius: 999px;
-  cursor: pointer;
-}
-.news-section__new { padding: 0.6rem 0.9rem; }
-.news-section__archive {
-  display: grid;
-  gap: 1rem;
-}
-.news-section__archive-toggle {
-  justify-self: start;
-}
-.news-section__editor {
-  margin-top: 1.25rem;
-  display: grid;
-  gap: 0.6rem;
 }
 .page-title {
   margin: 0.2rem 0 0.4rem;

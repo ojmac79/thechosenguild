@@ -6,7 +6,7 @@
     <title>The Chosen — EverQuest Legends</title>
     <meta
       name="description"
-      content="The Chosen Guild is a community-driven EverQuest guild hall with news, forums, roster, and resources."
+      content="The Chosen Guild is a community-driven EverQuest guild hall with forums, roster, and resources."
     />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -28,7 +28,7 @@
             </span>
           </a>
           <nav class="site-nav" aria-label="Primary">
-            <a class="site-nav__link active" href="/">News</a>
+            <a class="site-nav__link active" href="/">Home</a>
             <a class="site-nav__link" href="/forums/">Forums</a>
             <a class="site-nav__link" href="/roster/">Roster</a>
             <a class="site-nav__link" href="/discord/">Discord</a>
@@ -64,7 +64,7 @@
                 class="search-console__input"
                 id="heroSearchInput"
                 type="text"
-                placeholder="Search guild news and announcements…"
+                placeholder="Search the guild site…"
               />
               <button type="submit" class="search-console__submit">
                 Search Hall
@@ -85,46 +85,6 @@
           <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=600&q=80" alt="Ancient ruins" /></div>
           <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
         </div>
-
-        <section class="news-section" aria-label="Guild news">
-          <div class="news-section__header">
-            <h2 class="news-section__title">Latest News</h2>
-            <button class="btn-torch news-section__new" id="newPostButton" type="button" hidden>New Post</button>
-          </div>
-
-          <div id="newsList"></div>
-          <div class="news-section__archive" id="newsArchiveSection" hidden>
-            <button class="btn-torch news-section__archive-toggle" id="newsArchiveToggle" type="button" hidden></button>
-            <div id="newsArchiveList" hidden></div>
-          </div>
-          <div class="news-section__editor">
-            <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
-            <form class="panel forum-form" id="newsForm" hidden>
-              <label class="resource-field">
-                <span>Post Title</span>
-                <input id="newsTitle" type="text" placeholder="Announce the next guild event" required />
-              </label>
-              <label class="resource-field">
-                <span>Message</span>
-                <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
-              </label>
-              <label class="resource-checkbox">
-                <input
-                  id="newsPostToForum"
-                  type="checkbox"
-                  aria-label="Also post this article to the public forum"
-                  aria-describedby="newsForumOptionHelp"
-                />
-                <span>Also post this article to the public forum</span>
-              </label>
-              <p id="newsForumOptionHelp" class="resource-notice">This creates or updates a matching thread in the public forums when the news article is saved.</p>
-              <div class="auth-actions">
-                <button class="btn-primary" type="submit">Save News Post</button>
-                <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
-              </div>
-            </form>
-          </div>
-        </section>
 
         <div class="page-footer-links">
           <a class="site-footer__support" href="https://app.netlify.com/" target="_blank" rel="noopener noreferrer">
@@ -226,7 +186,7 @@
       const heroScopeWeb = document.getElementById('heroScopeWeb');
       const heroSearchResults = document.getElementById('heroSearchResults');
       const siteSearchPages = [
-        { path: '/', title: 'News' },
+        { path: '/', title: 'Home' },
         { path: '/forums/', title: 'Forums' },
         { path: '/roster/', title: 'Roster' },
         { path: '/discord/', title: 'Discord' },
@@ -892,12 +852,6 @@
         }
 
         const matches = [];
-        const newsMatches = await searchNewsArticles(query);
-        newsMatches.forEach((result) => {
-          if (matches.length < MAX_SITE_RESULTS) {
-            matches.push(result);
-          }
-        });
 
         for (const page of siteSearchPages) {
           if (matches.length >= MAX_SITE_RESULTS) {
@@ -987,6 +941,7 @@
         await runHeroSearch(heroSearchInput.value);
       });
 
+      if (newPostButton) {
       newPostButton.addEventListener('click', async () => {
         await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
@@ -1153,6 +1108,7 @@
         }
         void openNewsPostEditor(button.getAttribute('data-edit-post'));
       });
+      }
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
@@ -1163,35 +1119,20 @@
         }
         localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
         renderMemberBadge(null);
-        renderNews();
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('init', () => {
-          void flushPendingNewsSync();
-        });
         window.netlifyIdentity.on('login', () => {
-          renderNews();
-          void flushPendingNewsSync();
-          void syncPostsWithRemote();
+          renderMemberBadge(readCurrentMember());
         });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
           renderMemberBadge(null);
-          renderNews();
         });
       }
 
-      window.addEventListener('theChosen:persistent-store-ready', () => {
-        renderNews();
-        void flushPendingNewsSync();
-        void syncPostsWithRemote();
-      });
-
-      renderNews();
-      void flushPendingNewsSync();
-      void syncPostsWithRemote();
+      renderMemberBadge(readCurrentMember());
     </script>
   </body>
 </html>
