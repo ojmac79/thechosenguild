@@ -60,6 +60,6 @@
   <text x="300" y="240" font-family="Georgia,serif" font-size="20" font-weight="bold"
         fill="#d4b870" text-anchor="middle" filter="url(#glow)">Humans of Norrath</text>
   <text x="300" y="260" font-family="Georgia,serif" font-size="12"
-        fill="#d4b870" text-anchor="middle" opacity="0.65">Twin Cities of Qeynos &amp;amp; Freeport</text>
+        fill="#d4b870" text-anchor="middle" opacity="0.65">Twin Cities of Qeynos &amp; Freeport</text>
 
 </svg>
