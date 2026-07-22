@@ -109,9 +109,15 @@
                 <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
               </label>
               <label class="resource-checkbox">
-                <input id="newsPostToForum" type="checkbox" />
+                <input
+                  id="newsPostToForum"
+                  type="checkbox"
+                  aria-label="Also post this article to the public forum"
+                  aria-describedby="newsForumOptionHelp"
+                />
                 <span>Also post this article to the public forum</span>
               </label>
+              <p id="newsForumOptionHelp" class="resource-notice">This creates or updates a matching thread in the public forums when the news article is saved.</p>
               <div class="auth-actions">
                 <button class="btn-primary" type="submit">Save News Post</button>
                 <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
@@ -293,7 +299,7 @@
         const inferredCreatedAt = Math.max(0, total - index);
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
         return {
-          id: Object.prototype.hasOwnProperty.call(post, 'id') && post.id != null ? String(post.id) : buildId('news'),
+          id: post.id != null ? String(post.id) : buildId('news'),
           title: String(post.title || ''),
           body: String(post.body || ''),
           author: String(post.author || 'Guild Member'),
@@ -445,7 +451,7 @@
         const publicCategories = Array.isArray(forumState.public && forumState.public.categories) && forumState.public.categories.length
           ? forumState.public.categories
           : defaultForumState().public.categories;
-        const firstPublicCategory = publicCategories[0] || { id: DEFAULT_PUBLIC_FORUM_CATEGORY };
+        const firstPublicCategory = publicCategories[0] || defaultForumState().public.categories[0];
         const categoryId = publicCategories.some((category) => category.id === DEFAULT_PUBLIC_FORUM_CATEGORY)
           ? DEFAULT_PUBLIC_FORUM_CATEGORY
           : firstPublicCategory.id;
@@ -622,8 +628,8 @@
           newsArchiveSection.hidden = false;
           newsArchiveToggle.hidden = false;
           newsArchiveToggle.textContent = showArchivedNews
-            ? 'Show Fewer News Articles'
-            : `Show ${archivedPosts.length} More News Article${archivedPosts.length === 1 ? '' : 's'}`;
+            ? 'Hide Older News'
+            : `Show ${archivedPosts.length} Older News Article${archivedPosts.length === 1 ? '' : 's'}`;
           newsArchiveList.hidden = !showArchivedNews;
           newsArchiveList.innerHTML = showArchivedNews
             ? archivedPosts.map((post) => renderNewsPost(post, canEditNews, ARCHIVE_BADGE_LABEL)).join('')
@@ -914,6 +920,7 @@
                 await savePostsToRemote(nextPosts);
               }
             } catch (error) {
+              console.error('Failed to sync news to forum:', error);
               // Keep the saved news article even if the optional forum sync fails.
             }
           }
