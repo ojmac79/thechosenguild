@@ -1019,6 +1019,11 @@
         });
       }
 
+      window.addEventListener('theChosen:persistent-store-ready', () => {
+        renderNews();
+        void syncPostsWithRemote();
+      });
+
       renderNews();
       void syncPostsWithRemote();
     </script>
