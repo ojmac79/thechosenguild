@@ -3,7 +3,11 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Chosen — Stories</title>
+    <title>The Chosen — EQ Stories</title>
+    <meta
+      name="description"
+      content="Searchable EverQuest canon stories featuring dragons, heroes, gods, and creatures from across Norrath."
+    />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -11,6 +15,224 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../../styles.css" />
+    <style>
+      .eq-stories-intro {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.5rem;
+      }
+      .eq-stories-intro__grid {
+        display: grid;
+        grid-template-columns: 1.4fr 0.9fr;
+        gap: 1rem;
+        align-items: stretch;
+      }
+      .eq-stories-intro__blurb {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+      .eq-stories-intro__meta {
+        display: grid;
+        gap: 0.9rem;
+      }
+      .eq-story-stat {
+        display: grid;
+        gap: 0.25rem;
+      }
+      .eq-story-stat__label {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.78rem;
+        letter-spacing: 0.16em;
+        text-transform: uppercase;
+      }
+      .eq-story-stat__value {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1.4rem;
+        color: var(--accent);
+      }
+      .eq-story-stat__copy {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.6;
+        font-size: 0.92rem;
+      }
+      .eq-stories-search {
+        margin-top: 1.5rem;
+        display: grid;
+        gap: 0.8rem;
+      }
+      .eq-stories-search__row {
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .eq-stories-search__input {
+        flex: 1;
+        min-width: 240px;
+        padding: 0.85rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0,0,0,0.25);
+        color: var(--text);
+        font: inherit;
+      }
+      .eq-stories-search__input:focus {
+        outline: none;
+        border-color: var(--accent);
+        box-shadow: 0 0 0 3px rgba(184, 160, 244, 0.15);
+      }
+      .eq-stories-search__clear {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: transparent;
+        color: var(--muted);
+        cursor: pointer;
+        font: inherit;
+        padding: 0.65rem 1rem;
+      }
+      .eq-stories-search__clear:hover {
+        color: var(--text);
+      }
+      .eq-stories-search__count,
+      .eq-stories-search__hint {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+      }
+      .eq-stories-toc {
+        margin-top: 1rem;
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+        gap: 0.75rem;
+      }
+      .eq-stories-toc a {
+        display: block;
+        padding: 0.8rem 0.95rem;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        background: rgba(255,255,255,0.03);
+        color: var(--muted);
+        transition: border-color 0.2s ease, color 0.2s ease, transform 0.2s ease;
+      }
+      .eq-stories-toc a:hover {
+        color: var(--text);
+        border-color: var(--accent);
+        transform: translateY(-1px);
+      }
+      .eq-stories-list {
+        display: grid;
+        gap: 1.4rem;
+      }
+      .eq-story {
+        display: grid;
+        gap: 1rem;
+      }
+      .eq-story[hidden] {
+        display: none;
+      }
+      .eq-story__header {
+        display: grid;
+        gap: 0.65rem;
+      }
+      .eq-story__eyebrow {
+        margin: 0;
+        color: var(--accent);
+        font-size: 0.78rem;
+        letter-spacing: 0.2em;
+        text-transform: uppercase;
+      }
+      .eq-story__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: clamp(1.8rem, 4vw, 2.4rem);
+      }
+      .eq-story__dek {
+        margin: 0;
+        color: var(--muted);
+        line-height: 1.7;
+        font-size: 1rem;
+      }
+      .eq-story__chips {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+      }
+      .eq-story__chip {
+        display: inline-flex;
+        align-items: center;
+        padding: 0.32rem 0.7rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        color: var(--text);
+        font-size: 0.74rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        background: rgba(255,255,255,0.04);
+      }
+      .eq-story__content {
+        display: grid;
+        gap: 1rem;
+        grid-template-columns: minmax(0, 1.65fr) minmax(260px, 0.95fr);
+      }
+      .eq-story__body {
+        display: grid;
+        gap: 0.95rem;
+      }
+      .eq-story__body p {
+        margin: 0;
+        color: var(--text);
+        line-height: 1.85;
+      }
+      .eq-story__aside {
+        display: grid;
+        gap: 0.9rem;
+        align-content: start;
+      }
+      .eq-story__factbox {
+        display: grid;
+        gap: 0.7rem;
+      }
+      .eq-story__factbox-title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1rem;
+      }
+      .eq-story__facts,
+      .eq-story__sources {
+        margin: 0;
+        padding-left: 1.1rem;
+        display: grid;
+        gap: 0.55rem;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      .eq-story__sources a {
+        color: var(--accent);
+      }
+      .eq-story__sources a:hover {
+        color: var(--text);
+      }
+      .eq-story__source-note {
+        margin: 0;
+        color: var(--muted);
+        font-size: 0.88rem;
+        line-height: 1.65;
+      }
+      .eq-stories-empty {
+        text-align: center;
+        color: var(--muted);
+      }
+      @media (max-width: 920px) {
+        .eq-stories-intro__grid,
+        .eq-story__content {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   </head>
   <body>
     <div class="chosen-shell">
@@ -31,7 +253,7 @@
             <a class="site-nav__link" href="/eql-information/">EQL Information</a>
             <a class="site-nav__link" href="/lore/">Lore</a>
             <a class="site-nav__link" href="/server-status/">Status</a>
-            <a class="site-nav__link active" href="/stories/">Stories</a>
+            <a class="site-nav__link active" href="/stories/">EQ Stories</a>
             <a class="site-nav__link" href="/low-level-quests/">Low Level Quests</a>
             <a class="site-nav__link" href="/mid-level-quests/">Mid Level Quests</a>
             <a class="site-nav__link" href="/high-level-quests/">High Level Quests</a>
@@ -43,70 +265,323 @@
       </header>
 
       <main class="page">
-        <p class="hero__eyebrow">Tales of Norrath</p>
-        <h1 class="page-title">Guild Stories</h1>
-        <p class="page-subtitle">Chronicles, memories, and adventures penned by the members of The Chosen. Open for all to read; members may share their own tales.</p>
+        <p class="hero__eyebrow">Canon Tales of Norrath</p>
+        <h1 class="page-title">EQ Stories</h1>
+        <p class="page-subtitle">A searchable library of original long-form retellings grounded in EverQuest canon, drawing from official lore, classic live events, and enduring legends of Norrath.</p>
 
-        <!-- Compact story submission form (members only) -->
-        <section class="panel stories-form-panel" id="storiesFormPanel" aria-label="Submit a story">
-          <div class="stories-form-panel__header">
-            <h2 class="resource-section__title">Share a Tale</h2>
-            <p id="storiesAuthNote" class="resource-notice" aria-live="polite"></p>
+        <section class="eq-stories-intro">
+          <div class="eq-stories-intro__grid">
+            <div class="panel">
+              <h2 class="resource-section__title">What lives here</h2>
+              <p class="eq-stories-intro__blurb">
+                These stories are written as fresh short fiction, but each one is anchored to developer-established EverQuest lore: the Battle of Bloody Kithicor, the tragedy of Vox and Nagafen, the waking of Kerafyrm, the fall of Sebilis, the Froglok wars, and the wild laughter of Bristlebane. Search by NPC, creature, zone, mood, or faction to jump directly into the tale you want.
+              </p>
+            </div>
+            <div class="panel eq-stories-intro__meta" aria-label="EQ Stories overview">
+              <div class="eq-story-stat">
+                <p class="eq-story-stat__label">Chronicles</p>
+                <p class="eq-story-stat__value">6 canon tales</p>
+                <p class="eq-story-stat__copy">Dragons, demigods, frogs, forests, tricksters, and heroes.</p>
+              </div>
+              <div class="eq-story-stat">
+                <p class="eq-story-stat__label">Focus</p>
+                <p class="eq-story-stat__value">Searchable lore</p>
+                <p class="eq-story-stat__copy">Every story includes canon touchstones and source trails for deeper reading.</p>
+              </div>
+            </div>
           </div>
+        </section>
 
-          <form id="storyForm" class="stories-compact-form" hidden>
-            <div class="stories-compact-form__row">
-              <label class="resource-field">
-                <span>Title</span>
-                <input id="storyTitle" type="text" maxlength="120" placeholder="Name your tale…" required />
-              </label>
-              <label class="resource-field">
-                <span>Photos (up to 3, max 500 KB each)</span>
-                <input id="storyImages" type="file" accept="image/*" multiple />
-              </label>
-            </div>
-            <div id="storyImagePreviews" class="stories-image-previews" hidden></div>
-            <label class="resource-field">
-              <span>Story</span>
-              <textarea id="storyBody" rows="4" placeholder="Tell your tale…" required></textarea>
-            </label>
-            <div class="stories-compact-form__row stories-compact-form__row--forum">
-              <label class="stories-checkbox-label">
-                <input id="storyPostToForum" type="checkbox" />
-                <span>Also post to the Public Forum</span>
-              </label>
-              <label class="resource-field stories-forum-summary" id="storySummaryWrap" hidden>
-                <span>Forum summary (brief teaser)</span>
-                <input id="storyForumSummary" type="text" maxlength="200" placeholder="A short teaser for the forum post…" />
-              </label>
-            </div>
-            <div class="auth-actions stories-form__actions">
-              <button class="btn-primary" type="submit" id="storySaveButton">Post Story</button>
-              <button class="btn-torch" type="button" id="storyCancelEdit" hidden>Cancel Edit</button>
-            </div>
-          </form>
+        <section class="panel eq-stories-search" aria-label="Search EQ stories">
+          <div class="eq-stories-search__row">
+            <input
+              id="eqStoriesSearch"
+              class="eq-stories-search__input"
+              type="search"
+              placeholder="Search by NPC, creature, zone, expansion, or mood…"
+              aria-label="Search EQ stories"
+              autocomplete="off"
+            />
+            <button id="eqStoriesClear" class="eq-stories-search__clear" type="button">Clear</button>
+          </div>
+          <p id="eqStoriesCount" class="eq-stories-search__count" aria-live="polite">Showing all 6 stories.</p>
+          <p class="eq-stories-search__hint">Try: Kerafyrm, Firiona, Sebilis, Froglok, humor, courage, tragedy, dragon, Innoruuk, or Velious.</p>
+          <nav class="eq-stories-toc" aria-label="EQ story contents">
+            <a href="#story-vox-nagafen">Lady Vox &amp; Lord Nagafen</a>
+            <a href="#story-kerafyrm">Kerafyrm the Sleeper</a>
+            <a href="#story-kithicor">The Battle of Bloody Kithicor</a>
+            <a href="#story-trakanon">Trakanon and the Fall of Sebilis</a>
+            <a href="#story-frogloks">The Froglok Crusade</a>
+            <a href="#story-bristlebane">Bristlebane and the Plane of Mischief</a>
+          </nav>
         </section>
 
         <div class="divider-rune" aria-hidden="true">✦</div>
 
-        <!-- Search bar -->
-        <div class="stories-search-wrap">
-          <input
-            class="search-console__input stories-search"
-            id="storiesSearch"
-            type="search"
-            placeholder="Search stories by title or text…"
-            aria-label="Search stories"
-          />
-        </div>
+        <section id="eqStoriesList" class="eq-stories-list" aria-label="EverQuest story archive">
+          <article id="story-vox-nagafen" class="panel eq-story" data-search="lady vox lord nagafen kerafyrm permafrost solusek eye fire ice dragon tragedy forbidden love velious classic">
+            <div class="eq-story__header">
+              <p class="eq-story__eyebrow">Tragedy · Dragons of Frost and Flame</p>
+              <h2 class="eq-story__title">Lady Vox and Lord Nagafen: The Law That Could Not Melt</h2>
+              <p class="eq-story__dek">Two ancient dragons dared to imagine a future the Claws of Veeshan had forbidden forever, and all of Norrath still echoes with the punishment.</p>
+              <div class="eq-story__chips">
+                <span class="eq-story__chip">Lady Vox</span>
+                <span class="eq-story__chip">Lord Nagafen</span>
+                <span class="eq-story__chip">Permafrost</span>
+                <span class="eq-story__chip">Solusek's Eye</span>
+                <span class="eq-story__chip">Forbidden Love</span>
+              </div>
+            </div>
+            <div class="eq-story__content">
+              <div class="eq-story__body">
+                <p>Among the elder dragons, law is older than memory and colder than the sky above Velious. It is not written in ink, but in blood, frost, and fire. Long before adventurers learned the roads to Permafrost Keep or the furnace tunnels beneath Lavastorm, the Claws of Veeshan had already chosen the fate of two dragons whose crime was not war, nor treachery, but hope.</p>
+                <p>Lady Vox ruled with winter in her lungs. Lord Nagafen breathed in magma and answered with ruin. The two should have been opposites so complete that even speech between them would crack like ice beneath a forge hammer. Instead, the old stories say the distance between frost and flame became a kind of fascination. Each carried a power the other lacked. Each saw in the other the dangerous miracle of balance. Together, they imagined what dragonkind had sworn never to create again.</p>
+                <p>The name behind that fear was Kerafyrm, the prismatic terror whose existence taught the Claws of Veeshan that love could become apocalypse. Since the first prismatic dragon had brought madness, death, and civil war among dragonkind, the council made its judgment absolute: no union of opposing elemental bloodlines would ever be allowed again. Vox and Nagafen were not merely breaking custom. They were leaning against the locked door of history itself.</p>
+                <p>When their intent was discovered, the sentence was merciless in its elegance. Vox was driven into the prison of Permafrost, where every wall reminded her that cold can preserve sorrow better than it preserves flesh. Nagafen was cast into the molten deeps of Solusek's Eye, a sovereign in a cage of his own element. The punishment was not death. Death would have been kind. The punishment was separation so complete that the world itself stood between them: snow, stone, leagues of hunted land, and the watchful memory of dragon law.</p>
+                <p>That is why the tale endures. Adventurers remember Vox as a queen of ice and Nagafen as a tyrant of flame, but under the raids and the treasure sits an older wound. These dragons became legends because they were powerful; they became tragic because power could not purchase even one small mercy from their own kind. In Norrath, some prisons have bars, and some are built from prophecy, shame, and the terror of what might be born if longing is ever allowed to win.</p>
+              </div>
+              <aside class="eq-story__aside">
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Canon touchstones</h3>
+                  <ul class="eq-story__facts">
+                    <li>Vox and Nagafen were exiled by dragon authorities for plotting a forbidden union.</li>
+                    <li>Their intended child evoked the catastrophic memory of the prismatic dragon Kerafyrm.</li>
+                    <li>Vox was confined to Permafrost while Nagafen was isolated in Solusek's Eye.</li>
+                    <li>Both remain classic EverQuest raid legends whose separation never truly resolves.</li>
+                  </ul>
+                </section>
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Source trail</h3>
+                  <ul class="eq-story__sources">
+                    <li><a href="https://wiki.project1999.com/Lady_Vox" target="_blank" rel="noopener noreferrer">Project 1999: Lady Vox</a></li>
+                    <li><a href="https://eqlwiki.com/Lord_Nagafen" target="_blank" rel="noopener noreferrer">EQ Legends Wiki: Lord Nagafen</a></li>
+                    <li><a href="https://wiki.project1999.com/Kerafyrm" target="_blank" rel="noopener noreferrer">Project 1999: Kerafyrm</a></li>
+                  </ul>
+                  <p class="eq-story__source-note">This retelling is original prose built from established EverQuest canon rather than a transcription of published text.</p>
+                </section>
+              </aside>
+            </div>
+          </article>
 
-        <!-- Story list -->
-        <section class="stories-list-wrap" aria-label="Guild stories">
-          <div id="storiesList" class="stories-list"></div>
-          <div class="stories-archive-row" id="storiesArchiveRow" hidden>
-            <button type="button" class="btn-torch stories-show-all" id="storiesShowAll">Show All Stories</button>
-          </div>
+          <article id="story-kerafyrm" class="panel eq-story" data-search="kerafyrm sleeper warders velious western wastes skyshrine prismatic dragon courage hubris adventure classic raid">
+            <div class="eq-story__header">
+              <p class="eq-story__eyebrow">Adventure · Courage · Irreversible Consequence</p>
+              <h2 class="eq-story__title">Kerafyrm the Sleeper: The Day Norrath Woke Something Worse Than a God</h2>
+              <p class="eq-story__dek">The prison beneath Velious was never meant to be opened, yet adventurers opened it anyway and proved that victory and disaster sometimes share the same key.</p>
+              <div class="eq-story__chips">
+                <span class="eq-story__chip">Kerafyrm</span>
+                <span class="eq-story__chip">Sleeper's Tomb</span>
+                <span class="eq-story__chip">Velious</span>
+                <span class="eq-story__chip">Warders</span>
+                <span class="eq-story__chip">Hubris</span>
+              </div>
+            </div>
+            <div class="eq-story__content">
+              <div class="eq-story__body">
+                <p>In the ice-dark age of Velious, dragonkind built a warning so large it became a monument. They did not carve it into stone. They buried it beneath stone, ringed it with honor guards, and called it Sleeper's Tomb. At its heart lay Kerafyrm, the first prismatic dragon, a being whose birth united impossible bloodlines and whose life taught the old wyrms that some marvels arrive wearing the face of extinction.</p>
+                <p>Kerafyrm was not chained because he was weak. He was chained because even dragons feared what he could become once anger and grief sharpened into madness. The First Brood could not truly destroy him, so they did the next most desperate thing: they defeated him, sealed him away, and set four Warders to watch the prison as if vigilance itself could stand in for hope. Every corridor in the Tomb was a confession that raw power had outgrown every simpler answer.</p>
+                <p>Then came adventurers, which is to say came curiosity with steel in its hands. The legends of Velious spread across campfires and guild halls until the question became impossible to ignore: what would happen if the Warders fell? The brave called it destiny. The greedy called it opportunity. The wise called it a catastrophe waiting patiently for impatient people.</p>
+                <p>When the final Warder died, EverQuest answered with one of its most unforgettable truths. Kerafyrm did not rise like treasure from a chest. He rose like a verdict. He tore through his prison, crossed the icy lands, and rampaged across Velious as though the whole continent existed only to remember his name. He was unkillable by design, a living rebuttal to every raid strategy ever whispered by mortals. Guilds that had mastered dragons, giants, and gods discovered there was still a difference between defeating a challenge and unleashing one.</p>
+                <p>That is why the Sleeper's tale still feels electric. It was never just about a dragon. It was about the old EverQuest appetite for seeing what lived behind the sealed door and the cost of being answered honestly. Kerafyrm turned player ambition into world history. The prison broke once, and on every server where it happened, the change was permanent. Norrath did not forget because the game itself refused to forget.</p>
+              </div>
+              <aside class="eq-story__aside">
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Canon touchstones</h3>
+                  <ul class="eq-story__facts">
+                    <li>Kerafyrm is the first prismatic dragon and a forbidden union made flesh.</li>
+                    <li>The First Brood imprisoned him in Sleeper's Tomb beneath Velious.</li>
+                    <li>Players could permanently awaken him by killing the four Warders.</li>
+                    <li>Once awakened, Kerafyrm rampaged across Velious and could not be slain in the original event design.</li>
+                  </ul>
+                </section>
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Source trail</h3>
+                  <ul class="eq-story__sources">
+                    <li><a href="https://wiki.project1999.com/Kerafyrm" target="_blank" rel="noopener noreferrer">Project 1999: Kerafyrm</a></li>
+                    <li><a href="https://wiki.project1999.com/Sleeper%27s_Tomb" target="_blank" rel="noopener noreferrer">Project 1999: Sleeper's Tomb</a></li>
+                    <li><a href="https://massivelyop.com/2022/04/04/the-game-archaeologist-when-everquest-players-killed-the-unkillable-sleeper/" target="_blank" rel="noopener noreferrer">MassivelyOP: The Sleeper event retrospective</a></li>
+                  </ul>
+                </section>
+              </aside>
+            </div>
+          </article>
+
+          <article id="story-kithicor" class="panel eq-story" data-search="kithicor lanys tvyl firiona vie innoruuk undead forest bloody courage drama live event tunare dark elf">
+            <div class="eq-story__header">
+              <p class="eq-story__eyebrow">Drama · War · The Price of Hatred</p>
+              <h2 class="eq-story__title">The Battle of Bloody Kithicor: How One Forest Learned to Haunt Itself</h2>
+              <p class="eq-story__dek">A war between Firiona Vie and Lanys T'Vyl ended in divine intervention, and Kithicor Forest has never known a peaceful night since.</p>
+              <div class="eq-story__chips">
+                <span class="eq-story__chip">Firiona Vie</span>
+                <span class="eq-story__chip">Lanys T'Vyl</span>
+                <span class="eq-story__chip">Kithicor</span>
+                <span class="eq-story__chip">Innoruuk</span>
+                <span class="eq-story__chip">Live Event</span>
+              </div>
+            </div>
+            <div class="eq-story__content">
+              <div class="eq-story__body">
+                <p>There are forests in Norrath where travelers fear wolves, and there are forests where they fear memory. Kithicor belongs to the second kind. By day it can still look like a road between places, a swath of trees useful for reaching Highpass or the Commonlands. By night, it reveals the deeper truth: Kithicor is not merely haunted. It is a battlefield that never agreed to end.</p>
+                <p>The blood that consecrated it came from two of EverQuest's great opposing figures. On one side stood Firiona Vie, champion of Tunare, a paladin whose courage became synonymous with resistance against darkness. On the other stood Lanys T'Vyl, child of Innoruuk, sharpened by hate until war looked less like ambition and more like inheritance. Their armies met under black banners and desperate prayers, and the forest became the kind of place where steel rang louder than birdsong.</p>
+                <p>The old official tellings emphasize that this was not a random clash but a campaign, one carried by conquest and wrath. Lanys had already left suffering in her wake, and Kithicor became the place where the march of hate met its refusal. Firiona did not stand as a symbol alone. She stood because someone had to hold a line against a power that believed terror itself was a birthright.</p>
+                <p>When the battle peaked, victory did not arrive cleanly. Firiona prevailed, but the struggle drew the gaze of Innoruuk himself. The Prince of Hate would not allow his daughter to die a mortal death on mortal soil. Instead he opened the reach of his own realm and dragged Lanys away, not to rescue her, but to torment and refine her hatred until it became something even more dangerous. Even in defeat, hate was not permitted to soften. It was reforged.</p>
+                <p>Kithicor paid for that lesson. The dead did not rest. The zone changed, permanently and publicly, into one of EverQuest's most famous living scars. Each night the forest remembers the army that marched into it and the army that refused to break. That is why players crossing Kithicor after sunset feel more than danger. They feel aftermath. They feel a developer-made promise that war, once fed enough fear, can linger in a place long after the generals are gone.</p>
+              </div>
+              <aside class="eq-story__aside">
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Canon touchstones</h3>
+                  <ul class="eq-story__facts">
+                    <li>The Battle of Bloody Kithicor was one of EverQuest's early live GM-run world events.</li>
+                    <li>Firiona Vie opposed Lanys T'Vyl, daughter of Innoruuk, in a defining struggle between light and hate.</li>
+                    <li>Innoruuk intervened directly, pulling Lanys back rather than allowing her death.</li>
+                    <li>Kithicor became permanently cursed, with undead overtaking the forest by night.</li>
+                  </ul>
+                </section>
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Source trail</h3>
+                  <ul class="eq-story__sources">
+                    <li><a href="https://www.everquest.com/news/imported-eq-enus-51141" target="_blank" rel="noopener noreferrer">EverQuest official lore: Kithicor campaign</a></li>
+                    <li><a href="https://www.everquest.com/news/imported-eq-enus-51143" target="_blank" rel="noopener noreferrer">EverQuest official lore: the final battle</a></li>
+                    <li><a href="https://www.eqarchives.com/zones/view/kithicor" target="_blank" rel="noopener noreferrer">EQ Archives: Kithicor Forest</a></li>
+                  </ul>
+                </section>
+              </aside>
+            </div>
+          </article>
+
+          <article id="story-trakanon" class="panel eq-story" data-search="trakanon sebilis iksar kunark poison dragon empire tragedy adventure cabilis ring of scale fall">
+            <div class="eq-story__header">
+              <p class="eq-story__eyebrow">Empire · Revenge · Dragonfire</p>
+              <h2 class="eq-story__title">Trakanon and the Fall of Sebilis: The Poison Dragon Over an Empty Throne</h2>
+              <p class="eq-story__dek">Sebilis was the jeweled heart of Iksar power until a dragon decided patience was for weaker creatures and burned history down around him.</p>
+              <div class="eq-story__chips">
+                <span class="eq-story__chip">Trakanon</span>
+                <span class="eq-story__chip">Sebilis</span>
+                <span class="eq-story__chip">Iksar</span>
+                <span class="eq-story__chip">Kunark</span>
+                <span class="eq-story__chip">Fall of an Empire</span>
+              </div>
+            </div>
+            <div class="eq-story__content">
+              <div class="eq-story__body">
+                <p>Empires often imagine they fall in one dramatic moment, but ruin usually begins earlier, in the arguments proud powers dismiss as temporary. For the Iksar of Kunark, the argument took the shape of Trakanon, a dragon whose contempt for restraint would outlast the empire he helped destroy.</p>
+                <p>Trakanon belonged to the Ring of Scale, yet he did not share its patience. While other ancient dragons weighed policy and timing, he believed the Iksar menace required direct force. This made him more than a military hawk. It made him a fracture line inside dragon politics, proof that even immortal councils are only as stable as the hungers of the creatures seated within them.</p>
+                <p>When the old balance broke, Trakanon gathered like-minded younger dragons and ceased pretending that diplomacy still mattered. Sebilis, once the shining Iksar capital, became the target not merely of attack but of judgment. The dragon and his allies descended in fire, poison, and annihilation. Cities built over generations are usually remembered for their walls, their wealth, or their kings. Sebilis is remembered because it burned so completely that its ruins still feel like an accusation.</p>
+                <p>The cruelty of the tale is that Trakanon did not merely destroy a city and depart. He stayed. He made the wreckage his throne room. That choice changes the story from military conquest to something darker. It is one thing to smash an enemy. It is another to roost above the ashes so every survivor understands exactly who authored their exile. Cabilis rose later as a grim answer to Sebilis's loss, but no replacement city could disguise the wound that had already entered Iksar memory.</p>
+                <p>When players descend into Old Sebilis and face Trakanon, they are walking into more than a raid zone. They are stepping into a mausoleum whose architect still lives there. Courage matters in that confrontation, but so does perspective. The poison dragon is terrifying in the present because he already won in the past. His victory was not lootable. It was civilizational. That is why Sebilis feels so heavy: every corridor reminds you that some monsters do not guard treasure. They guard the evidence.</p>
+              </div>
+              <aside class="eq-story__aside">
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Canon touchstones</h3>
+                  <ul class="eq-story__facts">
+                    <li>Trakanon broke from the Ring of Scale's restraint and pushed for direct action against the Iksar.</li>
+                    <li>He helped destroy Sebilis, ending the Iksar golden age on Kunark.</li>
+                    <li>The survivors later founded Cabilis, also known as New Sebilis.</li>
+                    <li>Trakanon remains in the ruins of Old Sebilis as one of EverQuest's iconic raid threats.</li>
+                  </ul>
+                </section>
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Source trail</h3>
+                  <ul class="eq-story__sources">
+                    <li><a href="https://fvproject.com/index.php/Trakanon:_The_Poison_Dragon,_Destroyer_of_Sebilis" target="_blank" rel="noopener noreferrer">Firiona Vie Project: Trakanon lore</a></li>
+                    <li><a href="https://eqlwiki.com/Old_Sebilis" target="_blank" rel="noopener noreferrer">EQ Legends Wiki: Old Sebilis</a></li>
+                    <li><a href="https://everquest.allakhazam.com/wiki/Iksar_History" target="_blank" rel="noopener noreferrer">Allakhazam: Iksar history</a></li>
+                  </ul>
+                </section>
+              </aside>
+            </div>
+          </article>
+
+          <article id="story-frogloks" class="panel eq-story" data-search="froglok gukta grobb trolls mithaniel marr humor courage swamp legacy of ykesha guk frog adventure race">
+            <div class="eq-story__header">
+              <p class="eq-story__eyebrow">Courage · Humor · Holy Upheaval</p>
+              <h2 class="eq-story__title">The Froglok Crusade: When the Swamp Rose Up and Took a City</h2>
+              <p class="eq-story__dek">Once dismissed as little more than swamp nuisances, the Frogloks were lifted by divine purpose and marched straight into the history books of Norrath.</p>
+              <div class="eq-story__chips">
+                <span class="eq-story__chip">Frogloks</span>
+                <span class="eq-story__chip">Grobb</span>
+                <span class="eq-story__chip">Gukta</span>
+                <span class="eq-story__chip">Mithaniel Marr</span>
+                <span class="eq-story__chip">Legacy of Ykesha</span>
+              </div>
+            </div>
+            <div class="eq-story__content">
+              <div class="eq-story__body">
+                <p>At first glance, the Froglok story almost sounds like a prank Bristlebane told after too much ale: a people long known for swamps, croaks, and repetitive dungeon ambushes suddenly rise under divine favor, conquer a troll capital, and demand to be taken seriously by the rest of Norrath. The joke, of course, is that it happened.</p>
+                <p>Before the blessing, Frogloks were mostly seen as hazards tucked into the damp margins of the world. Adventurers knew them as inhabitants of Guk and Innothule, not as claimants to destiny. Yet EverQuest has always liked transforming the familiar into the surprising. With the Legacy of Ykesha era came a dramatic turn: Mithaniel Marr, god of valor, raised the Frogloks into a more fully realized people with purpose, discipline, and spiritual force behind them.</p>
+                <p>The campaign that followed overturned old assumptions with almost comical force. The trolls of Grobb were not driven out by a lumbering empire or a dragon host but by the very swampfolk many had underestimated for years. Froglok courage was not theatrical. It was organized, fervent, and backed by belief. Grobb fell. Gukta rose in its place. A playable race was born not through quiet paperwork in a menu screen, but through conquest written into the world itself.</p>
+                <p>Yet the reason the story endures is that it refuses to stay simple. The Frogloks were triumphant, but their triumph displaced another people. The trolls became exiles in their own narrative, pushed outward into alliances and resentments of their own. Eventually, the counterstroke came. Grobb was retaken, and the Frogloks were forced again into motion, carrying with them both the pride of victory and the ache of losing what they had won.</p>
+                <p>That complexity is what makes the Froglok Crusade more than an amusing lore footnote. It is funny, yes, because there is genuine delight in imagining the mighty brought low by those they mocked. But it is also brave and a little sad. Divine favor can elevate the overlooked, yet even righteous upheaval leaves wreckage behind. In that sense, the Frogloks earned their place among Norrath's great peoples exactly the same way everyone else did: by discovering that history never gives without also taking.</p>
+              </div>
+              <aside class="eq-story__aside">
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Canon touchstones</h3>
+                  <ul class="eq-story__facts">
+                    <li>Frogloks began as non-playable swamp and dungeon creatures before their major lore elevation.</li>
+                    <li>Mithaniel Marr's blessing in the Legacy of Ykesha era helped transform them into a playable race.</li>
+                    <li>They conquered Grobb and renamed it Gukta before later being forced out again.</li>
+                    <li>The story blends humor, courage, divine favor, and the politics of displacement.</li>
+                  </ul>
+                </section>
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Source trail</h3>
+                  <ul class="eq-story__sources">
+                    <li><a href="https://everquest.fandom.com/wiki/Guktan" target="_blank" rel="noopener noreferrer">EverQuest Wiki: Guktan</a></li>
+                    <li><a href="https://everquest.allakhazam.com/wiki/EQ:Froglok" target="_blank" rel="noopener noreferrer">Allakhazam: Froglok lore</a></li>
+                    <li><a href="https://wiki.eqarchives.com/expansions/the_legacy_of_ykesha" target="_blank" rel="noopener noreferrer">EQ Archives: Legacy of Ykesha</a></li>
+                  </ul>
+                </section>
+              </aside>
+            </div>
+          </article>
+
+          <article id="story-bristlebane" class="panel eq-story" data-search="bristlebane plane of mischief halfling humor prankster trickster thieves comedy mischief god creatures faydwer">
+            <div class="eq-story__header">
+              <p class="eq-story__eyebrow">Humor · Trickery · Divine Absurdity</p>
+              <h2 class="eq-story__title">Bristlebane and the Plane of Mischief: Why Laughter Survives in a Dangerous World</h2>
+              <p class="eq-story__dek">Not every immortal lesson in EverQuest arrives through terror. Some arrive in a burst of laughter, a stolen purse, and a doorway that leads somewhere delightfully wrong.</p>
+              <div class="eq-story__chips">
+                <span class="eq-story__chip">Bristlebane</span>
+                <span class="eq-story__chip">Plane of Mischief</span>
+                <span class="eq-story__chip">Halflings</span>
+                <span class="eq-story__chip">Humor</span>
+                <span class="eq-story__chip">Trickster God</span>
+              </div>
+            </div>
+            <div class="eq-story__content">
+              <div class="eq-story__body">
+                <p>EverQuest is full of gods who demand reverence through fear, obedience, or awe. Then there is Bristlebane Fizzlethorpe, who seems entirely content to prove his power by making the universe slip on a banana peel and then applauding the landing. To dismiss him as comic relief would be a mistake. In Norrath, mischief is not the opposite of power. In Bristlebane's hands, it is simply power wearing a grin.</p>
+                <p>The Plane of Mischief exists as the best evidence. Adventurers entering it expect some celestial version of a dungeon. What they find instead is the divine argument that order is overrated. Architecture turns perverse. Logic takes a holiday. Invisible barriers, odd roles, sudden embarrassments, and narrative nonsense all mingle in a realm that behaves less like a battlefield and more like a prank with its own weather pattern.</p>
+                <p>That world reflects its master perfectly. Bristlebane is the patron of thieves, rogues, bards, and all who understand that wit can cut as sharply as steel. Even the halflings, often linked to his mischief, carry that legacy in miniature: warmth mixed with danger, charm mixed with a hand that may or may not still be in your pocket. His theology is not kind in the simplistic sense. It is liberating, destabilizing, and deeply aware that solemn people are often easiest to fool.</p>
+                <p>Yet there is something brave about Bristlebane's place in the pantheon. In a world shadowed by Innoruuk's hate and Cazic-Thule's fear, laughter becomes resistance. A joke can puncture pomposity. A prank can expose rigidity. The comic turn can remind heroes and villains alike that certainty is more fragile than they think. That is why the Plane of Mischief feels important rather than merely silly. It embodies the idea that chaos does not always arrive to destroy. Sometimes it arrives to keep creation from becoming unbearable.</p>
+                <p>So the tale of Bristlebane endures as one of EverQuest's necessary tonal miracles. Norrath needs dragons and wars, but it also needs the god who insists that the universe remains wonderfully interruptible. When players laugh in the Plane of Mischief, they are not stepping outside lore. They are stepping deeper into one of its oldest truths: joy can be unruly, and unruliness can be sacred.</p>
+              </div>
+              <aside class="eq-story__aside">
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Canon touchstones</h3>
+                  <ul class="eq-story__facts">
+                    <li>Bristlebane is EverQuest's god of mischief, humor, trickery, thieves, and playful disorder.</li>
+                    <li>The Plane of Mischief is a lore-rich realm built around pranks, oddity, and unstable logic.</li>
+                    <li>Halflings and roguish archetypes are strongly associated with Bristlebane's worldview.</li>
+                    <li>His role balances darker divine forces by making laughter a real metaphysical force in Norrath.</li>
+                  </ul>
+                </section>
+                <section class="panel eq-story__factbox">
+                  <h3 class="eq-story__factbox-title">Source trail</h3>
+                  <ul class="eq-story__sources">
+                    <li><a href="https://everquestlore.fandom.com/wiki/Fizzlethorpe_Bristlebane" target="_blank" rel="noopener noreferrer">EQ Lore Wiki: Bristlebane</a></li>
+                    <li><a href="https://wiki.project1999.com/Bristlebane_(God)" target="_blank" rel="noopener noreferrer">Project 1999: Bristlebane</a></li>
+                    <li><a href="https://wiki.project1999.com/Plane_of_Mischief" target="_blank" rel="noopener noreferrer">Project 1999: Plane of Mischief</a></li>
+                  </ul>
+                </section>
+              </aside>
+            </div>
+          </article>
         </section>
+
+        <div id="eqStoriesEmpty" class="panel eq-stories-empty" hidden>
+          No stories matched that search. Try a character name, zone, creature, expansion, or theme.
+        </div>
       </main>
 
       <footer class="site-footer">
@@ -133,510 +608,42 @@
     <script src="../../scripts/roster-data.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const STORIES_KEY = 'theChosenStories';
-      const MEMBER_KEY = 'theChosenCurrentMember';
-      const FORUM_KEY = 'theChosenForumStateV2';
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
-      const STORIES_PAGE_SIZE = 3;
+      const eqStoriesSearch = document.getElementById('eqStoriesSearch');
+      const eqStoriesClear = document.getElementById('eqStoriesClear');
+      const eqStoriesCount = document.getElementById('eqStoriesCount');
+      const eqStoriesEmpty = document.getElementById('eqStoriesEmpty');
+      const eqStoryCards = Array.from(document.querySelectorAll('.eq-story'));
 
-      let pendingImageDataUrls = [];
-      let editingStoryId = null;
-      let showingAll = false;
+      function applyEqStoriesFilter() {
+        const query = eqStoriesSearch.value.trim().toLowerCase();
+        let visibleCount = 0;
 
-      // ── DOM refs ────────────────────────────────────────────────────────────
-      const storyForm = document.getElementById('storyForm');
-      const storyTitle = document.getElementById('storyTitle');
-      const storyBody = document.getElementById('storyBody');
-      const storyImages = document.getElementById('storyImages');
-      const storyImagePreviews = document.getElementById('storyImagePreviews');
-      const storyPostToForum = document.getElementById('storyPostToForum');
-      const storySummaryWrap = document.getElementById('storySummaryWrap');
-      const storyForumSummary = document.getElementById('storyForumSummary');
-      const storySaveButton = document.getElementById('storySaveButton');
-      const storyCancelEdit = document.getElementById('storyCancelEdit');
-      const storiesAuthNote = document.getElementById('storiesAuthNote');
-      const storiesList = document.getElementById('storiesList');
-      const storiesSearch = document.getElementById('storiesSearch');
-      const storiesArchiveRow = document.getElementById('storiesArchiveRow');
-      const storiesShowAll = document.getElementById('storiesShowAll');
-      const footerMember = document.getElementById('footerMember');
-      const footerMemberMenu = document.getElementById('footerMemberMenu');
-      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
-      const footerMemberName = document.getElementById('footerMemberName');
-      const footerMemberEmail = document.getElementById('footerMemberEmail');
-      const footerAccountButton = document.getElementById('footerAccountButton');
-      const footerLogoutButton = document.getElementById('footerLogoutButton');
-
-      // ── Utilities ───────────────────────────────────────────────────────────
-      function escapeHtml(text) {
-        return String(text)
-          .replaceAll('&', '&amp;')
-          .replaceAll('<', '&lt;')
-          .replaceAll('>', '&gt;')
-          .replaceAll('"', '&quot;')
-          .replaceAll("'", '&#39;');
-      }
-
-      function buildId(prefix) {
-        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
-          return `${prefix}-${window.crypto.randomUUID()}`;
-        }
-        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
-      }
-
-      function formatDate(isoString) {
-        const date = new Date(isoString);
-        if (isNaN(date.getTime())) {
-          return '';
-        }
-        return date.toLocaleString(undefined, {
-          year: 'numeric', month: 'short', day: 'numeric',
-          hour: '2-digit', minute: '2-digit'
+        eqStoryCards.forEach((story) => {
+          const haystack = [story.dataset.search || '', story.textContent || '']
+            .join(' ')
+            .toLowerCase();
+          const matches = !query || haystack.includes(query);
+          story.hidden = !matches;
+          if (matches) {
+            visibleCount += 1;
+          }
         });
-      }
 
-      // ── Auth & member ───────────────────────────────────────────────────────
-      function getCurrentMember() {
-        const stored = localStorage.getItem(MEMBER_KEY);
-        if (stored) {
-          try {
-            const parsed = JSON.parse(stored);
-            if (parsed && parsed.email) {
-              return parsed;
-            }
-          } catch (_) {
-            // fall through
-          }
-        }
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser) {
-          const user = window.netlifyIdentity.currentUser();
-          if (user && user.email) {
-            const member = {
-              id: user.id || user.email,
-              name: user.user_metadata?.full_name || user.email.split('@')[0],
-              email: user.email,
-              avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-            };
-            localStorage.setItem(MEMBER_KEY, JSON.stringify(member));
-            return member;
-          }
-        }
-        return null;
-      }
-
-      function isOwner(member) {
-        return Boolean(member && member.email && member.email.toLowerCase() === OWNER_EMAIL.toLowerCase());
-      }
-
-      function canEditStory(story, member) {
-        if (!member) {
-          return false;
-        }
-        return isOwner(member) || story.authorId === member.id || story.authorEmail === member.email;
-      }
-
-      // ── Roster lookup ───────────────────────────────────────────────────────
-      function getRosterInfoForEmail(email) {
-        if (!email || !window.TheChosenRosterData) {
-          return null;
-        }
-        const match = window.TheChosenRosterData.findAssignedCharacterByEmail(email);
-        if (!match) {
-          return null;
-        }
-        return {
-          characterName: match.characterName || '',
-          classes: match.classSummary || ''
-        };
-      }
-
-      // ── Storage ─────────────────────────────────────────────────────────────
-      function readStories() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(STORIES_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored;
-          }
-        } catch (_) {
-          // fall through
-        }
-        return [];
-      }
-
-      function writeStories(stories) {
-        localStorage.setItem(STORIES_KEY, JSON.stringify(stories));
-      }
-
-      // ── Forum cross-post ────────────────────────────────────────────────────
-      function postStoryToForum(story, summary) {
-        try {
-          const rawState = JSON.parse(localStorage.getItem(FORUM_KEY) || 'null');
-          if (!rawState || !rawState.public) {
-            return null;
-          }
-          const publicSpace = rawState.public;
-          if (!Array.isArray(publicSpace.categories) || !publicSpace.categories.length) {
-            return null;
-          }
-          // Use first public category (General)
-          const categoryId = publicSpace.categories[0].id;
-          const storyUrl = window.location.origin + '/stories/';
-          const thread = {
-            id: buildId('pub-thread'),
-            categoryId,
-            title: story.title,
-            body: `${summary}\n\n→ Read the full story on the Stories page: ${storyUrl}`,
-            authorName: story.authorName,
-            authorEmail: story.authorEmail,
-            authorAvatar: story.authorAvatar || '',
-            createdAt: Date.now(),
-            isPinned: false,
-            isLocked: false
-          };
-          if (!Array.isArray(publicSpace.threads)) {
-            publicSpace.threads = [];
-          }
-          publicSpace.threads.push(thread);
-          localStorage.setItem(FORUM_KEY, JSON.stringify(rawState));
-          return thread.id;
-        } catch (_) {
-          return null;
-        }
-      }
-
-      // ── Image handling ──────────────────────────────────────────────────────
-      function readFileAsDataUrl(file) {
-        return new Promise((resolve, reject) => {
-          const reader = new FileReader();
-          reader.onload = (event) => resolve(event.target.result);
-          reader.onerror = () => reject(new Error('Failed to read file.'));
-          reader.readAsDataURL(file);
-        });
-      }
-
-      function renderImagePreviews(dataUrls) {
-        if (!dataUrls.length) {
-          storyImagePreviews.hidden = true;
-          storyImagePreviews.innerHTML = '';
+        eqStoriesEmpty.hidden = visibleCount !== 0;
+        if (!query) {
+          eqStoriesCount.textContent = `Showing all ${eqStoryCards.length} stories.`;
           return;
         }
-        storyImagePreviews.hidden = false;
-        storyImagePreviews.innerHTML = dataUrls
-          .map(
-            (url, index) => `
-              <div class="story-img-preview">
-                <img src="${escapeHtml(url)}" alt="Story image ${index + 1}" />
-                <button type="button" class="story-img-remove" data-index="${index}" aria-label="Remove image ${index + 1}">✕</button>
-              </div>
-            `
-          )
-          .join('');
+        eqStoriesCount.textContent = `Found ${visibleCount} ${visibleCount === 1 ? 'story' : 'stories'} for “${query}.”`;
       }
 
-      storyImages.addEventListener('change', async () => {
-        const files = Array.from(storyImages.files).slice(0, 3 - pendingImageDataUrls.length);
-        const MAX_SIZE = 500 * 1024;
-        const oversized = files.filter((file) => file.size > MAX_SIZE);
-        if (oversized.length) {
-          storiesAuthNote.textContent = `One or more images exceed 500 KB. Please choose smaller files.`;
-          storyImages.value = '';
-          return;
-        }
-        storiesAuthNote.textContent = '';
-        const dataUrls = await Promise.all(files.map((file) => readFileAsDataUrl(file)));
-        pendingImageDataUrls = pendingImageDataUrls.concat(dataUrls).slice(0, 3);
-        storyImages.value = '';
-        renderImagePreviews(pendingImageDataUrls);
+      eqStoriesSearch.addEventListener('input', applyEqStoriesFilter);
+      eqStoriesClear.addEventListener('click', () => {
+        eqStoriesSearch.value = '';
+        applyEqStoriesFilter();
+        eqStoriesSearch.focus();
       });
-
-      storyImagePreviews.addEventListener('click', (event) => {
-        const removeButton = event.target.closest('[data-index]');
-        if (!removeButton) {
-          return;
-        }
-        const index = parseInt(removeButton.getAttribute('data-index'), 10);
-        pendingImageDataUrls.splice(index, 1);
-        renderImagePreviews(pendingImageDataUrls);
-      });
-
-      storyPostToForum.addEventListener('change', () => {
-        storySummaryWrap.hidden = !storyPostToForum.checked;
-        if (!storyPostToForum.checked) {
-          storyForumSummary.value = '';
-        }
-      });
-
-      // ── Form reset ──────────────────────────────────────────────────────────
-      function resetForm() {
-        editingStoryId = null;
-        pendingImageDataUrls = [];
-        storyForm.reset();
-        storyImagePreviews.hidden = true;
-        storyImagePreviews.innerHTML = '';
-        storySummaryWrap.hidden = true;
-        storySaveButton.textContent = 'Post Story';
-        storyCancelEdit.hidden = true;
-        storiesAuthNote.textContent = '';
-      }
-
-      // ── Render ──────────────────────────────────────────────────────────────
-      function renderMemberBadge(member) {
-        if (!member) {
-          footerMember.hidden = true;
-          footerMemberMenu.hidden = true;
-          return;
-        }
-        const displayName = member.name || member.email || 'Guild Member';
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ff7b7b&color=14070b`;
-        footerMemberAvatar.alt = `${displayName} avatar`;
-        footerMemberName.textContent = displayName;
-        footerMemberEmail.textContent = member.email || 'Netlify member';
-        footerMember.hidden = false;
-        footerMemberMenu.hidden = false;
-      }
-
-      function setNoticeForMember(member) {
-        if (!member) {
-          storiesAuthNote.textContent = 'Sign in to share your own story.';
-          storyForm.hidden = true;
-          return;
-        }
-        storyForm.hidden = false;
-        storiesAuthNote.textContent = isOwner(member)
-          ? 'Owner access: you can edit or delete any story.'
-          : 'Member access: you may post stories and edit your own.';
-      }
-
-      function renderStories() {
-        const member = getCurrentMember();
-        renderMemberBadge(member);
-        setNoticeForMember(member);
-
-        const query = storiesSearch.value.trim().toLowerCase();
-        let stories = readStories()
-          .slice()
-          .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
-
-        if (query) {
-          stories = stories.filter(
-            (story) =>
-              story.title.toLowerCase().includes(query) ||
-              story.body.toLowerCase().includes(query)
-          );
-        }
-
-        if (!stories.length) {
-          storiesArchiveRow.hidden = true;
-          storiesList.innerHTML = `<div class="panel empty-state"><p>${query ? 'No stories match your search.' : 'No tales have been recorded yet. Be the first to share one.'}</p></div>`;
-          return;
-        }
-
-        const visibleStories = showingAll ? stories : stories.slice(0, STORIES_PAGE_SIZE);
-        const hasMore = stories.length > STORIES_PAGE_SIZE;
-
-        storiesArchiveRow.hidden = showingAll || !hasMore || Boolean(query);
-        if (!showingAll && hasMore && !query) {
-          storiesShowAll.textContent = `Show All Stories (${stories.length - STORIES_PAGE_SIZE} more in archive)`;
-        }
-
-        storiesList.innerHTML = visibleStories
-          .map((story) => {
-            const rosterInfo = getRosterInfoForEmail(story.authorEmail);
-            const characterLine = rosterInfo
-              ? `<span class="story-card__character">${escapeHtml(rosterInfo.characterName)}${rosterInfo.classes ? ` · ${escapeHtml(rosterInfo.classes)}` : ''}</span>`
-              : '';
-
-            const imagesHtml = story.images && story.images.length
-              ? `<div class="story-card__images story-card__images--${story.images.length}">
-                  ${story.images.map((url, i) => `<img class="story-card__image" src="${escapeHtml(url)}" alt="Story image ${i + 1}" loading="lazy" />`).join('')}
-                </div>`
-              : '';
-
-            const actionButtons = canEditStory(story, member)
-              ? `<button class="resource-item__edit" type="button" data-edit-story="${escapeHtml(story.id)}">Edit</button>
-                 <button class="resource-item__delete" type="button" data-delete-story="${escapeHtml(story.id)}">Delete</button>`
-              : '';
-
-            return `
-              <article class="panel story-card" id="story-${escapeHtml(story.id)}">
-                <div class="story-card__header">
-                  <div class="story-card__header-main">
-                    <h2 class="story-card__title">${escapeHtml(story.title)}</h2>
-                    <div class="story-card__meta">
-                      <img class="story-card__avatar" src="${escapeHtml(story.authorAvatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(story.authorName || story.authorEmail || 'Member')}&background=ff7b7b&color=14070b`)}" alt="${escapeHtml(story.authorName || '')} avatar" />
-                      <span class="story-card__author">${escapeHtml(story.authorName || story.authorEmail || 'Member')}</span>
-                      ${characterLine}
-                      <time class="story-card__time" datetime="${escapeHtml(story.createdAt)}">${escapeHtml(formatDate(story.createdAt))}</time>
-                      ${story.updatedAt && story.updatedAt !== story.createdAt ? `<span class="story-card__edited">(edited ${escapeHtml(formatDate(story.updatedAt))})</span>` : ''}
-                    </div>
-                  </div>
-                  ${actionButtons ? `<div class="resource-item__actions">${actionButtons}</div>` : ''}
-                </div>
-                ${imagesHtml}
-                <p class="story-card__body">${escapeHtml(story.body)}</p>
-              </article>
-            `;
-          })
-          .join('');
-      }
-
-      // ── Populate form for editing ───────────────────────────────────────────
-      function populateFormForEdit(story) {
-        editingStoryId = story.id;
-        storyTitle.value = story.title;
-        storyBody.value = story.body;
-        pendingImageDataUrls = story.images ? story.images.slice() : [];
-        renderImagePreviews(pendingImageDataUrls);
-        storySaveButton.textContent = 'Update Story';
-        storyCancelEdit.hidden = false;
-        storyForm.scrollIntoView({ behavior: 'smooth', block: 'center' });
-      }
-
-      // ── Form submission ─────────────────────────────────────────────────────
-      storyForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const member = getCurrentMember();
-        if (!member) {
-          window.location.href = '/login/';
-          return;
-        }
-
-        const title = storyTitle.value.trim();
-        const body = storyBody.value.trim();
-        if (!title || !body) {
-          return;
-        }
-
-        const stories = readStories();
-
-        if (editingStoryId) {
-          const index = stories.findIndex((story) => story.id === editingStoryId);
-          if (index >= 0 && canEditStory(stories[index], member)) {
-            stories[index] = {
-              ...stories[index],
-              title,
-              body,
-              images: pendingImageDataUrls.slice(),
-              updatedAt: new Date().toISOString()
-            };
-          }
-        } else {
-          const shouldPostToForum = storyPostToForum.checked;
-          const summary = storyForumSummary.value.trim();
-
-          const newStory = {
-            id: buildId('story'),
-            title,
-            body,
-            images: pendingImageDataUrls.slice(),
-            authorId: member.id,
-            authorEmail: member.email,
-            authorName: member.name || member.email.split('@')[0],
-            authorAvatar: member.avatar || '',
-            createdAt: new Date().toISOString(),
-            updatedAt: new Date().toISOString(),
-            forumPostId: null
-          };
-
-          if (shouldPostToForum && summary) {
-            const forumPostId = postStoryToForum(newStory, summary);
-            if (forumPostId) {
-              newStory.forumPostId = forumPostId;
-            }
-          }
-
-          stories.push(newStory);
-        }
-
-        writeStories(stories);
-        resetForm();
-        showingAll = false;
-        renderStories();
-      });
-
-      // ── List interactions (edit/delete) ─────────────────────────────────────
-      storiesList.addEventListener('click', (event) => {
-        const member = getCurrentMember();
-        const editButton = event.target.closest('[data-edit-story]');
-        const deleteButton = event.target.closest('[data-delete-story]');
-        if (!editButton && !deleteButton) {
-          return;
-        }
-
-        const storyId = (editButton || deleteButton).getAttribute(
-          editButton ? 'data-edit-story' : 'data-delete-story'
-        );
-        const stories = readStories();
-        const story = stories.find((item) => item.id === storyId);
-        if (!story || !canEditStory(story, member)) {
-          return;
-        }
-
-        if (editButton) {
-          populateFormForEdit(story);
-          return;
-        }
-
-        const remaining = stories.filter((item) => item.id !== storyId);
-        writeStories(remaining);
-        if (editingStoryId === storyId) {
-          resetForm();
-        }
-        renderStories();
-      });
-
-      // ── Search ──────────────────────────────────────────────────────────────
-      let searchTimer = null;
-      storiesSearch.addEventListener('input', () => {
-        clearTimeout(searchTimer);
-        searchTimer = setTimeout(() => {
-          showingAll = false;
-          renderStories();
-        }, 250);
-      });
-
-      // ── Show all ────────────────────────────────────────────────────────────
-      storiesShowAll.addEventListener('click', () => {
-        showingAll = true;
-        storiesArchiveRow.hidden = true;
-        renderStories();
-      });
-
-      // ── Cancel edit ─────────────────────────────────────────────────────────
-      storyCancelEdit.addEventListener('click', () => {
-        resetForm();
-        renderStories();
-      });
-
-      // ── Footer auth ─────────────────────────────────────────────────────────
-      footerAccountButton.addEventListener('click', () => {
-        window.location.href = '/login/';
-      });
-
-      footerLogoutButton.addEventListener('click', () => {
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.logout();
-        }
-        localStorage.removeItem(MEMBER_KEY);
-        resetForm();
-        renderMemberBadge(null);
-        renderStories();
-      });
-
-      // ── Netlify Identity ────────────────────────────────────────────────────
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderStories());
-        window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(MEMBER_KEY);
-          resetForm();
-          renderMemberBadge(null);
-          renderStories();
-        });
-      }
-
-      // ── Initial render ──────────────────────────────────────────────────────
-      renderStories();
+      applyEqStoriesFilter();
     </script>
   </body>
 </html>
