@@ -1,0 +1,378 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Low Level Quests</title>
+    <meta
+      name="description"
+      content="Searchable list of popular original EverQuest pre-expansion quests for level 1 to 25 players."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .llq-intro {
+        margin-top: 1.2rem;
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 78ch;
+      }
+      .llq-search {
+        margin-top: 1.3rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .llq-search__input {
+        flex: 1;
+        min-width: 240px;
+        padding: 0.8rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+      }
+      .llq-search__input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .llq-search__clear {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        cursor: pointer;
+      }
+      .llq-search__clear:hover { color: var(--text); }
+      .llq-match-count {
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-width: 120px;
+      }
+      .llq-grid {
+        margin-top: 1.2rem;
+        display: grid;
+        gap: 0.9rem;
+      }
+      .llq-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 1rem 1.1rem;
+      }
+      .llq-card__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+      .llq-card__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1.02rem;
+      }
+      .llq-card__level {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+      }
+      .llq-card__meta,
+      .llq-card__desc {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+      .llq-card__link {
+        margin-top: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--text);
+        text-decoration: underline;
+        text-decoration-color: var(--border);
+        font-size: 0.87rem;
+      }
+      .llq-card__link:hover { color: var(--accent); }
+      .llq-note {
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.8rem 0.95rem;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .llq-hidden { display: none !important; }
+      .llq-empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link active" href="/low-level-quests/">Low Level Quests</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Classic Era Questing</p>
+        <h1 class="page-title">Low Level Quests</h1>
+        <p class="page-subtitle">
+          Popular original EverQuest pre-expansion quests for levels 1–25, curated from classic community references.
+        </p>
+        <p class="llq-intro">
+          Use this quick index to find high-value early quests for experience, faction, coin, and iconic starter rewards.
+          Search by quest name, zone, reward, or level range.
+        </p>
+
+        <div class="llq-search">
+          <input id="llqSearch" class="llq-search__input" type="search" placeholder="Search quest name, zone, reward, or level..." autocomplete="off" aria-label="Search low level quests" />
+          <button id="llqClear" class="llq-search__clear" type="button">Clear</button>
+          <span id="llqMatchCount" class="llq-match-count" aria-live="polite"></span>
+        </div>
+
+        <div class="llq-grid" id="llqGrid">
+          <article class="llq-card" data-search="bone chips turn in qeynos felwithe kaladim starter cloth armor experience">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Bone Chips Turn-Ins</h2>
+              <span class="llq-card__level">Level 1–12</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos / Kaladim / Felwithe</p>
+            <p class="llq-card__desc">Classic starter hand-in quest chain for early XP and faction using common low-level drops.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Bone+Chips+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="fire beetle eye newbie freeport qeynos starter quest">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Fire Beetle Eye Turn-Ins</h2>
+              <span class="llq-card__level">Level 1–10</span>
+            </div>
+            <p class="llq-card__meta">Zones: Freeport / Qeynos</p>
+            <p class="llq-card__desc">Fast starter quest often paired with leveling routes in city-adjacent newbie zones.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Fire+Beetle+Eye+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="spiderling silk qeynos turn in tailoring newbie quests">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Spiderling Silk Turn-Ins</h2>
+              <span class="llq-card__level">Level 1–12</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos Hills / Qeynos</p>
+            <p class="llq-card__desc">A common low-level hand-in that supports both leveling and early tradeskill stockpiling.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Spiderling+Silk+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="gnoll fang blackburrow captain tillin qeynos popular exp quest">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Gnoll Fang Quest</h2>
+              <span class="llq-card__level">Level 5–16</span>
+            </div>
+            <p class="llq-card__meta">Zones: Blackburrow / Qeynos</p>
+            <p class="llq-card__desc">One of the most famous classic turn-in loops for reliable XP and faction while farming gnolls.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Gnoll+Fang+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="bandit sashes qeynos hills west karana captain tillin bronze weapons exp">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Bandit Sashes</h2>
+              <span class="llq-card__level">Level 14–25</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos Hills / West Karana</p>
+            <p class="llq-card__desc">High-traffic XP turn-in for low-to-mid levels with useful coin and occasional weapon rewards.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Bandit+Sashes" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="deathfist slashed belts freeport commonlands militia orc belts">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Deathfist Slashed Belts</h2>
+              <span class="llq-card__level">Level 8–20</span>
+            </div>
+            <p class="llq-card__meta">Zones: East Commonlands / Freeport</p>
+            <p class="llq-card__desc">Classic Freeport belt hand-in that doubles as strong faction and cash progression.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Deathfist+Slashed+Belts" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="crushbone belts kaladim felwithe faydark dwarf elf popular turn in">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Crushbone Belts</h2>
+              <span class="llq-card__level">Level 5–15</span>
+            </div>
+            <p class="llq-card__meta">Zones: Crushbone / Kaladim</p>
+            <p class="llq-card__desc">Extremely popular early-game quest route for dwarves and nearby good-aligned players.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Crushbone+Belts" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="crushbone shoulderpads kaladim orc pawn legionnaire faction exp">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Crushbone Shoulderpads</h2>
+              <span class="llq-card__level">Level 8–18</span>
+            </div>
+            <p class="llq-card__meta">Zones: Crushbone / Kaladim</p>
+            <p class="llq-card__desc">A follow-up classic Crushbone turn-in path often done alongside belt farming.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Crushbone+Shoulderpads" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="greater lightstone gypsy north karana classic platinum turn in">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Greater Lightstone Turn-Ins</h2>
+              <span class="llq-card__level">Level 15–25</span>
+            </div>
+            <p class="llq-card__meta">Zones: North Karana / South Karana</p>
+            <p class="llq-card__desc">A staple classic cash-and-XP quest, especially popular for funding spells and gear upgrades.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Greater+Lightstone+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="rabid wolves qeynos rabies quest surefall glade druid ring">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Rabid Wolves</h2>
+              <span class="llq-card__level">Level 10–20</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos Hills / Surefall Glade</p>
+            <p class="llq-card__desc">Classic anti-rabies questline valued for XP bursts and strong early utility rewards.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Rabid+Wolves+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="rabid grizzly qeynos hills surefall quest line experience">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Rabid Grizzlies</h2>
+              <span class="llq-card__level">Level 12–22</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos Hills / Surefall Glade</p>
+            <p class="llq-card__desc">Frequently paired with Rabid Wolves for efficient leveling and faction progression in the area.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Rabid+Grizzlies+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="shiny brass shield qeynos classic paladin warrior tank reward">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Shiny Brass Shield</h2>
+              <span class="llq-card__level">Level 18–25</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos and surrounding regions</p>
+            <p class="llq-card__desc">Iconic classic equipment questline with strong recognition among tank players.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Shiny+Brass+Shield" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="shiny brass halberd qeynos knight weapon quest">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Shiny Brass Halberd</h2>
+              <span class="llq-card__level">Level 18–25</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos and surrounding regions</p>
+            <p class="llq-card__desc">Popular classic weapon quest that remains a known milestone for early melee progression.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Shiny+Brass+Halberd" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="testament of vanear qeynos paladin quest level 20">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Testament of Vanear</h2>
+              <span class="llq-card__level">Level 20–25</span>
+            </div>
+            <p class="llq-card__meta">Zones: Qeynos region</p>
+            <p class="llq-card__desc">A widely referenced classic paladin questline with meaningful lore and progression steps.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Testament+of+Vanear" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="stein of moggok oggok enchanter charisma item classic">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Stein of Moggok</h2>
+              <span class="llq-card__level">Level 20–25</span>
+            </div>
+            <p class="llq-card__meta">Zones: Oggok / Norrath travel route</p>
+            <p class="llq-card__desc">One of the most famous classic utility item quests, especially for charisma-focused characters.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Stein+of+Moggok" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <div id="llqEmpty" class="llq-empty llq-hidden" role="status">
+            No quests matched your search. Try a different term.
+          </div>
+        </div>
+
+        <p class="llq-note">
+          These links point to classic community references on the public web; verify details against your server ruleset
+          before committing to a quest route.
+        </p>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
+      </footer>
+    </div>
+
+    <script>
+      const llqSearch = document.getElementById('llqSearch');
+      const llqClear = document.getElementById('llqClear');
+      const llqMatchCount = document.getElementById('llqMatchCount');
+      const llqEmpty = document.getElementById('llqEmpty');
+      const llqCards = Array.from(document.querySelectorAll('.llq-card'));
+
+      function runQuestSearch() {
+        const query = llqSearch.value.trim().toLowerCase();
+        let visible = 0;
+
+        llqCards.forEach((card) => {
+          const haystack = `${card.dataset.search || ''} ${card.textContent}`.toLowerCase();
+          const show = !query || haystack.includes(query);
+          card.classList.toggle('llq-hidden', !show);
+          if (show) visible += 1;
+        });
+
+        llqEmpty.classList.toggle('llq-hidden', visible > 0);
+        llqMatchCount.textContent = query
+          ? `${visible} quest${visible === 1 ? '' : 's'} shown`
+          : `${llqCards.length} quests available`;
+      }
+
+      llqSearch.addEventListener('input', runQuestSearch);
+      llqClear.addEventListener('click', () => {
+        llqSearch.value = '';
+        runQuestSearch();
+      });
+
+      runQuestSearch();
+    </script>
+  </body>
+</html>
