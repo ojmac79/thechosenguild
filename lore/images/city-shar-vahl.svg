@@ -1,0 +1,116 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#040410"/>
+      <stop offset="100%" stop-color="#080818"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)"/>
+    </filter>
+  </defs>
+<rect width="600" height="280" fill="url(#bg)"/>
+  <!-- lunar landscape -->
+  <g fill="#1a1830" opacity="0.5">
+    <circle cx="100" cy="210" r="45"/>
+    <circle cx="380" cy="220" r="38"/>
+    <circle cx="530" cy="200" r="30"/>
+  </g>
+    <g transform="translate(300,160)" fill="#2a2840" opacity="0.8">
+    <!-- main keep -->
+    <rect x="-60" y="-90" width="120" height="110"/>
+    <!-- battlements -->
+    <rect x="-60" y="-105" width="20" height="18"/>
+    <rect x="-30" y="-105" width="20" height="18"/>
+    <rect x="0"   y="-105" width="20" height="18"/>
+    <rect x="30"  y="-105" width="20" height="18"/>
+    <!-- flanking towers -->
+    <rect x="-105" y="-75" width="45" height="95"/>
+    <rect x="60"   y="-75" width="45" height="95"/>
+    <!-- tower battlements left -->
+    <rect x="-105" y="-90" width="14" height="18"/>
+    <rect x="-83"  y="-90" width="14" height="18"/>
+    <!-- tower battlements right -->
+    <rect x="60"   y="-90" width="14" height="18"/>
+    <rect x="82"   y="-90" width="14" height="18"/>
+    <!-- gate -->
+    <path d="M-22,20 Q-22,-15 0,-15 Q22,-15 22,20 Z" fill="#2a2840" opacity="0.3"/>
+    <!-- windows -->
+    <path d="M-20,-60 Q-20,-75 -10,-75 Q0,-75 0,-60 Z" fill="gold" opacity="0.4"/>
+    <path d="M10,-60 Q10,-75 20,-75 Q30,-75 30,-60 Z" fill="gold" opacity="0.4"/>
+  </g>
+  <!-- crescent moon -->
+  <circle cx="80" cy="50" r="45" fill="#e0d080" opacity="0.3"/>
+  <circle cx="98" cy="42" r="40" fill="#040410" opacity="0.95"/>
+  <circle cx="474" cy="191" r="1" fill="white" opacity="0.40"/>
+  <circle cx="6" cy="173" r="1.5" fill="white" opacity="0.62"/>
+  <circle cx="82" cy="171" r="1.5" fill="white" opacity="0.96"/>
+  <circle cx="41" cy="194" r="0.5" fill="white" opacity="0.79"/>
+  <circle cx="462" cy="216" r="0.5" fill="white" opacity="0.42"/>
+  <circle cx="52" cy="56" r="0.5" fill="white" opacity="0.65"/>
+  <circle cx="64" cy="196" r="0.5" fill="white" opacity="0.94"/>
+  <circle cx="209" cy="114" r="1" fill="white" opacity="0.92"/>
+  <circle cx="273" cy="107" r="1" fill="white" opacity="0.50"/>
+  <circle cx="44" cy="102" r="0.5" fill="white" opacity="0.92"/>
+  <circle cx="56" cy="193" r="1" fill="white" opacity="0.40"/>
+  <circle cx="242" cy="217" r="0.5" fill="white" opacity="0.97"/>
+  <circle cx="3" cy="62" r="1.5" fill="white" opacity="0.44"/>
+  <circle cx="207" cy="169" r="0.5" fill="white" opacity="0.92"/>
+  <circle cx="136" cy="276" r="0.5" fill="white" opacity="0.65"/>
+  <circle cx="586" cy="254" r="1.5" fill="white" opacity="0.94"/>
+  <circle cx="430" cy="35" r="1" fill="white" opacity="0.43"/>
+  <circle cx="95" cy="74" r="0.5" fill="white" opacity="0.96"/>
+  <circle cx="42" cy="27" r="1" fill="white" opacity="0.69"/>
+  <circle cx="152" cy="137" r="1.5" fill="white" opacity="1.00"/>
+  <circle cx="124" cy="206" r="0.5" fill="white" opacity="0.41"/>
+  <circle cx="517" cy="22" r="1" fill="white" opacity="0.89"/>
+  <circle cx="534" cy="44" r="1" fill="white" opacity="0.38"/>
+  <circle cx="598" cy="187" r="1" fill="white" opacity="0.45"/>
+  <circle cx="203" cy="9" r="1" fill="white" opacity="0.86"/>
+  <circle cx="336" cy="0" r="1" fill="white" opacity="0.38"/>
+  <circle cx="227" cy="227" r="1" fill="white" opacity="0.53"/>
+  <circle cx="90" cy="157" r="1" fill="white" opacity="0.37"/>
+  <circle cx="56" cy="13" r="1" fill="white" opacity="0.85"/>
+  <circle cx="438" cy="254" r="1" fill="white" opacity="0.80"/>
+  <circle cx="254" cy="33" r="1" fill="white" opacity="0.75"/>
+  <circle cx="98" cy="205" r="1.5" fill="white" opacity="0.56"/>
+  <circle cx="573" cy="189" r="0.5" fill="white" opacity="0.77"/>
+  <circle cx="175" cy="132" r="0.5" fill="white" opacity="0.34"/>
+  <circle cx="176" cy="134" r="0.5" fill="white" opacity="0.99"/>
+  <circle cx="151" cy="6" r="0.5" fill="white" opacity="0.34"/>
+  <circle cx="213" cy="199" r="1" fill="white" opacity="0.73"/>
+  <circle cx="363" cy="145" r="0.5" fill="white" opacity="0.64"/>
+  <circle cx="284" cy="70" r="0.5" fill="white" opacity="0.82"/>
+  <circle cx="303" cy="60" r="0.5" fill="white" opacity="0.59"/>
+  <circle cx="145" cy="196" r="1.5" fill="white" opacity="0.92"/>
+  <circle cx="173" cy="140" r="1.5" fill="white" opacity="0.92"/>
+  <circle cx="506" cy="178" r="0.5" fill="white" opacity="0.95"/>
+  <circle cx="283" cy="270" r="0.5" fill="white" opacity="0.42"/>
+  <circle cx="86" cy="83" r="0.5" fill="white" opacity="0.90"/>
+  <circle cx="207" cy="90" r="1" fill="white" opacity="0.62"/>
+  <circle cx="572" cy="279" r="1" fill="white" opacity="0.36"/>
+  <circle cx="561" cy="246" r="1.5" fill="white" opacity="0.96"/>
+  <circle cx="548" cy="34" r="0.5" fill="white" opacity="0.71"/>
+  <circle cx="599" cy="223" r="1.5" fill="white" opacity="0.52"/>
+  <rect x="6" y="6" width="588" height="268" fill="none" stroke="#e0c060" stroke-width="1" stroke-opacity="0.45" rx="6"/>
+  <rect x="10" y="10" width="580" height="260" fill="none" stroke="#e0c060" stroke-width="0.5" stroke-opacity="0.23" rx="4"/>
+  <g stroke="#e0c060" stroke-width="1.8" fill="none" stroke-opacity="0.7">
+    <path d="M22,22 L22,40 M22,22 L40,22"/>
+    <path d="M578,22 L578,40 M578,22 L560,22"/>
+    <path d="M22,258 L22,240 M22,258 L40,258"/>
+    <path d="M578,258 L578,240 M578,258 L560,258"/>
+  </g>
+  <line x1="80" y1="226" x2="520" y2="226" stroke="#e0c060" stroke-width="0.6" stroke-opacity="0.4"/>
+  <text x="300" y="240" font-family="Georgia,serif" font-size="20" font-weight="bold"
+        fill="#e0c060" text-anchor="middle" filter="url(#glow)">Shar Vahl</text>
+  <text x="300" y="260" font-family="Georgia,serif" font-size="12"
+        fill="#e0c060" text-anchor="middle" opacity="0.65">City of the Vah Shir · Luclin</text>
+
+</svg>
