@@ -1,4 +1,4 @@
-const { getStore } = require('@netlify/blobs');
+const { connectLambda, getStore } = require('@netlify/blobs');
 
 const OWNER_EMAIL = 'ojmac79@gmail.com';
 const STORE_NAME = 'the-chosen-content';
@@ -87,6 +87,7 @@ exports.handler = async function handler(event, context) {
     return json(400, { error: 'Invalid scope.' });
   }
 
+  connectLambda(event);
   const store = getStore(STORE_NAME);
 
   if (event.httpMethod === 'GET') {

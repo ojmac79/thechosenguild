@@ -2,7 +2,7 @@
 
 The Chosen Guild
 
-Welcome to the repository for **The Chosen Guild**, hosted at thechosenguild.netlify.app. This project is optimized for development inside GitHub Codespaces.
+Welcome to the repository for **The Chosen Guild**, hosted at https://thechosenguild.com. This project is optimized for development inside GitHub Codespaces.
 
 ## Deployment
 
@@ -14,6 +14,8 @@ This repository is set up as a static site and can be deployed to Netlify direct
 2. Set the build command to an empty value or leave it blank.
 3. Set the publish directory to the repository root.
 4. Deploy the main branch.
+
+The apex domain `https://thechosenguild.com` is canonical. Requests to `https://www.thechosenguild.com` redirect to the same path on the apex domain so pages and same-origin function requests use one consistent host.
 
 ### Owner usage and billing dashboard
 

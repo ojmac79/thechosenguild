@@ -1,4 +1,4 @@
-const { getStore } = require('@netlify/blobs');
+const { connectLambda, getStore } = require('@netlify/blobs');
 
 const OWNER_EMAIL = 'ojmac79@gmail.com';
 const STORE_NAME = 'the-chosen-content';
@@ -157,6 +157,7 @@ async function mirrorToPublicForum(store, post) {
 }
 
 exports.handler = async function handler(event, context) {
+  connectLambda(event);
   const store = getStore(STORE_NAME);
 
   if (event.httpMethod === 'GET') {
