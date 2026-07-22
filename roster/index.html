@@ -3,7 +3,7 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Chosen — Roster</title>
+    <title>The Chosen - Roster</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -11,6 +11,50 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .roster-tools,
+      .roster-owner {
+        display: grid;
+        gap: 1rem;
+        margin-top: 1.25rem;
+      }
+      .roster-tools__grid,
+      .roster-form__grid {
+        display: grid;
+        gap: 0.9rem;
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+      }
+      .roster-table-wrap { margin-top: 1.25rem; overflow-x: auto; }
+      .roster-table {
+        width: 100%;
+        min-width: 780px;
+        border-collapse: collapse;
+      }
+      .roster-table th,
+      .roster-table td {
+        padding: 0.75rem 0.8rem;
+        border-bottom: 1px solid var(--border);
+        text-align: left;
+      }
+      .roster-table th {
+        font-family: 'Cinzel', serif;
+        letter-spacing: 0.04em;
+        font-size: 0.92rem;
+      }
+      .roster-table td:nth-child(2) { text-align: center; width: 78px; }
+      .roster-table tr:hover td { background: rgba(255, 255, 255, 0.03); }
+      .roster-rank { white-space: nowrap; }
+      .roster-actions {
+        display: inline-flex;
+        gap: 0.5rem;
+        flex-wrap: wrap;
+      }
+      .roster-owner-note { margin: 0; color: var(--muted); }
+      .roster-empty { margin: 0; color: var(--muted); }
+      @media (max-width: 900px) {
+        .roster-table { min-width: 640px; }
+      }
+    </style>
   </head>
   <body>
     <div class="chosen-shell">
@@ -42,137 +86,166 @@
 
       <main class="page">
         <p class="hero__eyebrow">The Muster Roll</p>
-        <h1 class="page-title">Official Guild Roster</h1>
-        <p class="page-subtitle">
-          Live roster data is pulled from the official Daybreak feed for The Chosen on Qeynos, cached locally,
-          and refreshed once every day.
-        </p>
+        <h1 class="page-title">Guild Roster</h1>
+        <p class="page-subtitle">Public roster view with owner-managed updates shared across all users.</p>
 
-        <section class="guild-metrics" aria-label="Roster summary">
-          <article class="panel guild-metric">
-            <p class="guild-metric__label">Characters</p>
-            <p class="guild-metric__value" id="metricRosterTotal">0</p>
-          </article>
-          <article class="panel guild-metric">
-            <p class="guild-metric__label">Assigned Accounts</p>
-            <p class="guild-metric__value" id="metricRosterAssigned">0</p>
-          </article>
-          <article class="panel guild-metric">
-            <p class="guild-metric__label">Unassigned</p>
-            <p class="guild-metric__value" id="metricRosterUnassigned">0</p>
-          </article>
-        </section>
-
-        <section class="panel roster-sync" aria-label="Roster sync status">
-          <div class="roster-sync__top">
-            <div>
-              <h2 class="resource-section__title">Roster Sync</h2>
-              <p class="forum2-note">
-                Source: <a class="site-footer__support" href="https://census.daybreakgames.com/" target="_blank" rel="noopener noreferrer" aria-label="Visit Daybreak Census API documentation">Daybreak Census</a>
-                &middot; Guild: The Chosen &middot; World: Qeynos
-              </p>
-            </div>
-            <button class="btn-primary" type="button" id="rosterRefreshButton">Refresh Now</button>
-          </div>
-          <div class="roster-sync__meta">
-            <span class="forum-badge" id="rosterSyncBadge">Idle</span>
-            <span id="rosterLastSync">Last sync: never</span>
-            <span id="rosterNextSync">Next automatic poll: on load after 24 hours</span>
-          </div>
-          <p id="rosterSyncNotice" class="resource-notice" aria-live="polite"></p>
-          <p id="rosterAssignmentNotice" class="resource-notice" aria-live="polite"></p>
-        </section>
-
-        <section class="panel roster-toolbar" aria-label="Roster filters">
-          <div class="roster-toolbar__top">
-            <div>
-              <h2 class="resource-section__title">Roster Directory</h2>
-              <p class="forum2-note">Search the official roster and, as guild leader, map characters to verified Netlify accounts.</p>
-            </div>
-          </div>
-          <div class="guild-filter-grid roster-filter-grid">
+        <section class="panel roster-tools" aria-label="Roster search and sorting">
+          <div class="roster-tools__grid">
             <label class="resource-field">
-              <span>Search Characters</span>
-              <input id="rosterSearch" type="search" maxlength="120" placeholder="Search by name, rank, class, or level" />
-            </label>
-            <label class="resource-field">
-              <span>Assignment</span>
-              <select id="rosterAssignmentFilter">
-                <option value="all">All characters</option>
-                <option value="assigned">Assigned only</option>
-                <option value="unassigned">Unassigned only</option>
-              </select>
+              <span>Search</span>
+              <input id="rosterSearch" type="search" maxlength="120" placeholder="Search by name, class, rank, or date" />
             </label>
             <label class="resource-field">
               <span>Sort</span>
               <select id="rosterSort">
-                <option value="name">Character name</option>
+                <option value="rank">Rank, then name</option>
+                <option value="name">Name</option>
                 <option value="level-desc">Highest level</option>
-                <option value="level-asc">Lowest level</option>
+                <option value="last-on-desc">Most recent last on</option>
               </select>
             </label>
           </div>
+          <p id="rosterCount" class="roster-owner-note"></p>
         </section>
 
-        <section id="rosterOwnerPanel" class="panel roster-owner-panel" hidden>
-          <p class="hero__eyebrow">Guild Leader Tools</p>
-          <h2 class="resource-section__title">Netlify Character Assignments</h2>
-          <p class="forum2-note">Use the assignment control on each character card to connect a roster entry to a verified Netlify account.</p>
+        <section id="rosterOwnerPanel" class="panel roster-owner" aria-label="Owner roster editor" hidden>
+          <h2 class="resource-section__title">Roster Manager</h2>
+          <p class="roster-owner-note">
+            Owner-only controls. Changes are persistent and public across the site.
+          </p>
+          <p id="rosterEditorNotice" class="resource-notice" aria-live="polite"></p>
+          <form id="rosterForm" class="roster-form">
+            <div class="roster-form__grid">
+              <label class="resource-field">
+                <span>Name</span>
+                <input id="rosterName" type="text" maxlength="80" required />
+              </label>
+              <label class="resource-field">
+                <span>Level</span>
+                <input id="rosterLevel" type="number" min="1" max="125" required />
+              </label>
+              <label class="resource-field">
+                <span>Class</span>
+                <input id="rosterClass" type="text" maxlength="80" placeholder="PAL / DRU / BRD" required />
+              </label>
+              <label class="resource-field">
+                <span>Rank</span>
+                <input id="rosterRank" type="text" maxlength="50" required />
+              </label>
+              <label class="resource-field">
+                <span>Last On</span>
+                <input id="rosterLastOn" type="date" required />
+              </label>
+            </div>
+            <div class="resource-form__actions">
+              <button id="rosterSaveButton" class="btn-primary" type="submit">Add Entry</button>
+              <button id="rosterCancelEdit" class="btn-secondary" type="button" hidden>Cancel Edit</button>
+            </div>
+          </form>
         </section>
 
-        <section class="roster-grid" aria-label="Roster entries">
-          <div id="rosterList" class="guild-directory-list"></div>
+        <section class="panel roster-table-wrap" aria-label="Guild roster table">
+          <table class="roster-table">
+            <thead>
+              <tr>
+                <th>Name</th>
+                <th>Level</th>
+                <th>Class</th>
+                <th>Rank</th>
+                <th>Last On</th>
+                <th id="actionsHeader" hidden>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="rosterTableBody"></tbody>
+          </table>
+          <p id="rosterEmpty" class="roster-empty" hidden>No roster entries match your current filters.</p>
         </section>
       </main>
 
       <footer class="site-footer">
-        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
-        <div id="footerMember" class="site-footer__member" hidden>
-          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
-          <div>
-            <div id="footerMemberName" class="site-footer__member-name"></div>
-            <div id="footerMemberEmail" class="site-footer__member-email"></div>
-          </div>
-        </div>
-        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
-          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
-          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
-        </div>
+        <p>The Chosen - forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
         <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
       </footer>
     </div>
 
+    <script src="../scripts/persistent-store.js"></script>
     <script src="../scripts/site-decor.js"></script>
     <script src="../scripts/guild-access.js"></script>
-    <script src="../scripts/roster-data.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const guildAccess = window.TheChosenGuildAccess;
-      const rosterData = window.TheChosenRosterData;
+      const OWNER_EMAIL = 'ojmac79@gmail.com';
+      const ROSTER_STORAGE_KEY = 'theChosenRosterManagedV1';
+      const RANK_ORDER = { Leader: 0, 'Senior Officer': 1, Officer: 2, Recruit: 3 };
+      const DEFAULT_ROSTER = [
+        { id: 'roster-1', name: 'Karma', level: 50, className: 'SHD / MNK / SHM', rank: 'Leader', lastOn: '2026-07-21' },
+        { id: 'roster-2', name: 'Evorie', level: 10, className: 'NEC / MAG / ENC', rank: 'Senior Officer', lastOn: '2026-07-21' },
+        { id: 'roster-3', name: 'Cone', level: 12, className: 'CLR / MNK / BER', rank: 'Officer', lastOn: '2026-07-12' },
+        { id: 'roster-4', name: 'Corsair', level: 50, className: 'WAR / CLR / BRD', rank: 'Officer', lastOn: '2026-07-21' },
+        { id: 'roster-5', name: 'Akira', level: 11, className: 'DRU / MNK / ENC', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-6', name: 'Barmy', level: 11, className: 'DRU / MNK / NEC', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-7', name: 'Bralstorm', level: 11, className: 'BRD / ROG / SHM', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-8', name: 'Darkmoon', level: 23, className: 'MNK / SHM / BST', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-9', name: 'Fieild', level: 12, className: 'PAL / DRU / BER', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-10', name: 'Foran', level: 15, className: 'PAL / DRU / ENC', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-11', name: 'Goodan', level: 7, className: 'MAG / ENC', rank: 'Recruit', lastOn: '2026-07-10' },
+        { id: 'roster-12', name: 'Gorlak', level: 21, className: 'DRU / BRD / BST', rank: 'Recruit', lastOn: '2026-07-19' },
+        { id: 'roster-13', name: 'Grixis', level: 11, className: 'CLR / MNK / ROG', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-14', name: 'Heriale', level: 12, className: 'SHD / BRD / BER', rank: 'Recruit', lastOn: '2026-07-18' },
+        { id: 'roster-15', name: 'Hoppyhappyfrogs', level: 2, className: 'NEC / ENC', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-16', name: 'Jamez', level: 23, className: 'PAL / DRU / NEC', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-17', name: 'Kiternia', level: 10, className: 'WAR / CLR / MNK', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-18', name: 'Kuphive', level: 39, className: 'PAL / ENC / BER', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-19', name: 'Lorant', level: 38, className: 'CLR / RNG / ENC', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-20', name: 'Mahulu', level: 5, className: 'SHD / BRD', rank: 'Recruit', lastOn: '2026-07-15' },
+        { id: 'roster-21', name: 'Mara', level: 48, className: 'DRU / MNK / MAG', rank: 'Recruit', lastOn: '2026-07-18' },
+        { id: 'roster-22', name: 'Origroodbnok', level: 15, className: 'SHD / SHM / NEC', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-23', name: 'Rial', level: 22, className: 'CLR / RNG / ENC', rank: 'Recruit', lastOn: '2026-07-19' },
+        { id: 'roster-24', name: 'Sagoth', level: 10, className: 'PAL / DRU / BRD', rank: 'Recruit', lastOn: '2026-07-15' },
+        { id: 'roster-25', name: 'Seething', level: 15, className: 'SHD / BRD / SHM', rank: 'Recruit', lastOn: '2026-07-14' },
+        { id: 'roster-26', name: 'Silverline', level: 26, className: 'DRU / BRD / ROG', rank: 'Recruit', lastOn: '2026-07-14' },
+        { id: 'roster-27', name: 'Skypilot', level: 11, className: 'DRU / SHM', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-28', name: 'Teaana', level: 32, className: 'PAL / MNK / SHM', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-29', name: 'Uggah', level: 26, className: 'NEC / BER', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-30', name: 'Ultima', level: 10, className: 'PAL / DRU / BRD', rank: 'Recruit', lastOn: '2026-07-19' },
+        { id: 'roster-31', name: 'Vaelkyrie', level: 11, className: 'SHD / DRU / BRD', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-32', name: 'Volux', level: 11, className: 'RNG / ROG / NEC', rank: 'Recruit', lastOn: '2026-07-21' },
+        { id: 'roster-33', name: 'Warcrimesarebad', level: 34, className: 'PAL / SHM / BER', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-34', name: 'Woses', level: 16, className: 'SHD / ROG / SHM', rank: 'Recruit', lastOn: '2026-07-20' },
+        { id: 'roster-35', name: 'Xilo', level: 18, className: 'PAL / ROG / ENC', rank: 'Recruit', lastOn: '2026-07-20' }
+      ];
 
-      const rosterList = document.getElementById('rosterList');
       const rosterSearch = document.getElementById('rosterSearch');
-      const rosterAssignmentFilter = document.getElementById('rosterAssignmentFilter');
       const rosterSort = document.getElementById('rosterSort');
-      const rosterRefreshButton = document.getElementById('rosterRefreshButton');
-      const rosterSyncBadge = document.getElementById('rosterSyncBadge');
-      const rosterLastSync = document.getElementById('rosterLastSync');
-      const rosterNextSync = document.getElementById('rosterNextSync');
-      const rosterSyncNotice = document.getElementById('rosterSyncNotice');
-      const rosterAssignmentNotice = document.getElementById('rosterAssignmentNotice');
+      const rosterCount = document.getElementById('rosterCount');
+      const rosterTableBody = document.getElementById('rosterTableBody');
+      const rosterEmpty = document.getElementById('rosterEmpty');
       const rosterOwnerPanel = document.getElementById('rosterOwnerPanel');
+      const actionsHeader = document.getElementById('actionsHeader');
+      const rosterEditorNotice = document.getElementById('rosterEditorNotice');
+      const rosterForm = document.getElementById('rosterForm');
+      const rosterName = document.getElementById('rosterName');
+      const rosterLevel = document.getElementById('rosterLevel');
+      const rosterClass = document.getElementById('rosterClass');
+      const rosterRank = document.getElementById('rosterRank');
+      const rosterLastOn = document.getElementById('rosterLastOn');
+      const rosterSaveButton = document.getElementById('rosterSaveButton');
+      const rosterCancelEdit = document.getElementById('rosterCancelEdit');
 
-      const footerMember = document.getElementById('footerMember');
-      const footerMemberMenu = document.getElementById('footerMemberMenu');
-      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
-      const footerMemberName = document.getElementById('footerMemberName');
-      const footerMemberEmail = document.getElementById('footerMemberEmail');
-      const footerAccountButton = document.getElementById('footerAccountButton');
-      const footerLogoutButton = document.getElementById('footerLogoutButton');
+      const state = {
+        entries: [],
+        query: '',
+        sort: 'rank',
+        editingId: null,
+        owner: false
+      };
 
-      function escapeHtml(text) {
-        return String(text)
+      function normalizeEmail(value) {
+        return String(value || '').trim().toLowerCase();
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
           .replaceAll('&', '&amp;')
           .replaceAll('<', '&lt;')
           .replaceAll('>', '&gt;')
@@ -180,330 +253,333 @@
           .replaceAll("'", '&#39;');
       }
 
-      function formatDate(value) {
-        if (!value) {
-          return 'never';
+      function normalizeClassName(value) {
+        return String(value || '')
+          .split('/')
+          .map((part) => part.trim().toUpperCase())
+          .filter(Boolean)
+          .join(' / ');
+      }
+
+      function normalizeRank(value) {
+        const trimmed = String(value || '').trim();
+        if (!trimmed) {
+          return 'Recruit';
         }
-        const date = new Date(value);
-        if (Number.isNaN(date.getTime())) {
-          return 'unknown';
+        if (trimmed.toLowerCase() === 'leader') {
+          return 'Leader';
         }
-        return date.toLocaleString();
-      }
-
-      function getCurrentMember() {
-        return guildAccess.getCurrentMember();
-      }
-
-      function getPermissions(member) {
-        return guildAccess.getPermissions(member);
-      }
-
-      function isSameEmail(left, right) {
-        return rosterData.normalizeEmail(left) === rosterData.normalizeEmail(right);
-      }
-
-      function renderMemberBadge(member) {
-        if (!member) {
-          footerMember.hidden = true;
-          footerMemberMenu.hidden = true;
-          return;
+        if (trimmed.toLowerCase() === 'senior officer') {
+          return 'Senior Officer';
         }
-
-        const displayName = member.name || member.email || 'Guild Member';
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ff7b7b&color=14070b`;
-        footerMemberAvatar.alt = `${displayName} avatar`;
-        footerMemberName.textContent = displayName;
-        footerMemberEmail.textContent = member.email || 'Netlify member';
-        footerMember.hidden = false;
-        footerMemberMenu.hidden = false;
-      }
-
-      function setNotice(element, message, type) {
-        element.textContent = message;
-        element.className = type ? `resource-notice resource-notice--${type}` : 'resource-notice';
-      }
-
-      function renderMetrics(entries) {
-        const assigned = entries.filter((entry) => entry.assignedEmail).length;
-        document.getElementById('metricRosterTotal').textContent = entries.length;
-        document.getElementById('metricRosterAssigned').textContent = assigned;
-        document.getElementById('metricRosterUnassigned').textContent = entries.length - assigned;
-      }
-
-      function renderSync(snapshot) {
-        const source = snapshot.source || {};
-        const status = source.status || 'idle';
-        rosterSyncBadge.textContent = status === 'success' ? 'Synced' : status === 'error' ? 'Source Unavailable' : 'Idle';
-        rosterSyncBadge.className = status === 'success' ? 'forum-badge forum-badge--member' : 'forum-badge';
-        rosterLastSync.textContent = `Last sync: ${formatDate(source.fetchedAt)}`;
-        rosterNextSync.textContent = `Next automatic poll: ${new Date(Date.now() + rosterData.SYNC_INTERVAL_MS).toLocaleString()}`;
-
-        if (status === 'error') {
-          const fallbackCount = snapshot.entries.length;
-          setNotice(
-            rosterSyncNotice,
-            fallbackCount
-              ? `Live sync failed. Showing the last saved roster snapshot (${fallbackCount} characters). ${source.error || ''}`.trim()
-              : `Live sync failed and no official roster snapshot is cached yet. ${source.error || ''}`.trim(),
-            'error'
-          );
-          return;
+        if (trimmed.toLowerCase() === 'officer') {
+          return 'Officer';
         }
-
-        if (snapshot.entries.length) {
-          setNotice(
-            rosterSyncNotice,
-            `Loaded ${snapshot.entries.length} roster entries from ${source.provider || 'Daybreak Census'}.`,
-            'success'
-          );
-          return;
+        if (trimmed.toLowerCase() === 'recruit') {
+          return 'Recruit';
         }
-
-        setNotice(rosterSyncNotice, 'No roster entries are cached yet. Use Refresh Now to pull the official roster feed.', '');
+        return trimmed;
       }
 
-      function getVisibleEntries(snapshot) {
-        const query = rosterSearch.value.trim().toLowerCase();
-        const assignment = rosterAssignmentFilter.value;
-        const sort = rosterSort.value;
-        const compareByName = (left, right) => left.characterName.localeCompare(right.characterName, undefined, { sensitivity: 'base' });
-
-        return snapshot.entries
-          .filter((entry) => {
-            if (assignment === 'assigned' && !entry.assignedEmail) {
-              return false;
-            }
-            if (assignment === 'unassigned' && entry.assignedEmail) {
-              return false;
-            }
-            if (!query) {
-              return true;
-            }
-            return String(entry.searchBlob || '').includes(query);
-          })
-          .sort((left, right) => {
-            if (sort === 'level-desc') {
-              return (right.level || 0) - (left.level || 0) || compareByName(left, right);
-            }
-            if (sort === 'level-asc') {
-              return (left.level || 0) - (right.level || 0) || compareByName(left, right);
-            }
-            return compareByName(left, right);
-          });
-      }
-
-      function buildAssignmentOptions(entry, currentMember, permissions) {
-        if (!permissions.canManageGuild) {
-          if (entry.assignedEmail && currentMember && isSameEmail(entry.assignedEmail, currentMember.email)) {
-            return '<p class="roster-card__assignment-note">Linked to your verified Netlify account.</p>';
-          }
+      function normalizeLastOn(value) {
+        const raw = String(value || '').trim();
+        if (!raw) {
           return '';
         }
-
-        const members = rosterData.getAssignableMembers();
-        const options = ['<option value="">Not assigned</option>']
-          .concat(
-            members.map((record) => {
-              const selected = isSameEmail(record.email, entry.assignedEmail) ? ' selected' : '';
-              const label = `${record.name || record.email} — ${record.email}`;
-              return `<option value="${escapeHtml(record.email)}"${selected}>${escapeHtml(label)}</option>`;
-            })
-          )
-          .join('');
-
-        return `
-          <div class="roster-card__assignment-row">
-            <label class="resource-field roster-card__assignment-field">
-              <span>Assigned Netlify account</span>
-              <select data-assignment-select="${entry.id}">${options}</select>
-            </label>
-            <div class="resource-item__actions roster-card__actions">
-              <button class="resource-item__edit" type="button" data-save-assignment="${entry.id}">Save</button>
-              <button class="resource-item__delete" type="button" data-clear-assignment="${entry.id}">Clear</button>
-            </div>
-          </div>
-        `;
+        if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+          return raw;
+        }
+        const match = raw.match(/^(\d{2})\/(\d{2})\/(\d{2})$/);
+        if (match) {
+          return `20${match[3]}-${match[1]}-${match[2]}`;
+        }
+        const parsed = new Date(raw);
+        if (Number.isNaN(parsed.getTime())) {
+          return '';
+        }
+        return parsed.toISOString().slice(0, 10);
       }
 
-      function renderRoster() {
-        const currentMember = getCurrentMember();
-        const permissions = getPermissions(currentMember);
-        const snapshot = rosterData.readSnapshot();
-        const entries = getVisibleEntries(snapshot);
-
-        renderMemberBadge(currentMember);
-        renderMetrics(snapshot.entries);
-        renderSync(snapshot);
-        rosterOwnerPanel.hidden = !permissions.canManageGuild;
-        if (!permissions.canManageGuild) {
-          setNotice(
-            rosterAssignmentNotice,
-            currentMember
-              ? 'Sign in with the guild leader account to change Netlify character assignments.'
-              : 'Sign in as the guild leader to assign Netlify accounts to characters.',
-            ''
-          );
-        } else {
-          setNotice(rosterAssignmentNotice, 'Guild leader access is active. Save each character assignment after choosing a Netlify account.', 'success');
+      function toLevel(value) {
+        const parsed = Number(value);
+        if (!Number.isFinite(parsed)) {
+          return 1;
         }
+        return Math.max(1, Math.min(125, Math.round(parsed)));
+      }
 
-        if (!entries.length) {
-          rosterList.innerHTML = '<article class="panel guild-member-card"><p class="empty-state">No roster entries match the current filters.</p></article>';
+      function sanitizeEntry(entry, fallbackId) {
+        if (!entry || typeof entry !== 'object') {
+          return null;
+        }
+        const name = String(entry.name || '').trim().slice(0, 80);
+        if (!name) {
+          return null;
+        }
+        return {
+          id: String(entry.id || fallbackId || `roster-${Date.now()}-${Math.floor(Math.random() * 100000)}`),
+          name,
+          level: toLevel(entry.level),
+          className: normalizeClassName(entry.className || entry.class || ''),
+          rank: normalizeRank(entry.rank),
+          lastOn: normalizeLastOn(entry.lastOn)
+        };
+      }
+
+      function readStoredEntries() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(ROSTER_STORAGE_KEY) || 'null');
+          if (!Array.isArray(parsed)) {
+            return [];
+          }
+          return parsed
+            .map((entry, index) => sanitizeEntry(entry, `roster-seed-${index + 1}`))
+            .filter(Boolean);
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function writeEntries(entries) {
+        localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(entries));
+      }
+
+      function ensureSeed() {
+        const current = readStoredEntries();
+        if (current.length) {
+          state.entries = current;
           return;
         }
+        const seeded = DEFAULT_ROSTER.map((entry, index) => sanitizeEntry(entry, `roster-default-${index + 1}`)).filter(Boolean);
+        writeEntries(seeded);
+        state.entries = seeded;
+      }
 
-        rosterList.innerHTML = entries
+      function rankSortValue(rank) {
+        if (Object.prototype.hasOwnProperty.call(RANK_ORDER, rank)) {
+          return RANK_ORDER[rank];
+        }
+        return 99;
+      }
+
+      function getSortedEntries(entries) {
+        const working = [...entries];
+        if (state.sort === 'name') {
+          return working.sort((a, b) => a.name.localeCompare(b.name));
+        }
+        if (state.sort === 'level-desc') {
+          return working.sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+        }
+        if (state.sort === 'last-on-desc') {
+          return working.sort((a, b) => {
+            const left = Date.parse(a.lastOn || '') || 0;
+            const right = Date.parse(b.lastOn || '') || 0;
+            return right - left || a.name.localeCompare(b.name);
+          });
+        }
+        return working.sort((a, b) => {
+          const rankDelta = rankSortValue(a.rank) - rankSortValue(b.rank);
+          if (rankDelta !== 0) {
+            return rankDelta;
+          }
+          return a.name.localeCompare(b.name);
+        });
+      }
+
+      function getFilteredEntries() {
+        const query = state.query.toLowerCase();
+        const filtered = !query
+          ? state.entries
+          : state.entries.filter((entry) => {
+              return (
+                entry.name.toLowerCase().includes(query) ||
+                entry.className.toLowerCase().includes(query) ||
+                entry.rank.toLowerCase().includes(query) ||
+                entry.lastOn.toLowerCase().includes(query) ||
+                String(entry.level).includes(query)
+              );
+            });
+        return getSortedEntries(filtered);
+      }
+
+      function resetForm() {
+        state.editingId = null;
+        rosterForm.reset();
+        rosterSaveButton.textContent = 'Add Entry';
+        rosterCancelEdit.hidden = true;
+      }
+
+      function setEditorNotice(message, type) {
+        rosterEditorNotice.textContent = message;
+        rosterEditorNotice.className = type ? `resource-notice resource-notice--${type}` : 'resource-notice';
+      }
+
+      function render() {
+        const rows = getFilteredEntries();
+        rosterCount.textContent = `Showing ${rows.length} of ${state.entries.length} roster entries`;
+        rosterEmpty.hidden = rows.length !== 0;
+        actionsHeader.hidden = !state.owner;
+
+        rosterTableBody.innerHTML = rows
           .map((entry) => {
-            const levelText = entry.level != null ? `Level ${escapeHtml(entry.level)}` : 'Level unknown';
-            const assignmentSummary = entry.assignedEmail
-              ? `<p class="roster-card__assignment-note">Assigned to ${escapeHtml(entry.assignedMemberName || entry.assignedEmail)}</p>`
-              : '<p class="roster-card__assignment-note">No Netlify account assigned.</p>';
-            const sourceUpdated = entry.sourceUpdatedAt ? `<p class="roster-card__source">Source updated: ${escapeHtml(formatDate(entry.sourceUpdatedAt))}</p>` : '';
-
+            const actions = state.owner
+              ? `<td><div class="roster-actions"><button class="resource-item__edit" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">Edit</button><button class="resource-item__delete" type="button" data-action="delete" data-id="${escapeHtml(entry.id)}">Delete</button></div></td>`
+              : '';
             return `
-              <article class="panel guild-member-card roster-card" data-entry-id="${entry.id}">
-                <div class="guild-member-card__top roster-card__top">
-                  <div>
-                    <p class="guild-member-card__title roster-card__name">${escapeHtml(entry.characterName)}</p>
-                    <p class="guild-member-card__email roster-card__subtitle">${escapeHtml(entry.rank || 'Guild Member')}</p>
-                  </div>
-                  <div class="guild-badge-group">
-                    <span class="forum-badge forum-badge--member">${escapeHtml(levelText)}</span>
-                    ${entry.classSummary ? `<span class="forum-badge">${escapeHtml(entry.classSummary)}</span>` : ''}
-                  </div>
-                </div>
-                <div class="guild-member-card__meta roster-card__meta">
-                  <p><strong>First name:</strong> ${escapeHtml(entry.firstName || '—')}</p>
-                  <p><strong>Last name:</strong> ${escapeHtml(entry.lastName || '—')}</p>
-                  <p><strong>Classes:</strong> ${escapeHtml(entry.classSummary || 'Unknown')}</p>
-                  <p><strong>Roster status:</strong> ${entry.assignedEmail ? 'Assigned' : 'Unassigned'}</p>
-                </div>
-                <div class="roster-card__assignment">
-                  ${assignmentSummary}
-                  ${buildAssignmentOptions(entry, currentMember, permissions)}
-                </div>
-                ${sourceUpdated}
-              </article>
+              <tr>
+                <td>${escapeHtml(entry.name)}</td>
+                <td>${entry.level}</td>
+                <td>${escapeHtml(entry.className)}</td>
+                <td class="roster-rank">${escapeHtml(entry.rank)}</td>
+                <td>${escapeHtml(entry.lastOn || 'N/A')}</td>
+                ${actions}
+              </tr>
             `;
           })
           .join('');
       }
 
-      async function syncRoster(force) {
-        rosterRefreshButton.disabled = true;
-        setNotice(rosterSyncNotice, force ? 'Refreshing the official roster feed…' : 'Checking whether the official roster feed needs a refresh…', '');
-        await rosterData.syncSnapshot({ force: Boolean(force) });
-        rosterRefreshButton.disabled = false;
-        renderRoster();
+      function getCurrentMember() {
+        if (window.TheChosenGuildAccess && typeof window.TheChosenGuildAccess.getCurrentMember === 'function') {
+          return window.TheChosenGuildAccess.getCurrentMember();
+        }
+        try {
+          return JSON.parse(localStorage.getItem('theChosenCurrentMember') || 'null');
+        } catch (error) {
+          return null;
+        }
       }
 
-      rosterRefreshButton.addEventListener('click', () => {
-        syncRoster(true);
+      function refreshOwnerState() {
+        const member = getCurrentMember();
+        state.owner = normalizeEmail(member && member.email) === OWNER_EMAIL;
+        rosterOwnerPanel.hidden = !state.owner;
+        if (!state.owner) {
+          resetForm();
+        } else {
+          setEditorNotice('Owner mode enabled. Use this form to manage public roster entries.', 'success');
+        }
+        render();
+      }
+
+      rosterSearch.addEventListener('input', () => {
+        state.query = rosterSearch.value.trim();
+        render();
       });
 
-      [rosterSearch, rosterAssignmentFilter, rosterSort].forEach((element) => {
-        element.addEventListener('input', renderRoster);
-        element.addEventListener('change', renderRoster);
+      rosterSort.addEventListener('change', () => {
+        state.sort = rosterSort.value;
+        render();
       });
 
-      rosterList.addEventListener('click', (event) => {
-        const currentMember = getCurrentMember();
-        const permissions = getPermissions(currentMember);
-        if (!permissions.canManageGuild) {
+      rosterCancelEdit.addEventListener('click', () => {
+        resetForm();
+        setEditorNotice('Edit cancelled.', '');
+      });
+
+      rosterForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        if (!state.owner) {
           return;
         }
 
-        const saveButton = event.target.closest('[data-save-assignment]');
-        const clearButton = event.target.closest('[data-clear-assignment]');
-        if (!saveButton && !clearButton) {
+        const nextEntry = sanitizeEntry({
+          id: state.editingId || `roster-${Date.now()}`,
+          name: rosterName.value,
+          level: rosterLevel.value,
+          className: rosterClass.value,
+          rank: rosterRank.value,
+          lastOn: rosterLastOn.value
+        });
+
+        if (!nextEntry) {
+          setEditorNotice('Please provide valid roster details before saving.', 'error');
           return;
         }
 
-        const entryId = (saveButton || clearButton).dataset.saveAssignment || (saveButton || clearButton).dataset.clearAssignment;
-        if (!entryId) {
-          setNotice(rosterAssignmentNotice, 'That character could not be identified for assignment.', 'error');
-          return;
-        }
-        const card = (saveButton || clearButton).closest('[data-entry-id]');
-        const select = card ? card.querySelector('[data-assignment-select]') : null;
-        const email = clearButton ? '' : (select ? select.value : '');
-        const updated = rosterData.assignCharacter(entryId, email);
-        if (!updated) {
-          setNotice(rosterAssignmentNotice, 'That character could not be updated.', 'error');
-          return;
+        if (state.editingId) {
+          state.entries = state.entries.map((entry) => (entry.id === state.editingId ? nextEntry : entry));
+          setEditorNotice(`Updated ${nextEntry.name}.`, 'success');
+        } else {
+          state.entries = [nextEntry, ...state.entries];
+          setEditorNotice(`Added ${nextEntry.name}.`, 'success');
         }
 
-        setNotice(
-          rosterAssignmentNotice,
-          updated.assignedEmail
-            ? `${updated.characterName} is now linked to ${updated.assignedMemberName || updated.assignedEmail}.`
-            : `${updated.characterName} is no longer linked to a Netlify account.`,
-          'success'
-        );
-        renderRoster();
+        writeEntries(state.entries);
+        resetForm();
+        render();
       });
 
-      footerAccountButton.addEventListener('click', () => {
-        window.location.href = '/login/';
-      });
-
-      footerLogoutButton.addEventListener('click', () => {
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.logout();
+      rosterTableBody.addEventListener('click', (event) => {
+        if (!state.owner) {
+          return;
         }
-        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-        renderRoster();
+
+        const button = event.target.closest('[data-action]');
+        if (!button) {
+          return;
+        }
+
+        const action = button.getAttribute('data-action');
+        const id = button.getAttribute('data-id');
+        const target = state.entries.find((entry) => entry.id === id);
+        if (!target) {
+          return;
+        }
+
+        if (action === 'edit') {
+          state.editingId = target.id;
+          rosterName.value = target.name;
+          rosterLevel.value = String(target.level);
+          rosterClass.value = target.className;
+          rosterRank.value = target.rank;
+          rosterLastOn.value = target.lastOn;
+          rosterSaveButton.textContent = 'Save Changes';
+          rosterCancelEdit.hidden = false;
+          setEditorNotice(`Editing ${target.name}.`, '');
+          return;
+        }
+
+        if (action === 'delete') {
+          const confirmed = window.confirm(`Remove ${target.name} from the roster?`);
+          if (!confirmed) {
+            return;
+          }
+          state.entries = state.entries.filter((entry) => entry.id !== target.id);
+          writeEntries(state.entries);
+          if (state.editingId === target.id) {
+            resetForm();
+          }
+          setEditorNotice(`Removed ${target.name}.`, 'success');
+          render();
+        }
       });
 
       window.addEventListener('storage', (event) => {
-        if (
-          event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
-          event.key === guildAccess.DIRECTORY_STORAGE_KEY ||
-          event.key === rosterData.SNAPSHOT_STORAGE_KEY
-        ) {
-          renderRoster();
+        if (event.key === ROSTER_STORAGE_KEY || event.key === 'theChosenCurrentMember') {
+          state.entries = readStoredEntries();
+          refreshOwnerState();
         }
+      });
+
+      window.addEventListener('theChosen:persistent-store-ready', () => {
+        state.entries = readStoredEntries();
+        refreshOwnerState();
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => {
-          guildAccess.ensureMemberRecord(getCurrentMember());
-          renderRoster();
+          refreshOwnerState();
         });
         window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-          renderRoster();
+          refreshOwnerState();
         });
       }
 
-      let rosterPollTimer = null;
-
-      function startRosterPolling() {
-        if (rosterPollTimer) {
-          window.clearInterval(rosterPollTimer);
-        }
-        rosterPollTimer = window.setInterval(() => {
-          syncRoster(false);
-        }, rosterData.SYNC_INTERVAL_MS);
-      }
-
-      async function initializeRosterPage() {
-        renderRoster();
-        if (rosterData.needsSync()) {
-          await syncRoster(false);
-        }
-        startRosterPolling();
-      }
-
-      initializeRosterPage();
-      window.addEventListener('beforeunload', () => {
-        if (rosterPollTimer) {
-          window.clearInterval(rosterPollTimer);
-          rosterPollTimer = null;
-        }
-      });
+      ensureSeed();
+      refreshOwnerState();
+      render();
     </script>
   </body>
 </html>
