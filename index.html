@@ -93,6 +93,10 @@
           </div>
 
           <div id="newsList"></div>
+          <div class="news-section__archive" id="newsArchiveSection" hidden>
+            <button class="btn-torch news-section__archive-toggle" id="newsArchiveToggle" type="button" hidden></button>
+            <div id="newsArchiveList" hidden></div>
+          </div>
           <div class="news-section__editor">
             <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
             <form class="panel forum-form" id="newsForm" hidden>
@@ -103,6 +107,10 @@
               <label class="resource-field">
                 <span>Message</span>
                 <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
+              </label>
+              <label class="resource-checkbox" for="newsPostToForum">
+                <input id="newsPostToForum" type="checkbox" />
+                <span>Also post this article to the public forum</span>
               </label>
               <div class="auth-actions">
                 <button class="btn-primary" type="submit">Save News Post</button>
@@ -144,13 +152,20 @@
     <script>
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
       const OWNER_EMAIL = 'ojmac79@gmail.com';
+      const NEWS_HOME_LIMIT = 3;
       const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
       const NEWS_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=news';
+      const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
+      const DEFAULT_PUBLIC_FORUM_CATEGORY = 'pub-general';
       const heroTagline = document.getElementById('heroTagline');
       const newsForm = document.getElementById('newsForm');
       const newsTitle = document.getElementById('newsTitle');
       const newsBody = document.getElementById('newsBody');
+      const newsPostToForum = document.getElementById('newsPostToForum');
       const newsList = document.getElementById('newsList');
+      const newsArchiveSection = document.getElementById('newsArchiveSection');
+      const newsArchiveToggle = document.getElementById('newsArchiveToggle');
+      const newsArchiveList = document.getElementById('newsArchiveList');
       const newsNotice = document.getElementById('newsNotice');
       const newPostButton = document.getElementById('newPostButton');
       const cancelNewsEdit = document.getElementById('cancelNewsEdit');
@@ -215,6 +230,7 @@
       const SNIPPET_CHARS_BEFORE_MATCH = 70;
       const SNIPPET_CHARS_AFTER_MATCH = 90;
       let editingPostId = null;
+      let showArchivedNews = false;
 
       function isOwner(member) {
         return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
@@ -245,6 +261,13 @@
         return null;
       }
 
+      function buildId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return `${prefix}-${window.crypto.randomUUID()}`;
+        }
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
       function readPosts() {
         try {
           const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
@@ -268,13 +291,15 @@
         const inferredCreatedAt = Math.max(0, total - index);
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
         return {
-          id: post.id || `news-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
+          id: post.id || buildId('news'),
           title: String(post.title || ''),
           body: String(post.body || ''),
           author: String(post.author || 'Guild Member'),
           avatar: String(post.avatar || ''),
           createdAt,
-          updatedAt: Number(post.updatedAt) || createdAt
+          updatedAt: Number(post.updatedAt) || createdAt,
+          postedToForum: Boolean(post.postedToForum),
+          forumThreadId: typeof post.forumThreadId === 'string' ? post.forumThreadId : ''
         };
       }
 
@@ -323,6 +348,140 @@
         return response.ok;
       }
 
+      function defaultForumState() {
+        return {
+          public: {
+            categories: [
+              { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
+              { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
+            ],
+            threads: [],
+            replies: []
+          },
+          private: {
+            categories: [
+              { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
+              { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
+            ],
+            threads: [],
+            replies: []
+          }
+        };
+      }
+
+      function normalizeForumCategory(category, fallbackPrefix) {
+        if (!category || typeof category !== 'object') {
+          return null;
+        }
+        const name = String(category.name || '').trim();
+        const description = String(category.description || '').trim();
+        if (!name || !description) {
+          return null;
+        }
+        return {
+          id: typeof category.id === 'string' && category.id ? category.id : buildId(fallbackPrefix),
+          name,
+          description
+        };
+      }
+
+      function readForumStateFromSource(source) {
+        const fallback = defaultForumState();
+        if (!source || typeof source !== 'object') {
+          return fallback;
+        }
+
+        return ['public', 'private'].reduce((state, spaceKey) => {
+          const fallbackSpace = fallback[spaceKey];
+          const sourceSpace = source[spaceKey];
+          const categories = Array.isArray(sourceSpace && sourceSpace.categories)
+            ? sourceSpace.categories
+                .map((category) => normalizeForumCategory(category, `${spaceKey}-category`))
+                .filter(Boolean)
+            : [];
+
+          state[spaceKey] = {
+            categories: categories.length ? categories : fallbackSpace.categories.map((category) => ({ ...category })),
+            threads: Array.isArray(sourceSpace && sourceSpace.threads)
+              ? sourceSpace.threads.filter((thread) => thread && typeof thread === 'object').map((thread) => ({ ...thread }))
+              : [],
+            replies: Array.isArray(sourceSpace && sourceSpace.replies)
+              ? sourceSpace.replies.filter((reply) => reply && typeof reply === 'object').map((reply) => ({ ...reply }))
+              : []
+          };
+          return state;
+        }, {});
+      }
+
+      async function fetchForumStateFromRemote() {
+        const response = await fetch(FORUM_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+        if (!response.ok) {
+          throw new Error('Unable to read forum state.');
+        }
+        const payload = await response.json();
+        return readForumStateFromSource(payload && payload.state);
+      }
+
+      async function saveForumStateToRemote(state) {
+        const token = await getIdentityToken();
+        if (!token) {
+          return false;
+        }
+        const response = await fetch(FORUM_REMOTE_ENDPOINT, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `******
+          },
+          body: JSON.stringify({ state })
+        });
+        return response.ok;
+      }
+
+      async function syncNewsPostToForum(post, member) {
+        const forumState = await fetchForumStateFromRemote();
+        const publicCategories = Array.isArray(forumState.public && forumState.public.categories) && forumState.public.categories.length
+          ? forumState.public.categories
+          : defaultForumState().public.categories;
+        const categoryId = publicCategories.some((category) => category.id === DEFAULT_PUBLIC_FORUM_CATEGORY)
+          ? DEFAULT_PUBLIC_FORUM_CATEGORY
+          : publicCategories[0].id;
+        const threadId = post.forumThreadId || buildId('public-thread');
+        const existingIndex = Array.isArray(forumState.public.threads)
+          ? forumState.public.threads.findIndex((thread) => String(thread.id || '') === threadId)
+          : -1;
+
+        const threadPayload = {
+          id: threadId,
+          categoryId,
+          title: post.title,
+          body: post.body,
+          authorName: member.name || member.email || 'Guild Member',
+          authorEmail: member.email || '',
+          authorAvatar: member.avatar || '',
+          createdAt: existingIndex >= 0
+            ? Number(forumState.public.threads[existingIndex].createdAt) || Date.now()
+            : Date.now(),
+          isPinned: existingIndex >= 0 ? Boolean(forumState.public.threads[existingIndex].isPinned) : false,
+          isLocked: existingIndex >= 0 ? Boolean(forumState.public.threads[existingIndex].isLocked) : false
+        };
+
+        if (existingIndex >= 0) {
+          forumState.public.threads[existingIndex] = {
+            ...forumState.public.threads[existingIndex],
+            ...threadPayload
+          };
+        } else {
+          forumState.public.threads.push(threadPayload);
+        }
+
+        const ok = await saveForumStateToRemote(forumState);
+        return {
+          ok,
+          forumThreadId: ok ? threadId : post.forumThreadId || ''
+        };
+      }
+
       async function syncPostsWithRemote() {
         try {
           const response = await fetch(NEWS_REMOTE_ENDPOINT, { credentials: 'same-origin' });
@@ -356,6 +515,7 @@
         newsForm.hidden = true;
         newsTitle.value = '';
         newsBody.value = '';
+        newsPostToForum.checked = false;
       }
 
       function randomizeThumbnailCards() {
@@ -390,10 +550,43 @@
         footerMember.hidden = false;
       }
 
-      function renderNews() {
+      function getNewsNotice(currentMember, message = '') {
+        const accessNotice = isOwner(currentMember)
+          ? 'Owner access enabled: you can add or update guild news.'
+          : 'Public view is enabled. Owner sign-in is required to publish or edit news.';
+        return message ? `${message} ${accessNotice}` : accessNotice;
+      }
+
+      function renderNewsPost(post, canEditNews, badgeLabel) {
+        const editButton = canEditNews
+          ? `<button class="resource-item__delete" type="button" data-edit-post="${escapeHtml(post.id)}">Edit</button>`
+          : '';
+        const avatarUrl = post.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author || 'Guild Member')}&background=ff7b7b&color=14070b`;
+
+        return `
+          <article class="panel forum-thread">
+            <div class="forum-thread__header">
+              <div>
+                <h3 class="forum-thread__title">${escapeHtml(post.title)}</h3>
+                <div class="forum-thread__author">
+                  <img class="forum-thread__author-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(post.author)} avatar" />
+                  <span class="forum-thread__author-name">${escapeHtml(post.author)}</span>
+                </div>
+              </div>
+              <span class="forum-badge">${escapeHtml(badgeLabel)}</span>
+            </div>
+            <p class="forum-thread__body">${escapeHtml(post.body)}</p>
+            <div class="resource-item__actions">${editButton}</div>
+          </article>
+        `;
+      }
+
+      function renderNews(statusMessage = '') {
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
-        const posts = readPosts().slice(0, 3);
+        const allPosts = readPosts();
+        const posts = allPosts.slice(0, NEWS_HOME_LIMIT);
+        const archivedPosts = allPosts.slice(NEWS_HOME_LIMIT);
         const canEditNews = isOwner(currentMember);
         newPostButton.hidden = !canEditNews;
         heroEditButton.hidden = !canEditNews;
@@ -403,39 +596,38 @@
 
         if (!posts.length) {
           newsList.innerHTML = '<div class="panel empty-state"><p>No news has been posted yet. Start a fresh entry for the guild hall.</p></div>';
-          newsNotice.textContent = currentMember
-            ? 'Owner access enabled: you can add or update guild news.'
-            : 'Public view is enabled. Owner sign-in is required to publish or edit news.';
+          showArchivedNews = false;
+          newsArchiveSection.hidden = true;
+          newsArchiveToggle.hidden = true;
+          newsArchiveList.hidden = true;
+          newsArchiveList.innerHTML = '';
+          newsNotice.textContent = getNewsNotice(currentMember, statusMessage);
           return;
         }
 
         newsList.innerHTML = posts
-          .map((post) => {
-            const editButton = canEditNews
-              ? `<button class="resource-item__delete" type="button" data-edit-post="${post.id}">Edit</button>`
-              : '';
-            return `
-              <article class="panel forum-thread">
-                <div class="forum-thread__header">
-                  <div>
-                    <h3 class="forum-thread__title">${post.title}</h3>
-                    <div class="forum-thread__author">
-                      <img class="forum-thread__author-avatar" src="${post.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(post.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${post.author} avatar" />
-                      <span class="forum-thread__author-name">${post.author}</span>
-                    </div>
-                  </div>
-                  <span class="forum-badge">News</span>
-                </div>
-                <p class="forum-thread__body">${post.body}</p>
-                <div class="resource-item__actions">${editButton}</div>
-              </article>
-            `;
-          })
+          .map((post) => renderNewsPost(post, canEditNews, 'News'))
           .join('');
 
-        newsNotice.textContent = currentMember
-          ? 'Owner access enabled: you can add or update guild news.'
-          : 'Public view is enabled. Owner sign-in is required to publish or edit news.';
+        if (!archivedPosts.length) {
+          showArchivedNews = false;
+          newsArchiveSection.hidden = true;
+          newsArchiveToggle.hidden = true;
+          newsArchiveList.hidden = true;
+          newsArchiveList.innerHTML = '';
+        } else {
+          newsArchiveSection.hidden = false;
+          newsArchiveToggle.hidden = false;
+          newsArchiveToggle.textContent = showArchivedNews
+            ? 'Show Fewer News Articles'
+            : `Show ${archivedPosts.length} More News Article${archivedPosts.length === 1 ? '' : 's'}`;
+          newsArchiveList.hidden = !showArchivedNews;
+          newsArchiveList.innerHTML = showArchivedNews
+            ? archivedPosts.map((post) => renderNewsPost(post, canEditNews, 'Archive')).join('')
+            : '';
+        }
+
+        newsNotice.textContent = getNewsNotice(currentMember, statusMessage);
       }
 
       function editHeroTagline() {
@@ -616,6 +808,7 @@
         editingPostId = null;
         newsTitle.value = '';
         newsBody.value = '';
+        newsPostToForum.checked = false;
         newsForm.hidden = false;
         newsTitle.focus();
       });
@@ -624,7 +817,33 @@
         resetNewsForm();
       });
 
-      newsForm.addEventListener('submit', (event) => {
+      newsArchiveToggle.addEventListener('click', () => {
+        showArchivedNews = !showArchivedNews;
+        renderNews();
+      });
+
+      function openNewsPostEditor(postId) {
+        const currentMember = readCurrentMember();
+        if (!isOwner(currentMember)) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const posts = readPosts();
+        const targetPost = posts.find((post) => post.id === postId);
+        if (!targetPost) {
+          return;
+        }
+
+        editingPostId = targetPost.id;
+        newsTitle.value = targetPost.title;
+        newsBody.value = targetPost.body;
+        newsPostToForum.checked = Boolean(targetPost.postedToForum);
+        newsForm.hidden = false;
+        newsTitle.focus();
+      }
+
+      newsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const currentMember = readCurrentMember();
         if (!isOwner(currentMember)) {
@@ -639,37 +858,73 @@
         }
 
         const posts = readPosts();
+        const isEditing = Boolean(editingPostId);
+        const wantsForumPost = newsPostToForum.checked;
+        let savedPostId = '';
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
-          if (targetIndex >= 0) {
-            const now = Date.now();
-            posts[targetIndex] = {
-              ...posts[targetIndex],
-              title,
-              body,
-              author: currentMember.name,
-              avatar: currentMember.avatar || '',
-              updatedAt: now
-            };
+          if (targetIndex < 0) {
+            return;
           }
-        } else {
           const now = Date.now();
-          posts.unshift({
-            id: `news-${Date.now()}`,
+          savedPostId = posts[targetIndex].id;
+          posts[targetIndex] = {
+            ...posts[targetIndex],
             title,
             body,
-            author: currentMember.name,
+            author: currentMember.name || currentMember.email,
+            avatar: currentMember.avatar || '',
+            updatedAt: now
+          };
+        } else {
+          const now = Date.now();
+          savedPostId = buildId('news');
+          posts.unshift({
+            id: savedPostId,
+            title,
+            body,
+            author: currentMember.name || currentMember.email,
             avatar: currentMember.avatar || '',
             createdAt: now,
             updatedAt: now
           });
         }
 
-        const nextPosts = posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        let nextPosts = posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         writePosts(nextPosts);
-        void savePostsToRemote(nextPosts);
+        const savedNewsRemotely = await savePostsToRemote(nextPosts);
+
+        if (wantsForumPost) {
+          const targetPost = nextPosts.find((post) => post.id === savedPostId);
+          if (targetPost) {
+            try {
+              const forumResult = await syncNewsPostToForum(targetPost, currentMember);
+              if (forumResult.ok) {
+                nextPosts = nextPosts.map((post) => (
+                  post.id === savedPostId
+                    ? { ...post, postedToForum: true, forumThreadId: forumResult.forumThreadId }
+                    : post
+                ));
+                writePosts(nextPosts);
+                await savePostsToRemote(nextPosts);
+              }
+            } catch (error) {
+              // Keep the saved news article even if the optional forum sync fails.
+            }
+          }
+        }
+
         resetNewsForm();
-        renderNews();
+        const savedPost = nextPosts.find((post) => post.id === savedPostId);
+        const postedToForum = Boolean(savedPost && savedPost.postedToForum);
+        const statusParts = [`News article ${isEditing ? 'updated' : 'saved'}.`];
+        if (!savedNewsRemotely) {
+          statusParts.push('Server sync is pending.');
+        }
+        if (wantsForumPost) {
+          statusParts.push(postedToForum ? 'Public forum post synced.' : 'Public forum sync could not be completed.');
+        }
+        renderNews(statusParts.join(' '));
       });
 
       newsList.addEventListener('click', (event) => {
@@ -677,24 +932,15 @@
         if (!button) {
           return;
         }
+        openNewsPostEditor(button.getAttribute('data-edit-post'));
+      });
 
-        const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
-          window.location.href = '/login/';
+      newsArchiveList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-edit-post]');
+        if (!button) {
           return;
         }
-
-        const posts = readPosts();
-        const targetPost = posts.find((post) => post.id === button.getAttribute('data-edit-post'));
-        if (!targetPost) {
-          return;
-        }
-
-        editingPostId = targetPost.id;
-        newsTitle.value = targetPost.title;
-        newsBody.value = targetPost.body;
-        newsForm.hidden = false;
-        newsTitle.focus();
+        openNewsPostEditor(button.getAttribute('data-edit-post'));
       });
 
       footerAccountButton.addEventListener('click', () => {
