@@ -134,6 +134,7 @@
       </footer>
     </div>
 
+    <script src="scripts/persistent-store.js"></script>
     <script src="scripts/site-decor.js"></script>
     <script src="scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
@@ -141,6 +142,7 @@
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
       const OWNER_EMAIL = 'ojmac79@gmail.com';
       const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
+      const NEWS_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=news';
       const heroTagline = document.getElementById('heroTagline');
       const newsForm = document.getElementById('newsForm');
       const newsTitle = document.getElementById('newsTitle');
@@ -273,6 +275,75 @@
 
       function writePosts(posts) {
         localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(posts));
+      }
+
+      function latestPostTimestamp(posts) {
+        if (!Array.isArray(posts) || !posts.length) {
+          return 0;
+        }
+        return posts.reduce((latest, post) => {
+          const next = Number(post.updatedAt) || Number(post.createdAt) || 0;
+          return next > latest ? next : latest;
+        }, 0);
+      }
+
+      async function getIdentityToken() {
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
+          return '';
+        }
+        const user = window.netlifyIdentity.currentUser();
+        if (!user || typeof user.jwt !== 'function') {
+          return '';
+        }
+        try {
+          return await user.jwt();
+        } catch (error) {
+          return '';
+        }
+      }
+
+      async function savePostsToRemote(posts) {
+        const token = await getIdentityToken();
+        if (!token) {
+          return false;
+        }
+        const response = await fetch(NEWS_REMOTE_ENDPOINT, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ posts })
+        });
+        return response.ok;
+      }
+
+      async function syncPostsWithRemote() {
+        try {
+          const response = await fetch(NEWS_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+          if (!response.ok) {
+            return;
+          }
+          const payload = await response.json();
+          const remotePosts = Array.isArray(payload && payload.posts)
+            ? payload.posts.map((post, index, all) => normalizePost(post, index, all.length)).filter(Boolean)
+            : [];
+          const localPosts = readPosts();
+          const remoteLatest = latestPostTimestamp(remotePosts);
+          const localLatest = latestPostTimestamp(localPosts);
+
+          if (remotePosts.length && remoteLatest >= localLatest) {
+            writePosts(remotePosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+            renderNews();
+            return;
+          }
+
+          if (localPosts.length && localLatest > remoteLatest) {
+            await savePostsToRemote(localPosts);
+          }
+        } catch (error) {
+          // Local cache remains the fallback when the shared store is unavailable.
+        }
       }
 
       function resetNewsForm() {
@@ -589,7 +660,9 @@
           });
         }
 
-        writePosts(posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+        const nextPosts = posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        writePosts(nextPosts);
+        void savePostsToRemote(nextPosts);
         resetNewsForm();
         renderNews();
       });
@@ -633,7 +706,10 @@
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderNews());
+        window.netlifyIdentity.on('login', () => {
+          renderNews();
+          void syncPostsWithRemote();
+        });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
           renderMemberBadge(null);
@@ -642,6 +718,7 @@
       }
 
       renderNews();
+      void syncPostsWithRemote();
     </script>
   </body>
 </html>

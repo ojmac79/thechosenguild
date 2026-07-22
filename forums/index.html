@@ -147,11 +147,13 @@
       </footer>
     </div>
 
+    <script src="../../scripts/persistent-store.js"></script>
     <script src="../../scripts/site-decor.js"></script>
     <script src="../../scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const STORAGE_KEY = 'theChosenForumStateV2';
+      const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
       const guildAccess = window.TheChosenGuildAccess;
       const uiState = {
         publicFilter: 'all',
@@ -159,6 +161,7 @@
         openReplyForms: new Set(),
         replyingToReplyId: {}
       };
+      let pendingForumSync = null;
 
       function getCurrentMember() {
         return guildAccess.getCurrentMember();
@@ -316,6 +319,132 @@
 
       function writeState(state) {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+        queueForumStateSync(state);
+      }
+
+      function latestForumTimestamp(state) {
+        if (!state || typeof state !== 'object') {
+          return 0;
+        }
+        return ['public', 'private'].reduce((latest, spaceKey) => {
+          const space = state[spaceKey] || {};
+          const threadLatest = Array.isArray(space.threads)
+            ? space.threads.reduce((acc, thread) => {
+                const value = Number(thread.createdAt) || 0;
+                return value > acc ? value : acc;
+              }, 0)
+            : 0;
+          const replyLatest = Array.isArray(space.replies)
+            ? space.replies.reduce((acc, reply) => {
+                const value = Number(reply.createdAt) || 0;
+                return value > acc ? value : acc;
+              }, 0)
+            : 0;
+          return Math.max(latest, threadLatest, replyLatest);
+        }, 0);
+      }
+
+      async function getIdentityToken() {
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
+          return '';
+        }
+        const user = window.netlifyIdentity.currentUser();
+        if (!user || typeof user.jwt !== 'function') {
+          return '';
+        }
+        try {
+          return await user.jwt();
+        } catch (error) {
+          return '';
+        }
+      }
+
+      async function saveForumStateToRemote(state) {
+        const token = await getIdentityToken();
+        if (!token) {
+          return false;
+        }
+        const response = await fetch(FORUM_REMOTE_ENDPOINT, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ state })
+        });
+        return response.ok;
+      }
+
+      function queueForumStateSync(state) {
+        pendingForumSync = state;
+        if (!window.netlifyIdentity || !window.netlifyIdentity.currentUser()) {
+          return;
+        }
+        const snapshot = pendingForumSync;
+        pendingForumSync = null;
+        void saveForumStateToRemote(snapshot);
+      }
+
+      async function syncForumStateWithRemote() {
+        try {
+          const response = await fetch(FORUM_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+          if (!response.ok) {
+            return;
+          }
+          const payload = await response.json();
+          const remoteState = payload && payload.state ? payload.state : null;
+          const normalizedRemote = remoteState ? readStateFromSource(remoteState) : null;
+          const localState = readState();
+          const remoteLatest = latestForumTimestamp(normalizedRemote);
+          const localLatest = latestForumTimestamp(localState);
+
+          if (normalizedRemote && remoteLatest >= localLatest) {
+            forumState.public = normalizedRemote.public;
+            forumState.private = normalizedRemote.private;
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedRemote));
+            render();
+            return;
+          }
+
+          if (localLatest > remoteLatest) {
+            await saveForumStateToRemote(localState);
+          }
+        } catch (error) {
+          // Local cache remains the fallback when the shared store is unavailable.
+        }
+      }
+
+      function readStateFromSource(source) {
+        try {
+          const parsed = source && typeof source === 'object' ? source : null;
+          if (!parsed) {
+            return defaultState();
+          }
+
+          const normalized = defaultState();
+          ['public', 'private'].forEach((spaceKey) => {
+            const sourceSpace = parsed[spaceKey] || {};
+            const fallbackPrefix = spaceKey === 'public' ? 'pub-cat' : 'priv-cat';
+            const categories = Array.isArray(sourceSpace.categories)
+              ? sourceSpace.categories.map((category) => normalizeCategory(category, fallbackPrefix)).filter(Boolean)
+              : [];
+            normalized[spaceKey].categories = categories.length ? categories : normalized[spaceKey].categories;
+            normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
+              ? sourceSpace.threads
+                  .map((thread) => normalizeThread(thread, normalized[spaceKey].categories, `${spaceKey}-thread`))
+                  .filter(Boolean)
+              : [];
+            const threadIds = normalized[spaceKey].threads.map((thread) => thread.id);
+            normalized[spaceKey].replies = Array.isArray(sourceSpace.replies)
+              ? sourceSpace.replies
+                  .map((reply) => normalizeReply(reply, threadIds, `${spaceKey}-reply`))
+                  .filter(Boolean)
+              : [];
+          });
+          return normalized;
+        } catch (error) {
+          return defaultState();
+        }
       }
 
       const forumState = readState();
@@ -1091,6 +1220,7 @@
         window.netlifyIdentity.on('login', () => {
           guildAccess.ensureMemberRecord(getCurrentMember());
           render();
+          void syncForumStateWithRemote();
         });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
@@ -1099,6 +1229,7 @@
       }
 
       render();
+      void syncForumStateWithRemote();
     </script>
   </body>
 </html>
