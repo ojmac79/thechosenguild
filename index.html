@@ -251,7 +251,8 @@
         posts: [],
         loaded: false,
         loadPromise: null,
-        pendingSyncPosts: null
+        pendingSyncPosts: null,
+        remoteSynced: false
       };
 
       function isOwner(member) {
@@ -384,6 +385,16 @@
         }, 0);
       }
 
+      function hydrateNewsFromLocalCache() {
+        if (newsState.loaded) {
+          return newsState.posts;
+        }
+
+        const localPosts = readLegacyNewsPosts();
+        writePosts(localPosts);
+        return newsState.posts;
+      }
+
       async function getIdentityToken() {
         if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
           return '';
@@ -444,7 +455,7 @@
       }
 
       async function ensureNewsPostsLoaded() {
-        if (newsState.loaded && !newsState.loadPromise) {
+        if (newsState.remoteSynced && !newsState.loadPromise) {
           return newsState.posts;
         }
 
@@ -452,6 +463,7 @@
           return newsState.loadPromise;
         }
 
+        hydrateNewsFromLocalCache();
         newsState.loadPromise = (async () => {
           try {
             const remotePosts = await fetchNewsPostsFromRemote();
@@ -461,6 +473,7 @@
 
             if (remotePosts.length && remoteLatest >= localLatest) {
               writePosts(remotePosts);
+              newsState.remoteSynced = true;
               return newsState.posts;
             }
 
@@ -468,10 +481,12 @@
               writePosts(localPosts);
               newsState.pendingSyncPosts = localPosts;
               await flushPendingNewsSync();
+              newsState.remoteSynced = true;
               return newsState.posts;
             }
 
             writePosts(remotePosts);
+            newsState.remoteSynced = true;
             return newsState.posts;
           } catch (error) {
             const localPosts = readLegacyNewsPosts();
@@ -479,6 +494,7 @@
             if (localPosts.length) {
               newsState.pendingSyncPosts = localPosts;
             }
+            newsState.remoteSynced = true;
             return newsState.posts;
           } finally {
             newsState.loaded = true;
@@ -490,7 +506,8 @@
       }
 
       async function syncPostsWithRemote() {
-        await ensureNewsPostsLoaded();
+        hydrateNewsFromLocalCache();
+        void ensureNewsPostsLoaded();
         renderNews();
       }
 
@@ -705,6 +722,9 @@
       function renderNews(statusMessage = '') {
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
+        if (!newsState.loaded) {
+          hydrateNewsFromLocalCache();
+        }
         const allPosts = readPosts();
         if (!newsState.loaded) {
           newsList.innerHTML = '<div class="panel empty-state"><p>Loading news posts from the server...</p></div>';
