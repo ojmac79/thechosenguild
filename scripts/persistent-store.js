@@ -1,5 +1,6 @@
 (function () {
   const PREFIX = 'theChosen';
+  const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
   const ENDPOINT = '/.netlify/functions/content-state?scope=kv';
   const storage = window.localStorage;
   if (!storage) {
@@ -17,7 +18,7 @@
   const pending = {};
 
   function isScopedKey(key) {
-    return typeof key === 'string' && key.indexOf(PREFIX) === 0;
+    return typeof key === 'string' && key.indexOf(PREFIX) === 0 && key !== NEWS_STORAGE_KEY;
   }
 
   function snapshotNativeScopedEntries() {

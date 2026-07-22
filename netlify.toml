@@ -1,3 +1,9 @@
 [build]
   publish = "."
   command = ""
+
+[[redirects]]
+  from = "https://www.thechosenguild.com/*"
+  to = "https://thechosenguild.com/:splat"
+  status = 301
+  force = true

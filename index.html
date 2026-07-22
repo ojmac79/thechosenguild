@@ -64,7 +64,7 @@
                 class="search-console__input"
                 id="heroSearchInput"
                 type="text"
-                placeholder="Search guild news and announcements…"
+                placeholder="Search the guild site…"
               />
               <button type="submit" class="search-console__submit">
                 Search Hall
@@ -86,43 +86,39 @@
           <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
         </div>
 
-        <section class="news-section" aria-label="Guild news">
-          <div class="news-section__header">
-            <h2 class="news-section__title">Latest News</h2>
-            <button class="btn-torch news-section__new" id="newPostButton" type="button" hidden>New Post</button>
+        <section class="home-news" aria-labelledby="homeNewsHeading">
+          <div class="home-news__header">
+            <div>
+              <p class="hero__eyebrow">Word from the Guild Hall</p>
+              <h2 class="home-news__title" id="homeNewsHeading">Latest News</h2>
+            </div>
+            <button class="btn-torch" id="homeNewsNewButton" type="button" hidden>Post News</button>
           </div>
 
-          <div id="newsList"></div>
-          <div class="news-section__archive" id="newsArchiveSection" hidden>
-            <button class="btn-torch news-section__archive-toggle" id="newsArchiveToggle" type="button" hidden></button>
-            <div id="newsArchiveList" hidden></div>
-          </div>
-          <div class="news-section__editor">
-            <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
-            <form class="panel forum-form" id="newsForm" hidden>
-              <label class="resource-field">
-                <span>Post Title</span>
-                <input id="newsTitle" type="text" placeholder="Announce the next guild event" required />
-              </label>
-              <label class="resource-field">
-                <span>Message</span>
-                <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
-              </label>
-              <label class="resource-checkbox">
-                <input
-                  id="newsPostToForum"
-                  type="checkbox"
-                  aria-label="Also post this article to the public forum"
-                  aria-describedby="newsForumOptionHelp"
-                />
-                <span>Also post this article to the public forum</span>
-              </label>
-              <p id="newsForumOptionHelp" class="resource-notice">This creates or updates a matching thread in the public forums when the news article is saved.</p>
-              <div class="auth-actions">
-                <button class="btn-primary" type="submit">Save News Post</button>
-                <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
-              </div>
-            </form>
+          <p class="resource-notice" id="homeNewsNotice" aria-live="polite"></p>
+          <form class="panel forum-form home-news__form" id="homeNewsForm" hidden>
+            <label class="resource-field">
+              <span>Article Title</span>
+              <input id="homeNewsTitle" type="text" maxlength="180" placeholder="Announce the next guild event" required />
+            </label>
+            <label class="resource-field">
+              <span>News Article</span>
+              <textarea id="homeNewsBody" rows="6" maxlength="12000" placeholder="Share guild updates, raid plans, or heroic news..." required></textarea>
+            </label>
+            <label class="resource-checkbox">
+              <input id="homeNewsPostToForum" type="checkbox" />
+              <span>Also copy this article to the public forum</span>
+            </label>
+            <div class="auth-actions">
+              <button class="btn-primary" id="homeNewsSubmit" type="submit">Publish News</button>
+              <button class="btn-torch" id="homeNewsCancel" type="button">Cancel</button>
+            </div>
+          </form>
+
+          <div class="home-news__list" id="homeNewsList"></div>
+          <div class="home-news__archive" id="homeNewsArchive" hidden>
+            <button class="btn-torch" id="homeNewsArchiveToggle" type="button" hidden></button>
+            <div class="home-news__list" id="homeNewsArchiveList" hidden></div>
           </div>
         </section>
 
@@ -226,7 +222,7 @@
       const heroScopeWeb = document.getElementById('heroScopeWeb');
       const heroSearchResults = document.getElementById('heroSearchResults');
       const siteSearchPages = [
-        { path: '/', title: 'News' },
+        { path: '/', title: 'Home' },
         { path: '/forums/', title: 'Forums' },
         { path: '/roster/', title: 'Roster' },
         { path: '/discord/', title: 'Discord' },
@@ -247,6 +243,13 @@
       const SNIPPET_CHARS_AFTER_MATCH = 90;
       let editingPostId = null;
       let showArchivedNews = false;
+      const newsState = {
+        posts: [],
+        loaded: false,
+        loadPromise: null,
+        pendingSyncPosts: null,
+        remoteSynced: false
+      };
 
       function isOwner(member) {
         return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
@@ -297,23 +300,14 @@
         renderNews('That news article could not be found.');
       }
 
-      function readPosts() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored
-              .map((post, index) => normalizePost(post, index, stored.length))
-              .filter(Boolean)
-              .sort((a, b) => b.createdAt - a.createdAt);
-          }
-        } catch (error) {
-          // Fall back to the default empty state.
-        }
-        return [];
-      }
-
       function normalizePost(post, index = 0, total = 0) {
         if (!post || typeof post !== 'object') {
+          return null;
+        }
+
+        const title = String(post.title || '').trim();
+        const body = String(post.body || '').trim();
+        if (!title || !body) {
           return null;
         }
 
@@ -321,10 +315,10 @@
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
         return {
           id: String(post.id || '').trim() || buildId('news'),
-          title: String(post.title || ''),
-          body: String(post.body || ''),
-          author: String(post.author || 'Guild Member'),
-          avatar: String(post.avatar || ''),
+          title: title,
+          body: body,
+          author: String(post.author || post.authorName || 'Guild Member'),
+          avatar: String(post.avatar || post.authorAvatar || ''),
           createdAt,
           updatedAt: Number(post.updatedAt) || createdAt,
           postedToForum: Boolean(post.postedToForum),
@@ -332,18 +326,69 @@
         };
       }
 
+      function normalizeNewsPosts(posts) {
+        if (!Array.isArray(posts)) {
+          return [];
+        }
+
+        return posts
+          .map((post, index, all) => normalizePost(post, index, all.length))
+          .filter(Boolean)
+          .sort((left, right) => {
+            const createdDelta = (Number(right.createdAt) || 0) - (Number(left.createdAt) || 0);
+            if (createdDelta !== 0) {
+              return createdDelta;
+            }
+            const updatedDelta = (Number(right.updatedAt) || 0) - (Number(left.updatedAt) || 0);
+            if (updatedDelta !== 0) {
+              return updatedDelta;
+            }
+            return String(left.title || '').localeCompare(String(right.title || ''));
+          });
+      }
+
+      function readLegacyNewsPosts() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
+          return normalizeNewsPosts(Array.isArray(stored) ? stored : []);
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function persistNewsPosts(posts) {
+        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(normalizeNewsPosts(posts)));
+      }
+
+      function readPosts() {
+        return newsState.posts.slice();
+      }
+
       function writePosts(posts) {
-        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(posts));
+        newsState.posts = normalizeNewsPosts(posts);
+        persistNewsPosts(newsState.posts);
+        newsState.loaded = true;
       }
 
       function latestPostTimestamp(posts) {
         if (!Array.isArray(posts) || !posts.length) {
           return 0;
         }
+
         return posts.reduce((latest, post) => {
           const next = Number(post.updatedAt) || Number(post.createdAt) || 0;
           return next > latest ? next : latest;
         }, 0);
+      }
+
+      function hydrateNewsFromLocalCache() {
+        if (newsState.loaded) {
+          return newsState.posts;
+        }
+
+        const localPosts = readLegacyNewsPosts();
+        writePosts(localPosts);
+        return newsState.posts;
       }
 
       async function getIdentityToken() {
@@ -361,6 +406,15 @@
         }
       }
 
+      async function fetchNewsPostsFromRemote() {
+        const response = await fetch(NEWS_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+        if (!response.ok) {
+          throw new Error('Unable to read news posts.');
+        }
+        const payload = await response.json();
+        return normalizeNewsPosts(payload && payload.posts);
+      }
+
       async function savePostsToRemote(posts) {
         const token = await getIdentityToken();
         if (!token) {
@@ -372,9 +426,85 @@
             'Content-Type': 'application/json',
             Authorization: `Bearer ${token}`
           },
-          body: JSON.stringify({ posts })
+          body: JSON.stringify({ posts: normalizeNewsPosts(posts) })
         });
         return response.ok;
+      }
+
+      async function flushPendingNewsSync() {
+        const pendingPosts = newsState.pendingSyncPosts;
+        if (!Array.isArray(pendingPosts) || !pendingPosts.length) {
+          return true;
+        }
+
+        const saved = await savePostsToRemote(pendingPosts);
+        if (saved) {
+          newsState.pendingSyncPosts = null;
+        }
+        return saved;
+      }
+
+      async function queueNewsSync(posts) {
+        newsState.pendingSyncPosts = normalizeNewsPosts(posts);
+        persistNewsPosts(newsState.pendingSyncPosts);
+        return flushPendingNewsSync();
+      }
+
+      async function ensureNewsPostsLoaded() {
+        if (newsState.remoteSynced && !newsState.loadPromise) {
+          return newsState.posts;
+        }
+
+        if (newsState.loadPromise) {
+          return newsState.loadPromise;
+        }
+
+        hydrateNewsFromLocalCache();
+        newsState.loadPromise = (async () => {
+          try {
+            const remotePosts = await fetchNewsPostsFromRemote();
+            const localPosts = readLegacyNewsPosts();
+            const remoteLatest = latestPostTimestamp(remotePosts);
+            const localLatest = latestPostTimestamp(localPosts);
+
+            if (remotePosts.length && remoteLatest >= localLatest) {
+              writePosts(remotePosts);
+              newsState.remoteSynced = true;
+              return newsState.posts;
+            }
+
+            if (localPosts.length) {
+              writePosts(localPosts);
+              newsState.pendingSyncPosts = localPosts;
+              await flushPendingNewsSync();
+              newsState.remoteSynced = true;
+              return newsState.posts;
+            }
+
+            writePosts(remotePosts);
+            newsState.remoteSynced = true;
+            return newsState.posts;
+          } catch (error) {
+            const localPosts = readLegacyNewsPosts();
+            writePosts(localPosts);
+            if (localPosts.length) {
+              newsState.pendingSyncPosts = localPosts;
+            }
+            newsState.remoteSynced = true;
+            return newsState.posts;
+          } finally {
+            newsState.loaded = true;
+            newsState.loadPromise = null;
+          }
+        })();
+
+        return newsState.loadPromise;
+      }
+
+      async function syncPostsWithRemote() {
+        hydrateNewsFromLocalCache();
+        void ensureNewsPostsLoaded();
+        renderNews();
       }
 
       function defaultForumState() {
@@ -514,34 +644,6 @@
         };
       }
 
-      async function syncPostsWithRemote() {
-        try {
-          const response = await fetch(NEWS_REMOTE_ENDPOINT, { credentials: 'same-origin' });
-          if (!response.ok) {
-            return;
-          }
-          const payload = await response.json();
-          const remotePosts = Array.isArray(payload && payload.posts)
-            ? payload.posts.map((post, index, all) => normalizePost(post, index, all.length)).filter(Boolean)
-            : [];
-          const localPosts = readPosts();
-          const remoteLatest = latestPostTimestamp(remotePosts);
-          const localLatest = latestPostTimestamp(localPosts);
-
-          if (remotePosts.length && remoteLatest >= localLatest) {
-            writePosts(remotePosts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
-            renderNews();
-            return;
-          }
-
-          if (localPosts.length && localLatest > remoteLatest) {
-            await savePostsToRemote(localPosts);
-          }
-        } catch (error) {
-          // Local cache remains the fallback when the shared store is unavailable.
-        }
-      }
-
       function resetNewsForm() {
         editingPostId = null;
         newsForm.hidden = true;
@@ -596,7 +698,7 @@
         const avatarUrl = getAvatarUrl(post.author, post.avatar);
 
         return `
-          <article class="panel forum-thread">
+          <article class="panel forum-thread" id="news-${escapeHtml(post.id)}">
             <div class="forum-thread__header">
               <div>
                 <h3 class="forum-thread__title">${escapeHtml(post.title)}</h3>
@@ -616,7 +718,20 @@
       function renderNews(statusMessage = '') {
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
+        if (!newsState.loaded) {
+          hydrateNewsFromLocalCache();
+        }
         const allPosts = readPosts();
+        if (!newsState.loaded) {
+          newsList.innerHTML = '<div class="panel empty-state"><p>Loading news posts from the server...</p></div>';
+          showArchivedNews = false;
+          newsArchiveSection.hidden = true;
+          newsArchiveToggle.hidden = true;
+          newsArchiveList.hidden = true;
+          newsArchiveList.innerHTML = '';
+          newsNotice.textContent = getNewsNotice(currentMember, statusMessage);
+          return;
+        }
         const posts = allPosts.slice(0, NEWS_HOME_LIMIT);
         const archivedPosts = allPosts.slice(NEWS_HOME_LIMIT);
         const canEditNews = isOwner(currentMember);
@@ -738,6 +853,34 @@
         }
       }
 
+      async function searchNewsArticles(query) {
+        const normalizedQuery = normalizeSearchValue(query);
+        if (!normalizedQuery) {
+          return [];
+        }
+
+        await ensureNewsPostsLoaded();
+        const matches = [];
+        for (const post of newsState.posts) {
+          const searchText = `${post.title} ${post.body} ${post.author}`;
+          if (!normalizeSearchValue(searchText).includes(normalizedQuery)) {
+            continue;
+          }
+
+          matches.push({
+            path: `/#news-${encodeURIComponent(post.id)}`,
+            title: `News: ${post.title}`,
+            snippet: createSearchSnippet(searchText, query)
+          });
+
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
+        }
+
+        return matches;
+      }
+
       async function searchEntireSite(query) {
         const normalizedQuery = normalizeSearchValue(query);
         if (!normalizedQuery) {
@@ -745,7 +888,11 @@
         }
 
         const matches = [];
+
         for (const page of siteSearchPages) {
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
           const pageText = await readPageSearchText(page.path);
           if (!normalizeSearchValue(pageText).includes(normalizedQuery)) {
             continue;
@@ -830,7 +977,9 @@
         await runHeroSearch(heroSearchInput.value);
       });
 
-      newPostButton.addEventListener('click', () => {
+      if (newPostButton) {
+      newPostButton.addEventListener('click', async () => {
+        await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
         if (!isOwner(currentMember)) {
           window.location.href = '/login/';
@@ -854,7 +1003,8 @@
         renderNews();
       });
 
-      function openNewsPostEditor(postId) {
+      async function openNewsPostEditor(postId) {
+        await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
         if (!isOwner(currentMember)) {
           window.location.href = '/login/';
@@ -878,6 +1028,7 @@
 
       newsForm.addEventListener('submit', async (event) => {
         event.preventDefault();
+        await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
         if (!isOwner(currentMember)) {
           window.location.href = '/login/';
@@ -926,7 +1077,7 @@
           });
         }
 
-        let nextPosts = [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        let nextPosts = sortNewsPosts(posts);
         writePosts(nextPosts);
 
         if (wantsForumPost) {
@@ -963,7 +1114,7 @@
           }
         }
 
-        const savedNewsRemotely = await savePostsToRemote(nextPosts);
+        const savedNewsRemotely = await queueNewsSync(nextPosts);
 
         resetNewsForm();
         const savedPost = nextPosts.find((post) => post.id === savedPostId);
@@ -983,7 +1134,7 @@
         if (!button) {
           return;
         }
-        openNewsPostEditor(button.getAttribute('data-edit-post'));
+        void openNewsPostEditor(button.getAttribute('data-edit-post'));
       });
 
       newsArchiveList.addEventListener('click', (event) => {
@@ -991,8 +1142,9 @@
         if (!button) {
           return;
         }
-        openNewsPostEditor(button.getAttribute('data-edit-post'));
+        void openNewsPostEditor(button.getAttribute('data-edit-post'));
       });
+      }
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
@@ -1003,29 +1155,21 @@
         }
         localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
         renderMemberBadge(null);
-        renderNews();
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => {
-          renderNews();
-          void syncPostsWithRemote();
+          renderMemberBadge(readCurrentMember());
         });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
           renderMemberBadge(null);
-          renderNews();
         });
       }
 
-      window.addEventListener('theChosen:persistent-store-ready', () => {
-        renderNews();
-        void syncPostsWithRemote();
-      });
-
-      renderNews();
-      void syncPostsWithRemote();
+      renderMemberBadge(readCurrentMember());
     </script>
+    <script src="scripts/news.js"></script>
   </body>
 </html>
