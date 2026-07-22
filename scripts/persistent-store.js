@@ -1,6 +1,12 @@
 (function () {
   const PREFIX = 'theChosen';
   const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
+  const DIRECTORY_STORAGE_KEY = 'theChosenGuildDirectoryV1';
+  const LOCAL_ONLY_KEYS = new Set([
+    NEWS_STORAGE_KEY,
+    'theChosenCurrentMember',
+    'theChosenForumStateV2'
+  ]);
   const ENDPOINT = '/.netlify/functions/content-state?scope=kv';
   const storage = window.localStorage;
   if (!storage) {
@@ -18,7 +24,7 @@
   const pending = {};
 
   function isScopedKey(key) {
-    return typeof key === 'string' && key.indexOf(PREFIX) === 0 && key !== NEWS_STORAGE_KEY;
+    return typeof key === 'string' && key.indexOf(PREFIX) === 0 && !LOCAL_ONLY_KEYS.has(key);
   }
 
   function snapshotNativeScopedEntries() {
@@ -157,7 +163,9 @@
     });
 
     try {
-      const response = await fetch(ENDPOINT, { credentials: 'same-origin' });
+      const token = await getIdentityToken();
+      const headers = token ? { Authorization: 'Bearer ' + token } : {};
+      const response = await fetch(ENDPOINT, { credentials: 'same-origin', cache: 'no-store', headers: headers });
       if (response.ok) {
         const payload = await response.json();
         const items = payload && payload.items && typeof payload.items === 'object' ? payload.items : {};
@@ -199,11 +207,28 @@
   patchStorage();
   void hydrate();
 
-  if (window.netlifyIdentity && typeof window.netlifyIdentity.on === 'function') {
+  function connectIdentityRefresh() {
+    if (!window.netlifyIdentity || typeof window.netlifyIdentity.on !== 'function') {
+      return;
+    }
+    window.netlifyIdentity.on('init', function (user) {
+      if (user) {
+        void hydrate();
+      }
+    });
     window.netlifyIdentity.on('login', function () {
-      if (initialized) {
-        queueFlush();
+      void hydrate().then(function () {
+        if (initialized) {
+          queueFlush();
+        }
+      });
+    });
+    window.netlifyIdentity.on('logout', function () {
+      if (Object.prototype.hasOwnProperty.call(cache, DIRECTORY_STORAGE_KEY)) {
+        delete cache[DIRECTORY_STORAGE_KEY];
+        emitStorageChange(DIRECTORY_STORAGE_KEY);
       }
     });
   }
+  window.addEventListener('DOMContentLoaded', connectIdentityRefresh);
 })();

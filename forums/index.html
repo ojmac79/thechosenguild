@@ -164,7 +164,7 @@
         openReplyForms: new Set(),
         replyingToReplyId: {}
       };
-      let pendingForumSync = null;
+      let serverAccess = 'public';
 
       function getCurrentMember() {
         return guildAccess.getCurrentMember();
@@ -314,6 +314,7 @@
                   .filter(Boolean)
               : [];
           });
+          normalized.private = defaultState().private;
           return normalized;
         } catch (error) {
           return defaultState();
@@ -321,8 +322,10 @@
       }
 
       function writeState(state) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-        queueForumStateSync(state);
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          public: state.public,
+          private: defaultState().private
+        }));
       }
 
       function latestForumTimestamp(state) {
@@ -362,55 +365,57 @@
         }
       }
 
-      async function saveForumStateToRemote(state) {
+      async function runForumOperation(action, spaceKey, input) {
         const token = await getIdentityToken();
-        if (!token) {
-          return false;
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
         }
+        const member = getCurrentMember();
         const response = await fetch(FORUM_REMOTE_ENDPOINT, {
-          method: 'PUT',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${token}`
-          },
-          body: JSON.stringify({ state })
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            action,
+            space: spaceKey,
+            authorName: member && (member.name || member.email),
+            authorAvatar: member && member.avatar,
+            ...input
+          })
         });
-        return response.ok;
-      }
-
-      function queueForumStateSync(state) {
-        pendingForumSync = state;
-        if (!window.netlifyIdentity || !window.netlifyIdentity.currentUser()) {
-          return;
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || 'The forum post could not be saved.');
         }
-        const snapshot = pendingForumSync;
-        pendingForumSync = null;
-        void saveForumStateToRemote(snapshot);
+        const normalized = readStateFromSource(payload.state);
+        serverAccess = String(payload.access || 'public');
+        forumState.public = normalized.public;
+        forumState.private = normalized.private;
+        writeState(normalized);
+        return payload;
       }
 
       async function syncForumStateWithRemote() {
         try {
-          const response = await fetch(FORUM_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+          const token = await getIdentityToken();
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const response = await fetch(FORUM_REMOTE_ENDPOINT, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers
+          });
           if (!response.ok) {
             return;
           }
           const payload = await response.json();
           const remoteState = payload && payload.state ? payload.state : null;
           const normalizedRemote = remoteState ? readStateFromSource(remoteState) : null;
-          const localState = readState();
-          const remoteLatest = latestForumTimestamp(normalizedRemote);
-          const localLatest = latestForumTimestamp(localState);
-
-          if (normalizedRemote && remoteLatest >= localLatest) {
+          if (normalizedRemote) {
+            serverAccess = String(payload.access || 'public');
             forumState.public = normalizedRemote.public;
             forumState.private = normalizedRemote.private;
-            localStorage.setItem(STORAGE_KEY, JSON.stringify(normalizedRemote));
+            writeState(normalizedRemote);
             render();
-            return;
-          }
-
-          if (localLatest > remoteLatest) {
-            await saveForumStateToRemote(localState);
           }
         } catch (error) {
           // Local cache remains the fallback when the shared store is unavailable.
@@ -772,7 +777,7 @@
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          const canReply = spaceKey === 'public' ? !!member : (!!member && !!privateAccess);
+          const canReply = spaceKey === 'public' ? true : (!!member && !!privateAccess);
           if (canReply && !thread.isLocked) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
 
@@ -844,15 +849,13 @@
         const privateNote = document.getElementById('privateAuthNote');
 
         if (!member) {
-          publicAuthNote.textContent = 'Sign in with a verified Netlify account to request forum authorization for public posting.';
+          publicAuthNote.textContent = 'Public posting is open to everyone. Guest posts are saved permanently.';
           privateNote.textContent = 'Private spaces unlock after the guild leader authorizes your forum access.';
           return;
         }
 
         const roleText = getRoleLabel(permissions);
-        publicAuthNote.textContent = permissions.canUseForums
-          ? `Signed in as ${member.email}. Forum authorization is active. Role: ${roleText}.`
-          : `Signed in as ${member.email}. Verified account detected, but forum authorization has not been granted yet.`;
+        publicAuthNote.textContent = `Signed in as ${member.email}. Public posting is enabled. Role: ${roleText}.`;
         privateNote.textContent = privateAccess
           ? 'Private posting enabled for your account.'
           : 'Your account can read public threads, but private guild forum access is not enabled.';
@@ -861,9 +864,8 @@
       function render() {
         const member = getCurrentMember();
         const permissions = guildAccess.getPermissions(member);
-        const moderator = canModerate(permissions);
-        const forumAccess = permissions.canUseForums;
-        const privateAccess = forumAccess;
+        const moderator = serverAccess === 'moderator';
+        const privateAccess = serverAccess === 'member' || serverAccess === 'moderator';
 
         renderMemberBadge(member);
         updateAuthNotes(member, permissions, privateAccess);
@@ -876,7 +878,7 @@
 
         const publicForm = document.getElementById('publicThreadForm');
         const privateForm = document.getElementById('privateThreadForm');
-        publicForm.querySelector('button[type="submit"]').disabled = !forumAccess;
+        publicForm.querySelector('button[type="submit"]').disabled = false;
         privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
 
         const privateGate = document.getElementById('privateGate');
@@ -900,22 +902,19 @@
         }
       }
 
-      function addCategory(spaceKey, name, description) {
+      async function addCategory(spaceKey, name, description) {
         const trimmedName = String(name || '').trim();
         const trimmedDescription = String(description || '').trim();
         if (!trimmedName || !trimmedDescription) {
           return;
         }
-
-        forumState[spaceKey].categories.push({
-          id: buildId(`${spaceKey}-cat`),
+        await runForumOperation('create-category', spaceKey, {
           name: trimmedName,
           description: trimmedDescription
         });
-        writeState(forumState);
       }
 
-      function renameCategory(spaceKey, categoryId) {
+      async function renameCategory(spaceKey, categoryId) {
         const category = categoryById(spaceKey, categoryId);
         if (!category) {
           return;
@@ -928,127 +927,76 @@
         if (!nextDescription) {
           return;
         }
-        category.name = nextName.trim();
-        category.description = nextDescription.trim();
-        writeState(forumState);
+        await runForumOperation('rename-category', spaceKey, {
+          categoryId,
+          name: nextName.trim(),
+          description: nextDescription.trim()
+        });
       }
 
-      function deleteCategory(spaceKey, categoryId) {
+      async function deleteCategory(spaceKey, categoryId) {
         const categories = forumState[spaceKey].categories;
         if (categories.length <= 1) {
           window.alert('At least one category is required.');
           return;
         }
 
-        const nextCategories = categories.filter((category) => category.id !== categoryId);
-        if (nextCategories.length === categories.length) {
-          return;
-        }
-
-        const fallbackCategoryId = nextCategories[0].id;
-        forumState[spaceKey].threads = forumState[spaceKey].threads.map((thread) => {
-          if (thread.categoryId === categoryId) {
-            return { ...thread, categoryId: fallbackCategoryId };
-          }
-          return thread;
-        });
-        forumState[spaceKey].categories = nextCategories;
-
-        if (uiState[`${spaceKey}Filter`] === categoryId) {
-          uiState[`${spaceKey}Filter`] = 'all';
-        }
-
-        writeState(forumState);
+        await runForumOperation('delete-category', spaceKey, { categoryId });
+        uiState[`${spaceKey}Filter`] = 'all';
       }
 
-      function addThread(spaceKey, member, title, body, categoryId) {
-        const categories = forumState[spaceKey].categories;
-        const validCategoryId = categories.some((category) => category.id === categoryId)
-          ? categoryId
-          : categories[0].id;
-
-        forumState[spaceKey].threads.push({
-          id: buildId(`${spaceKey}-thread`),
-          categoryId: validCategoryId,
+      async function addThread(spaceKey, title, body, categoryId) {
+        await runForumOperation('create-thread', spaceKey, {
           title: String(title || '').trim(),
           body: String(body || '').trim(),
-          authorName: member.name || member.email,
-          authorEmail: member.email,
-          authorAvatar: member.avatar || '',
-          createdAt: Date.now(),
-          isPinned: false,
-          isLocked: false
+          categoryId
         });
-        writeState(forumState);
       }
 
-      function updateThread(spaceKey, threadId, updater) {
-        const index = forumState[spaceKey].threads.findIndex((thread) => thread.id === threadId);
-        if (index < 0) {
-          return;
-        }
-        forumState[spaceKey].threads[index] = updater(forumState[spaceKey].threads[index]);
-        writeState(forumState);
+      async function updateThread(spaceKey, threadId, action) {
+        await runForumOperation(action, spaceKey, { threadId });
       }
 
-      function deleteThread(spaceKey, threadId) {
-        forumState[spaceKey].threads = forumState[spaceKey].threads.filter((thread) => thread.id !== threadId);
-        forumState[spaceKey].replies = forumState[spaceKey].replies.filter((reply) => reply.threadId !== threadId);
-        writeState(forumState);
+      async function deleteThread(spaceKey, threadId) {
+        await runForumOperation('delete-thread', spaceKey, { threadId });
       }
 
-      function addReply(spaceKey, member, threadId, body, parentReplyId) {
+      async function addReply(spaceKey, threadId, body, parentReplyId) {
         const trimmedBody = String(body || '').trim();
         if (!trimmedBody) {
           return;
         }
-        forumState[spaceKey].replies.push({
-          id: buildId(`${spaceKey}-reply`),
+        await runForumOperation('create-reply', spaceKey, {
           threadId,
           parentReplyId: parentReplyId || null,
-          body: trimmedBody,
-          authorName: member.name || member.email || 'Guest Adventurer',
-          authorEmail: member.email,
-          authorAvatar: member.avatar || '',
-          createdAt: Date.now()
+          body: trimmedBody
         });
-        writeState(forumState);
       }
 
-      function deleteReply(spaceKey, replyId) {
-        const toRemove = new Set([replyId]);
-        let changed = true;
-        while (changed) {
-          changed = false;
-          forumState[spaceKey].replies.forEach((reply) => {
-            if (reply.parentReplyId && toRemove.has(reply.parentReplyId) && !toRemove.has(reply.id)) {
-              toRemove.add(reply.id);
-              changed = true;
-            }
-          });
-        }
-        forumState[spaceKey].replies = forumState[spaceKey].replies.filter((reply) => !toRemove.has(reply.id));
-        writeState(forumState);
+      async function deleteReply(spaceKey, replyId) {
+        await runForumOperation('delete-reply', spaceKey, { replyId });
       }
 
-      document.getElementById('publicThreadForm').addEventListener('submit', (event) => {
+      document.getElementById('publicThreadForm').addEventListener('submit', async (event) => {
         event.preventDefault();
-        const member = getCurrentMember();
-        if (!guildAccess.getPermissions(member).canUseForums) {
-          window.location.href = '/login/';
-          return;
-        }
-
         const titleInput = document.getElementById('publicThreadTitle');
         const bodyInput = document.getElementById('publicThreadBody');
         const categorySelect = document.getElementById('publicThreadCategory');
-
-        addThread('public', member, titleInput.value, bodyInput.value, categorySelect.value);
-        event.target.reset();
-        render();
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        try {
+          await addThread('public', titleInput.value, bodyInput.value, categorySelect.value);
+          event.target.reset();
+          render();
+          document.getElementById('publicAuthNote').textContent = 'Public thread saved permanently.';
+        } catch (error) {
+          document.getElementById('publicAuthNote').textContent = error.message;
+        } finally {
+          submitButton.disabled = false;
+        }
       });
 
-      document.getElementById('privateThreadForm').addEventListener('submit', (event) => {
+      document.getElementById('privateThreadForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const member = getCurrentMember();
         if (!guildAccess.getPermissions(member).canUseForums) {
@@ -1060,14 +1008,23 @@
         const bodyInput = document.getElementById('privateThreadBody');
         const categorySelect = document.getElementById('privateThreadCategory');
 
-        addThread('private', member, titleInput.value, bodyInput.value, categorySelect.value);
-        event.target.reset();
-        render();
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        try {
+          await addThread('private', titleInput.value, bodyInput.value, categorySelect.value);
+          event.target.reset();
+          render();
+          document.getElementById('privateAuthNote').textContent = 'Member thread saved permanently.';
+        } catch (error) {
+          document.getElementById('privateAuthNote').textContent = error.message;
+        } finally {
+          submitButton.disabled = false;
+        }
       });
 
       ['public', 'private'].forEach((spaceKey) => {
         const categoryForm = document.getElementById(`${spaceKey}CategoryForm`);
-        categoryForm.addEventListener('submit', (event) => {
+        categoryForm.addEventListener('submit', async (event) => {
           event.preventDefault();
           const permissions = guildAccess.getPermissions(getCurrentMember());
           if (!canModerate(permissions)) {
@@ -1076,9 +1033,13 @@
 
           const nameInput = document.getElementById(`${spaceKey}CategoryName`);
           const descriptionInput = document.getElementById(`${spaceKey}CategoryDescription`);
-          addCategory(spaceKey, nameInput.value, descriptionInput.value);
-          event.target.reset();
-          render();
+          try {
+            await addCategory(spaceKey, nameInput.value, descriptionInput.value);
+            event.target.reset();
+            render();
+          } catch (error) {
+            document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
+          }
         });
 
         document.getElementById(`${spaceKey}Filters`).addEventListener('click', (event) => {
@@ -1090,7 +1051,7 @@
           render();
         });
 
-        document.getElementById(`${spaceKey}CategoryList`).addEventListener('click', (event) => {
+        document.getElementById(`${spaceKey}CategoryList`).addEventListener('click', async (event) => {
           const button = event.target.closest('[data-action]');
           if (!button) {
             return;
@@ -1107,16 +1068,20 @@
             return;
           }
 
-          if (action === 'rename-category') {
-            renameCategory(spaceKey, categoryId);
+          try {
+            if (action === 'rename-category') {
+              await renameCategory(spaceKey, categoryId);
+            }
+            if (action === 'delete-category') {
+              await deleteCategory(spaceKey, categoryId);
+            }
+            render();
+          } catch (error) {
+            document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
           }
-          if (action === 'delete-category') {
-            deleteCategory(spaceKey, categoryId);
-          }
-          render();
         });
 
-        document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', (event) => {
+        document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', async (event) => {
           const button = event.target.closest('[data-action]');
           if (!button) {
             return;
@@ -1144,17 +1109,24 @@
           if (action === 'post-reply') {
             const threadId = button.dataset.threadId;
             const parentReplyId = button.dataset.parentReplyId || null;
-            if (!threadId || !member) {
+            if (!threadId || (spaceKey === 'private' && !member)) {
               return;
             }
             const textarea = document.getElementById(`replyInput-${threadId}`);
             if (!textarea || !textarea.value.trim()) {
               return;
             }
-            addReply(spaceKey, member, threadId, textarea.value, parentReplyId);
-            uiState.openReplyForms.delete(threadId);
-            delete uiState.replyingToReplyId[threadId];
-            render();
+            button.disabled = true;
+            try {
+              await addReply(spaceKey, threadId, textarea.value, parentReplyId);
+              uiState.openReplyForms.delete(threadId);
+              delete uiState.replyingToReplyId[threadId];
+              render();
+              document.getElementById(`${spaceKey}AuthNote`).textContent = 'Reply saved permanently.';
+            } catch (error) {
+              document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
+              button.disabled = false;
+            }
             return;
           }
 
@@ -1163,33 +1135,36 @@
           }
 
           const threadId = button.dataset.threadId;
-
-          if (action === 'toggle-pin') {
-            if (!threadId) {
-              return;
+          try {
+            if (action === 'toggle-pin') {
+              if (!threadId) {
+                return;
+              }
+              await updateThread(spaceKey, threadId, 'toggle-pin');
             }
-            updateThread(spaceKey, threadId, (thread) => ({ ...thread, isPinned: !thread.isPinned }));
-          }
-          if (action === 'toggle-lock') {
-            if (!threadId) {
-              return;
+            if (action === 'toggle-lock') {
+              if (!threadId) {
+                return;
+              }
+              await updateThread(spaceKey, threadId, 'toggle-lock');
             }
-            updateThread(spaceKey, threadId, (thread) => ({ ...thread, isLocked: !thread.isLocked }));
-          }
-          if (action === 'delete-thread') {
-            if (!threadId) {
-              return;
+            if (action === 'delete-thread') {
+              if (!threadId) {
+                return;
+              }
+              await deleteThread(spaceKey, threadId);
             }
-            deleteThread(spaceKey, threadId);
-          }
-          if (action === 'delete-reply') {
-            const replyId = button.dataset.replyId;
-            if (!replyId) {
-              return;
+            if (action === 'delete-reply') {
+              const replyId = button.dataset.replyId;
+              if (!replyId) {
+                return;
+              }
+              await deleteReply(spaceKey, replyId);
             }
-            deleteReply(spaceKey, replyId);
+            render();
+          } catch (error) {
+            document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
           }
-          render();
         });
       });
 
@@ -1202,6 +1177,9 @@
           window.netlifyIdentity.logout();
         }
         localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+        serverAccess = 'public';
+        forumState.private = defaultState().private;
+        writeState(forumState);
         render();
       });
 
@@ -1213,7 +1191,9 @@
         ) {
           const latestState = readState();
           forumState.public = latestState.public;
-          forumState.private = latestState.private;
+          if (serverAccess === 'public') {
+            forumState.private = latestState.private;
+          }
           render();
         }
       });
@@ -1227,7 +1207,11 @@
         });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+          serverAccess = 'public';
+          forumState.private = defaultState().private;
+          writeState(forumState);
           render();
+          void syncForumStateWithRemote();
         });
       }
 
