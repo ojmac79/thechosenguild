@@ -276,6 +276,10 @@
         return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
       }
 
+      function getMemberDisplayName(member) {
+        return (member && (member.name || member.email)) || 'Guild Member';
+      }
+
       function readPosts() {
         try {
           const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
@@ -298,8 +302,9 @@
 
         const inferredCreatedAt = Math.max(0, total - index);
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
+        const normalizedId = String(post.id || '').trim();
         return {
-          id: post.id != null ? String(post.id) : buildId('news'),
+          id: normalizedId || buildId('news'),
           title: String(post.title || ''),
           body: String(post.body || ''),
           author: String(post.author || 'Guild Member'),
@@ -465,7 +470,7 @@
           categoryId,
           title: post.title,
           body: post.body,
-          authorName: member.name || member.email || 'Guild Member',
+          authorName: getMemberDisplayName(member),
           authorEmail: member.email || '',
           authorAvatar: member.avatar || '',
           createdAt: existingIndex >= 0
@@ -841,6 +846,7 @@
         const posts = readPosts();
         const targetPost = posts.find((post) => post.id === postId);
         if (!targetPost) {
+          resetNewsForm();
           renderNews('That news article could not be found.');
           return;
         }
@@ -870,10 +876,12 @@
         const posts = readPosts();
         const isEditing = Boolean(editingPostId);
         const wantsForumPost = newsPostToForum.checked;
+        let forumSyncFailed = false;
         let savedPostId = '';
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
           if (targetIndex < 0) {
+            resetNewsForm();
             renderNews('That news article could not be found.');
             return;
           }
@@ -883,7 +891,7 @@
             ...posts[targetIndex],
             title,
             body,
-            author: currentMember.name || currentMember.email,
+            author: getMemberDisplayName(currentMember),
             avatar: currentMember.avatar || '',
             updatedAt: now
           };
@@ -894,7 +902,7 @@
             id: savedPostId,
             title,
             body,
-            author: currentMember.name || currentMember.email,
+            author: getMemberDisplayName(currentMember),
             avatar: currentMember.avatar || '',
             createdAt: now,
             updatedAt: now
@@ -920,6 +928,7 @@
                 await savePostsToRemote(nextPosts);
               }
             } catch (error) {
+              forumSyncFailed = true;
               console.error('Failed to sync news to forum:', error);
               // Keep the saved news article even if the optional forum sync fails.
             }
@@ -934,7 +943,7 @@
           statusParts.push('Server sync is pending.');
         }
         if (wantsForumPost) {
-          statusParts.push(postedToForum ? 'Public forum post synced.' : 'Public forum sync could not be completed.');
+          statusParts.push(!forumSyncFailed && postedToForum ? 'Public forum post synced.' : 'Public forum sync could not be completed.');
         }
         renderNews(statusParts.join(' '));
       });
