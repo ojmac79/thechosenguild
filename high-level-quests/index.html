@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — High Level Quests</title>
+    <meta
+      name="description"
+      content="Searchable list of popular original EverQuest pre-expansion quests for level 41 to 50 players."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .llq-intro {
+        margin-top: 1.2rem;
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 78ch;
+      }
+      .llq-search {
+        margin-top: 1.3rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .llq-search__input {
+        flex: 1;
+        min-width: 240px;
+        padding: 0.8rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+      }
+      .llq-search__input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .llq-search__clear {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        cursor: pointer;
+      }
+      .llq-search__clear:hover { color: var(--text); }
+      .llq-match-count {
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-width: 120px;
+      }
+      .llq-grid {
+        margin-top: 1.2rem;
+        display: grid;
+        gap: 0.9rem;
+      }
+      .llq-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 1rem 1.1rem;
+      }
+      .llq-card__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+      .llq-card__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1.02rem;
+      }
+      .llq-card__level {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+      }
+      .llq-card__meta,
+      .llq-card__desc {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+      .llq-card__link {
+        margin-top: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--text);
+        text-decoration: underline;
+        text-decoration-color: var(--border);
+        font-size: 0.87rem;
+      }
+      .llq-card__link:hover { color: var(--accent); }
+      .llq-note {
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.8rem 0.95rem;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .llq-hidden { display: none !important; }
+      .llq-empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link" href="/low-level-quests/">Low Level Quests</a>
+            <a class="site-nav__link" href="/mid-level-quests/">Mid Level Quests</a>
+            <a class="site-nav__link active" href="/high-level-quests/">High Level Quests</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Classic Era Questing</p>
+        <h1 class="page-title">High Level Quests</h1>
+        <p class="page-subtitle">
+          Popular original EverQuest pre-expansion quests for levels 41–50, curated from classic community references.
+        </p>
+        <p class="llq-intro">
+          Use this quick index to find high-value endgame quests for experience, epic weapons, planar keys, and iconic
+          rewards. Search by quest name, zone, reward, class, or level range.
+        </p>
+
+        <div class="llq-search">
+          <input id="llqSearch" class="llq-search__input" type="search" placeholder="Search quest name, zone, reward, or level..." autocomplete="off" aria-label="Search high level quests" />
+          <button id="llqClear" class="llq-search__clear" type="button">Clear</button>
+          <span id="llqMatchCount" class="llq-match-count" aria-live="polite"></span>
+        </div>
+
+        <div class="llq-grid" id="llqGrid">
+
+          <article class="llq-card" data-search="epic weapon quest all classes 1.0 signature quest classic iconic weapon">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Epic Weapon Quests (1.0)</h2>
+              <span class="llq-card__level">Level 46–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various (class-specific multi-zone chains)</p>
+            <p class="llq-card__desc">Each class has a legendary multi-zone quest line rewarding a class-defining epic weapon. These are the most famous quests in classic EverQuest and require grouping, raiding, and travel across Norrath.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Epic_Weapons" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="plane of sky key access quest faction veeshan classic raid high level">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Plane of Sky Access</h2>
+              <span class="llq-card__level">Level 45–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Sky / East Freeport</p>
+            <p class="llq-card__desc">Gaining access to the Plane of Sky requires obtaining an Efreeti Boot quest item and navigating faction mechanics. Sky is a prized raiding destination with powerful loot islands.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Plane_of_Sky" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="plane of hate access key mistmoore dark elf portal classic raid innoruuk">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Plane of Hate Access</h2>
+              <span class="llq-card__level">Level 44–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Hate / Mistmoore / Various</p>
+            <p class="llq-card__desc">Accessing the Plane of Hate requires a rare drop from Mistmoore combined with a wizard or druid port. One of two original raid planes, home to Innoruuk and powerful gear.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Plane_of_Hate" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="plane of fear key access cazic thule terror horror horror classic raid mob">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Plane of Fear Access</h2>
+              <span class="llq-card__level">Level 44–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Fear / Cazic-Thule / Various</p>
+            <p class="llq-card__desc">Entry to the Plane of Fear requires a summoned portal scroll. The zone is home to Cazic-Thule himself and high-value classic gear including Flowing Black Silk Sash.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Plane_of_Fear" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="Flowing Black Silk Sash FBSS haste item classic iconic belt waist all classes">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Flowing Black Silk Sash (FBSS)</h2>
+              <span class="llq-card__level">Level 41–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Fear</p>
+            <p class="llq-card__desc">The most coveted haste item in classic EverQuest, the FBSS drops in the Plane of Fear and provides a 36% haste effect. Nearly every melee and hybrid character pursues this item.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Flowing_Black_Silk_Sash" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="cloak of flames robe fire classic caster wizard magician nagafen vox reward">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Cloak of Flames</h2>
+              <span class="llq-card__level">Level 44–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Nagafen's Lair (Solusek B)</p>
+            <p class="llq-card__desc">A legendary back slot item with fire resistance and strong stats, dropping from Lord Nagafen. Highly sought by casters and melee alike and one of the most recognizable items in classic EQ.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Cloak_of_Flames" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="nagafen vox dragon quest keys resist fire cold classic raid loot">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Lord Nagafen &amp; Lady Vox Raids</h2>
+              <span class="llq-card__level">Level 45–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Nagafen's Lair / Permafrost Caverns</p>
+            <p class="llq-card__desc">The two original dragon raid encounters of classic EverQuest. Both require resist gear, strong grouping, and coordination. Their loot tables include some of the most iconic classic items in the game.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Lord_Nagafen" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="guildmaster armor quest warrior paladin shadowknight rogue ranger bard class armor set crafted">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Class Armor Quests (Guildmaster)</h2>
+              <span class="llq-card__level">Level 41–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various (class guild cities)</p>
+            <p class="llq-card__desc">Each class has a guildmaster quest line that rewards a full set of class-specific armor. These quests involve collecting rare components from high-level zones and are a major endgame progression milestone.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Class+Armor+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="swiftwind pegasus feather wind spirit sword ranger epic quest classic weapon">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Swiftwind &amp; Earthcaller (Ranger Epic)</h2>
+              <span class="llq-card__level">Level 46–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various (multi-zone epic chain)</p>
+            <p class="llq-card__desc">The ranger epic weapon quest rewards Swiftwind and Earthcaller — two dual-wield swords with powerful procs. This lengthy quest spans many zones and is among the most involved class epics in classic EQ.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Swiftwind" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="staff of the wheel monk epic classic weapon offensive skill attack rating endgame">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Staff of the Wheel (Monk Epic)</h2>
+              <span class="llq-card__level">Level 46–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various (multi-zone epic chain)</p>
+            <p class="llq-card__desc">The monk epic quest rewards the Staff of the Wheel, a legendary two-handed weapon. This chain requires travel across Norrath and is a defining achievement for classic monks.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Staff_of_the_Wheel" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="manastone no drop classic item mana restore wizard enchanter magician necromancer endgame">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Manastone (Pre-Nerf Era)</h2>
+              <span class="llq-card__level">Level 41–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Fear</p>
+            <p class="llq-card__desc">A legendary no-drop item from the Plane of Fear that allowed casters to convert HP into mana. One of the most infamous items in EverQuest history, associated with the high-level caster endgame of the classic era.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Manastone" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="sarnak insignia bracer lake of ill omen frontier mountains kunark classic reward high level">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Sarnak Insignia Bracer Quest</h2>
+              <span class="llq-card__level">Level 41–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Lake of Ill Omen / Frontier Mountains</p>
+            <p class="llq-card__desc">A classic high-level turn-in quest involving Sarnak drops from Lake of Ill Omen, rewarding a bracer with strong stats. A popular endgame farming loop for players in that level range.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Sarnak+Insignia+Bracer" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="hole paineel erudite cursed undead key classic dungeon high level caster melee endgame">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">The Hole Access Quest</h2>
+              <span class="llq-card__level">Level 42–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: The Hole / Paineel</p>
+            <p class="llq-card__desc">Accessing The Hole requires a key obtained through Paineel. This deep erudite dungeon is a challenging endgame leveling and loot destination filled with undead and constructs, popular for both XP and rare drops.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/The_Hole" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="staff of four wizard epic classic weapon ice fire blaze ancient rune power teleport nuke">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Staff of Four (Wizard Epic)</h2>
+              <span class="llq-card__level">Level 46–50</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various (multi-zone epic chain)</p>
+            <p class="llq-card__desc">The wizard's epic quest rewards the Staff of Four, granting access to powerful clickable teleportation and a devastating nuke proc. Completing this chain is a landmark achievement for classic wizards.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Staff_of_Four" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="crown of the froglok king upper guk lower guk hp stamina tank reward classic">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Crown of the Froglok Kings</h2>
+              <span class="llq-card__level">Level 41–48</span>
+            </div>
+            <p class="llq-card__meta">Zones: Lower Guk</p>
+            <p class="llq-card__desc">A classic helmet quest rewarding the Crown of the Froglok Kings from deep in Lower Guk. Known for its strong HP bonus, it is a coveted headpiece for tanks and hybrids completing their pre-planar gear sets.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Crown_of_the_Froglok_Kings" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <div id="llqEmpty" class="llq-empty llq-hidden" role="status">
+            No quests matched your search. Try a different term.
+          </div>
+        </div>
+
+        <p class="llq-note">
+          These links point to classic community references on the public web; verify details against your server ruleset
+          before committing to a quest route.
+        </p>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
+      </footer>
+    </div>
+
+    <script>
+      const llqSearch = document.getElementById('llqSearch');
+      const llqClear = document.getElementById('llqClear');
+      const llqMatchCount = document.getElementById('llqMatchCount');
+      const llqEmpty = document.getElementById('llqEmpty');
+      const llqCards = Array.from(document.querySelectorAll('.llq-card'));
+
+      function runQuestSearch() {
+        const query = llqSearch.value.trim().toLowerCase();
+        let visible = 0;
+
+        llqCards.forEach((card) => {
+          const haystack = `${card.dataset.search || ''} ${card.textContent}`.toLowerCase();
+          const show = !query || haystack.includes(query);
+          card.classList.toggle('llq-hidden', !show);
+          if (show) visible += 1;
+        });
+
+        llqEmpty.classList.toggle('llq-hidden', visible > 0);
+        llqMatchCount.textContent = query
+          ? `${visible} quest${visible === 1 ? '' : 's'} shown`
+          : `${llqCards.length} quests available`;
+      }
+
+      llqSearch.addEventListener('input', runQuestSearch);
+      llqClear.addEventListener('click', () => {
+        llqSearch.value = '';
+        runQuestSearch();
+      });
+
+      runQuestSearch();
+    </script>
+  </body>
+</html>
