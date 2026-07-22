@@ -161,7 +161,7 @@ async function mirrorToPublicForum(store, post) {
 
 exports.handler = async function handler(event, context) {
   connectLambda(event);
-  const store = getStore(STORE_NAME, { consistency: 'strong' });
+  const store = getStore(STORE_NAME);
 
   if (event.httpMethod === 'GET') {
     const payload = await readJson(store, NEWS_KEY, { posts: [], updatedAt: '' });
