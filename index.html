@@ -463,33 +463,12 @@
         newsState.loadPromise = (async () => {
           try {
             const remotePosts = await fetchNewsPostsFromRemote();
-            const localPosts = readLegacyNewsPosts();
-            const remoteLatest = latestPostTimestamp(remotePosts);
-            const localLatest = latestPostTimestamp(localPosts);
-
-            if (remotePosts.length && remoteLatest >= localLatest) {
-              writePosts(remotePosts);
-              newsState.remoteSynced = true;
-              return newsState.posts;
-            }
-
-            if (localPosts.length) {
-              writePosts(localPosts);
-              newsState.pendingSyncPosts = localPosts;
-              await flushPendingNewsSync();
-              newsState.remoteSynced = true;
-              return newsState.posts;
-            }
-
             writePosts(remotePosts);
             newsState.remoteSynced = true;
             return newsState.posts;
           } catch (error) {
             const localPosts = readLegacyNewsPosts();
             writePosts(localPosts);
-            if (localPosts.length) {
-              newsState.pendingSyncPosts = localPosts;
-            }
             newsState.remoteSynced = true;
             return newsState.posts;
           } finally {

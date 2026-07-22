@@ -4,6 +4,8 @@ const OWNER_EMAIL = 'ojmac79@gmail.com';
 const STORE_NAME = 'the-chosen-content';
 const NEWS_KEY = 'news-posts-v1';
 const FORUM_KEY = 'forum-state-v1';
+const FORUM_CONFIG_KEY = 'forum-config-v1';
+const FORUM_THREAD_PREFIX = 'forum-threads/';
 const PUBLIC_FORUM_CATEGORY = 'pub-general';
 
 function json(statusCode, body) {
@@ -121,14 +123,23 @@ function buildId(prefix) {
 }
 
 async function mirrorToPublicForum(store, post) {
-  const payload = await readJson(store, FORUM_KEY, { state: null, updatedAt: '' });
-  const state = normalizeForumState(payload.state);
-  const categoryId = state.public.categories.some((category) => category.id === PUBLIC_FORUM_CATEGORY)
+  const [legacyPayload, config] = await Promise.all([
+    readJson(store, FORUM_KEY, { state: null, updatedAt: '' }),
+    readJson(store, FORUM_CONFIG_KEY, null)
+  ]);
+  const legacyState = normalizeForumState(legacyPayload.state);
+  const publicCategories = Array.isArray(config && config.public && config.public.categories) && config.public.categories.length
+    ? config.public.categories
+    : legacyState.public.categories;
+  const categoryId = publicCategories.some((category) => category.id === PUBLIC_FORUM_CATEGORY)
     ? PUBLIC_FORUM_CATEGORY
-    : state.public.categories[0].id;
+    : publicCategories[0].id;
   const threadId = post.forumThreadId || buildId('public-thread');
-  const threadIndex = state.public.threads.findIndex((thread) => String(thread.id || '') === threadId);
-  const existing = threadIndex >= 0 ? state.public.threads[threadIndex] : null;
+  const existing = await readJson(
+    store,
+    `${FORUM_THREAD_PREFIX}public/${threadId}`,
+    legacyState.public.threads.find((thread) => String(thread.id || '') === threadId) || null
+  );
   const thread = {
     ...(existing || {}),
     id: threadId,
@@ -140,19 +151,11 @@ async function mirrorToPublicForum(store, post) {
     authorAvatar: post.authorAvatar,
     createdAt: existing ? Number(existing.createdAt) || post.createdAt : post.createdAt,
     isPinned: existing ? Boolean(existing.isPinned) : false,
-    isLocked: existing ? Boolean(existing.isLocked) : false
+    isLocked: existing ? Boolean(existing.isLocked) : false,
+    space: 'public'
   };
 
-  if (threadIndex >= 0) {
-    state.public.threads[threadIndex] = thread;
-  } else {
-    state.public.threads.push(thread);
-  }
-
-  await store.setJSON(FORUM_KEY, {
-    state,
-    updatedAt: new Date().toISOString()
-  });
+  await store.setJSON(`${FORUM_THREAD_PREFIX}public/${threadId}`, thread);
   return threadId;
 }
 
