@@ -325,7 +325,7 @@ exports.handler = async function handler(event, context) {
   }
 
   connectLambda(event);
-  const store = getStore(STORE_NAME, { consistency: 'strong' });
+  const store = getStore(STORE_NAME);
 
   if (event.httpMethod === 'GET') {
     if (scope === 'news') {
