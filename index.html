@@ -108,7 +108,7 @@
                 <span>Message</span>
                 <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
               </label>
-              <label class="resource-checkbox" for="newsPostToForum">
+              <label class="resource-checkbox">
                 <input id="newsPostToForum" type="checkbox" />
                 <span>Also post this article to the public forum</span>
               </label>
@@ -157,6 +157,8 @@
       const NEWS_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=news';
       const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
       const DEFAULT_PUBLIC_FORUM_CATEGORY = 'pub-general';
+      const NEWS_BADGE_LABEL = 'News';
+      const ARCHIVE_BADGE_LABEL = 'Archive';
       const heroTagline = document.getElementById('heroTagline');
       const newsForm = document.getElementById('newsForm');
       const newsTitle = document.getElementById('newsTitle');
@@ -291,7 +293,7 @@
         const inferredCreatedAt = Math.max(0, total - index);
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
         return {
-          id: post.id || buildId('news'),
+          id: Object.prototype.hasOwnProperty.call(post, 'id') && post.id != null ? String(post.id) : buildId('news'),
           title: String(post.title || ''),
           body: String(post.body || ''),
           author: String(post.author || 'Guild Member'),
@@ -443,9 +445,10 @@
         const publicCategories = Array.isArray(forumState.public && forumState.public.categories) && forumState.public.categories.length
           ? forumState.public.categories
           : defaultForumState().public.categories;
+        const firstPublicCategory = publicCategories[0] || { id: DEFAULT_PUBLIC_FORUM_CATEGORY };
         const categoryId = publicCategories.some((category) => category.id === DEFAULT_PUBLIC_FORUM_CATEGORY)
           ? DEFAULT_PUBLIC_FORUM_CATEGORY
-          : publicCategories[0].id;
+          : firstPublicCategory.id;
         const threadId = post.forumThreadId || buildId('public-thread');
         const existingIndex = Array.isArray(forumState.public.threads)
           ? forumState.public.threads.findIndex((thread) => String(thread.id || '') === threadId)
@@ -559,7 +562,7 @@
 
       function renderNewsPost(post, canEditNews, badgeLabel) {
         const editButton = canEditNews
-          ? `<button class="resource-item__delete" type="button" data-edit-post="${escapeHtml(post.id)}">Edit</button>`
+          ? `<button class="resource-item__edit" type="button" data-edit-post="${escapeHtml(post.id)}">Edit</button>`
           : '';
         const avatarUrl = post.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(post.author || 'Guild Member')}&background=ff7b7b&color=14070b`;
 
@@ -606,7 +609,7 @@
         }
 
         newsList.innerHTML = posts
-          .map((post) => renderNewsPost(post, canEditNews, 'News'))
+          .map((post) => renderNewsPost(post, canEditNews, NEWS_BADGE_LABEL))
           .join('');
 
         if (!archivedPosts.length) {
@@ -623,7 +626,7 @@
             : `Show ${archivedPosts.length} More News Article${archivedPosts.length === 1 ? '' : 's'}`;
           newsArchiveList.hidden = !showArchivedNews;
           newsArchiveList.innerHTML = showArchivedNews
-            ? archivedPosts.map((post) => renderNewsPost(post, canEditNews, 'Archive')).join('')
+            ? archivedPosts.map((post) => renderNewsPost(post, canEditNews, ARCHIVE_BADGE_LABEL)).join('')
             : '';
         }
 
@@ -832,6 +835,7 @@
         const posts = readPosts();
         const targetPost = posts.find((post) => post.id === postId);
         if (!targetPost) {
+          renderNews('That news article could not be found.');
           return;
         }
 
@@ -864,6 +868,7 @@
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
           if (targetIndex < 0) {
+            renderNews('That news article could not be found.');
             return;
           }
           const now = Date.now();
