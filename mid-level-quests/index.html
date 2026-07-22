@@ -1,0 +1,379 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen — Mid Level Quests</title>
+    <meta
+      name="description"
+      content="Searchable list of popular original EverQuest pre-expansion quests for level 26 to 40 players."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .llq-intro {
+        margin-top: 1.2rem;
+        color: var(--muted);
+        line-height: 1.7;
+        max-width: 78ch;
+      }
+      .llq-search {
+        margin-top: 1.3rem;
+        display: flex;
+        gap: 0.75rem;
+        flex-wrap: wrap;
+        align-items: center;
+      }
+      .llq-search__input {
+        flex: 1;
+        min-width: 240px;
+        padding: 0.8rem 1rem;
+        border-radius: 999px;
+        border: 1px solid var(--border);
+        background: rgba(0, 0, 0, 0.3);
+        color: var(--text);
+        font: inherit;
+      }
+      .llq-search__input:focus {
+        outline: none;
+        border-color: var(--accent);
+      }
+      .llq-search__clear {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.55rem 1rem;
+        background: transparent;
+        color: var(--muted);
+        font: inherit;
+        cursor: pointer;
+      }
+      .llq-search__clear:hover { color: var(--text); }
+      .llq-match-count {
+        font-size: 0.82rem;
+        color: var(--muted);
+        min-width: 120px;
+      }
+      .llq-grid {
+        margin-top: 1.2rem;
+        display: grid;
+        gap: 0.9rem;
+      }
+      .llq-card {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--panel);
+        padding: 1rem 1.1rem;
+      }
+      .llq-card__top {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        gap: 0.8rem;
+        flex-wrap: wrap;
+      }
+      .llq-card__title {
+        margin: 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1.02rem;
+      }
+      .llq-card__level {
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.18rem 0.55rem;
+        font-size: 0.66rem;
+        text-transform: uppercase;
+        letter-spacing: 0.1em;
+        color: var(--accent);
+      }
+      .llq-card__meta,
+      .llq-card__desc {
+        margin: 0.5rem 0 0;
+        color: var(--muted);
+        font-size: 0.9rem;
+        line-height: 1.6;
+      }
+      .llq-card__link {
+        margin-top: 0.75rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.35rem;
+        color: var(--text);
+        text-decoration: underline;
+        text-decoration-color: var(--border);
+        font-size: 0.87rem;
+      }
+      .llq-card__link:hover { color: var(--accent); }
+      .llq-note {
+        margin-top: 1rem;
+        border: 1px solid var(--border);
+        border-radius: 14px;
+        padding: 0.8rem 0.95rem;
+        background: rgba(255, 255, 255, 0.03);
+        color: var(--muted);
+        font-size: 0.85rem;
+      }
+      .llq-hidden { display: none !important; }
+      .llq-empty {
+        text-align: center;
+        padding: 2rem 1rem;
+        border: 1px dashed var(--border);
+        border-radius: 14px;
+        color: var(--muted);
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link" href="/low-level-quests/">Low Level Quests</a>
+            <a class="site-nav__link active" href="/mid-level-quests/">Mid Level Quests</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">Classic Era Questing</p>
+        <h1 class="page-title">Mid Level Quests</h1>
+        <p class="page-subtitle">
+          Popular original EverQuest pre-expansion quests for levels 26–40, curated from classic community references.
+        </p>
+        <p class="llq-intro">
+          Use this quick index to find high-value mid-tier quests for experience, faction, coin, and iconic rewards.
+          Search by quest name, zone, reward, or level range.
+        </p>
+
+        <div class="llq-search">
+          <input id="llqSearch" class="llq-search__input" type="search" placeholder="Search quest name, zone, reward, or level..." autocomplete="off" aria-label="Search mid level quests" />
+          <button id="llqClear" class="llq-search__clear" type="button">Clear</button>
+          <span id="llqMatchCount" class="llq-match-count" aria-live="polite"></span>
+        </div>
+
+        <div class="llq-grid" id="llqGrid">
+          <article class="llq-card" data-search="journeyman boots jboots sow speed run classic iconic all classes">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Journeyman's Boots</h2>
+              <span class="llq-card__level">Level 26–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Steamfont Mountains / Various</p>
+            <p class="llq-card__desc">One of EverQuest's most famous quest rewards — boots that grant a self-cast Spirit of Wolf effect. A rite of passage for nearly every class.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Journeyman%27s_Boots" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="paw of opolla hp hitpoints stamina ring classic reward mid level">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Paw of Opolla</h2>
+              <span class="llq-card__level">Level 30–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Temple of Solusek Ro / Lavastorm</p>
+            <p class="llq-card__desc">A coveted ring granting +35 HP, widely sought for its exceptional hit point bonus at mid levels. One of the best rings in the classic game.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Paw_of_Opolla" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="ghoulbane paladin shadowknight weapon sword undead unrest crushbone">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Ghoulbane</h2>
+              <span class="llq-card__level">Level 28–38</span>
+            </div>
+            <p class="llq-card__meta">Zones: Upper Guk / Unrest / Najena</p>
+            <p class="llq-card__desc">Iconic paladin and shadowknight weapon with a holy proc against undead. Completing this quest is a defining mid-level milestone for those classes.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Ghoulbane" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="tainted darkstone marnek hp warrior cleric tank wristband arms">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Tainted Darkstone</h2>
+              <span class="llq-card__level">Level 30–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Lower Guk / Freeport</p>
+            <p class="llq-card__desc">A high-HP wristband quest popular with tanks and hybrids, obtained from a chain tied to Lower Guk. One of the strongest bracers available before raiding.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Tainted_Darkstone" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="quillmane cloak spirit of wolf south karana turn in experience reward">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Quillmane's Cloak</h2>
+              <span class="llq-card__level">Level 28–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: South Karana</p>
+            <p class="llq-card__desc">A famous rare-spawn hunt rewarding a cloak with a Spirit of Wolf effect. The chase for Quillmane is a shared classic experience across many characters.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Quillmane" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="orc scalps north karana exp faction turn in warrior guards">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Orc Scalps Turn-Ins</h2>
+              <span class="llq-card__level">Level 26–36</span>
+            </div>
+            <p class="llq-card__meta">Zones: North Karana</p>
+            <p class="llq-card__desc">A productive XP and faction loop turning in orc scalps to the guards of North Karana. Efficient for mid-level adventurers farming the karana plains.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Orc+Scalps+North+Karana" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="soul fire paladin weapon sacred word undead proc classic iconic">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Soul Fire</h2>
+              <span class="llq-card__level">Level 35–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Fear / Nagafen's Lair</p>
+            <p class="llq-card__desc">The paladin's signature weapon quest, culminating in a sword that procs Sacred Word of Swords against undead and summons. A legendary paladin milestone.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Soul_Fire" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="glowing black stone necromancer shadowknight dark elf quest reward">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Glowing Black Stone</h2>
+              <span class="llq-card__level">Level 30–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Neriak / Nektulos Forest</p>
+            <p class="llq-card__desc">A classic dark elf quest item and reward chain popular with necromancers and shadowknights, featuring travel through Neriak and surrounding dark zones.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Glowing+Black+Stone" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="thick banded belt innothule swamp troll warrior tank ac hp">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Thick Banded Belt</h2>
+              <span class="llq-card__level">Level 26–35</span>
+            </div>
+            <p class="llq-card__meta">Zones: Innothule Swamp / Grobb</p>
+            <p class="llq-card__desc">A classic AC and HP belt obtained through questing in Innothule Swamp, popular as a solid waist slot upgrade for melee classes at mid levels.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Thick+Banded+Belt" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="idol of the thorned highpass hold splitpaw int wisdom caster classic reward">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Idol of the Thorned</h2>
+              <span class="llq-card__level">Level 26–36</span>
+            </div>
+            <p class="llq-card__meta">Zones: Highpass Hold / Splitpaw Lair</p>
+            <p class="llq-card__desc">A prized caster item obtained through a classic quest chain in Highpass Hold, offering a strong intelligence and wisdom bonus for mid-level spellcasters.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Idol+of+the+Thorned" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="opal encrusted stein charisma intelligence caster enchanter object of the mind">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Opal Encrusted Stein</h2>
+              <span class="llq-card__level">Level 26–36</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various (multi-zone chain)</p>
+            <p class="llq-card__desc">An iconic classic charisma and intelligence item for enchanters and casters, requiring a multi-zone quest chain and considered a top-tier mid-level item.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Opal_Encrusted_Stein" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="bard instrument quest lute horn flute drum songblade classic faction exp">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Bard Instrument Quests</h2>
+              <span class="llq-card__level">Level 26–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Various bard guild cities</p>
+            <p class="llq-card__desc">A series of class-defining quest chains for bards to obtain their iconic instrument upgrades — lutes, drums, horns, and flutes — all improving song effectiveness.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Bard+Instrument+Quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="froglok talisman lower guk talisman of tnarg frog reward experience chain">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Froglok Talisman of Tnarg</h2>
+              <span class="llq-card__level">Level 30–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Upper Guk / Lower Guk</p>
+            <p class="llq-card__desc">A multi-step quest chain set in the Guk dungeon complex rewarding a classic talisman with strong stats. Popular with those who frequent the Guk leveling corridors.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Froglok+Talisman+of+Tnarg" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="ragebringer dagger rogue guild quest dark elf agility attack speed mid level">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Ragebringer (Rogue Guild)</h2>
+              <span class="llq-card__level">Level 30–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Neriak / Nektulos Forest / Various</p>
+            <p class="llq-card__desc">A classic rogue weapon quest line tied to the Neriak rogue guild, resulting in a prized piercing weapon with haste. Well known among rogue players in the classic era.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Ragebringer+quest" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <article class="llq-card" data-search="cazic thule mask mask of deception fear plane raid zone reward classic">
+            <div class="llq-card__top">
+              <h2 class="llq-card__title">Mask of Deception</h2>
+              <span class="llq-card__level">Level 35–40</span>
+            </div>
+            <p class="llq-card__meta">Zones: Plane of Fear / Cazic-Thule</p>
+            <p class="llq-card__desc">An iconic face slot item from Cazic-Thule associated with illusion and rogue gameplay. A notable classic quest reward that remains a milestone drop and trade target.</p>
+            <a class="llq-card__link" href="https://wiki.project1999.com/Special:Search?search=Mask+of+Deception" target="_blank" rel="noopener noreferrer">Open quest reference ↗</a>
+          </article>
+
+          <div id="llqEmpty" class="llq-empty llq-hidden" role="status">
+            No quests matched your search. Try a different term.
+          </div>
+        </div>
+
+        <p class="llq-note">
+          These links point to classic community references on the public web; verify details against your server ruleset
+          before committing to a quest route.
+        </p>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
+      </footer>
+    </div>
+
+    <script>
+      const llqSearch = document.getElementById('llqSearch');
+      const llqClear = document.getElementById('llqClear');
+      const llqMatchCount = document.getElementById('llqMatchCount');
+      const llqEmpty = document.getElementById('llqEmpty');
+      const llqCards = Array.from(document.querySelectorAll('.llq-card'));
+
+      function runQuestSearch() {
+        const query = llqSearch.value.trim().toLowerCase();
+        let visible = 0;
+
+        llqCards.forEach((card) => {
+          const haystack = `${card.dataset.search || ''} ${card.textContent}`.toLowerCase();
+          const show = !query || haystack.includes(query);
+          card.classList.toggle('llq-hidden', !show);
+          if (show) visible += 1;
+        });
+
+        llqEmpty.classList.toggle('llq-hidden', visible > 0);
+        llqMatchCount.textContent = query
+          ? `${visible} quest${visible === 1 ? '' : 's'} shown`
+          : `${llqCards.length} quests available`;
+      }
+
+      llqSearch.addEventListener('input', runQuestSearch);
+      llqClear.addEventListener('click', () => {
+        llqSearch.value = '';
+        runQuestSearch();
+      });
+
+      runQuestSearch();
+    </script>
+  </body>
+</html>
