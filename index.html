@@ -431,7 +431,7 @@
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
-            Authorization: `******
+            Authorization: `Bearer ${token}`
           },
           body: JSON.stringify({ state })
         });
