@@ -250,7 +250,8 @@
       const newsState = {
         posts: [],
         loaded: false,
-        loadPromise: null
+        loadPromise: null,
+        pendingSyncPosts: null
       };
 
       function isOwner(member) {
@@ -358,13 +359,29 @@
         }
       }
 
+      function persistNewsPosts(posts) {
+        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(normalizeNewsPosts(posts)));
+      }
+
       function readPosts() {
         return newsState.posts.slice();
       }
 
       function writePosts(posts) {
         newsState.posts = normalizeNewsPosts(posts);
+        persistNewsPosts(newsState.posts);
         newsState.loaded = true;
+      }
+
+      function latestPostTimestamp(posts) {
+        if (!Array.isArray(posts) || !posts.length) {
+          return 0;
+        }
+
+        return posts.reduce((latest, post) => {
+          const next = Number(post.updatedAt) || Number(post.createdAt) || 0;
+          return next > latest ? next : latest;
+        }, 0);
       }
 
       async function getIdentityToken() {
@@ -407,6 +424,25 @@
         return response.ok;
       }
 
+      async function flushPendingNewsSync() {
+        const pendingPosts = newsState.pendingSyncPosts;
+        if (!Array.isArray(pendingPosts) || !pendingPosts.length) {
+          return true;
+        }
+
+        const saved = await savePostsToRemote(pendingPosts);
+        if (saved) {
+          newsState.pendingSyncPosts = null;
+        }
+        return saved;
+      }
+
+      async function queueNewsSync(posts) {
+        newsState.pendingSyncPosts = normalizeNewsPosts(posts);
+        persistNewsPosts(newsState.pendingSyncPosts);
+        return flushPendingNewsSync();
+      }
+
       async function ensureNewsPostsLoaded() {
         if (newsState.loaded && !newsState.loadPromise) {
           return newsState.posts;
@@ -419,20 +455,30 @@
         newsState.loadPromise = (async () => {
           try {
             const remotePosts = await fetchNewsPostsFromRemote();
-            if (remotePosts.length) {
+            const localPosts = readLegacyNewsPosts();
+            const remoteLatest = latestPostTimestamp(remotePosts);
+            const localLatest = latestPostTimestamp(localPosts);
+
+            if (remotePosts.length && remoteLatest >= localLatest) {
               writePosts(remotePosts);
               return newsState.posts;
             }
 
-            const legacyPosts = readLegacyNewsPosts();
-            writePosts(legacyPosts);
-            if (legacyPosts.length) {
-              await savePostsToRemote(legacyPosts);
+            if (localPosts.length) {
+              writePosts(localPosts);
+              newsState.pendingSyncPosts = localPosts;
+              await flushPendingNewsSync();
+              return newsState.posts;
             }
+
+            writePosts(remotePosts);
             return newsState.posts;
           } catch (error) {
-            const legacyPosts = readLegacyNewsPosts();
-            writePosts(legacyPosts);
+            const localPosts = readLegacyNewsPosts();
+            writePosts(localPosts);
+            if (localPosts.length) {
+              newsState.pendingSyncPosts = localPosts;
+            }
             return newsState.posts;
           } finally {
             newsState.loaded = true;
@@ -1057,7 +1103,7 @@
           }
         }
 
-        const savedNewsRemotely = await savePostsToRemote(nextPosts);
+        const savedNewsRemotely = await queueNewsSync(nextPosts);
 
         resetNewsForm();
         const savedPost = nextPosts.find((post) => post.id === savedPostId);
@@ -1102,8 +1148,12 @@
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
+        window.netlifyIdentity.on('init', () => {
+          void flushPendingNewsSync();
+        });
         window.netlifyIdentity.on('login', () => {
           renderNews();
+          void flushPendingNewsSync();
           void syncPostsWithRemote();
         });
         window.netlifyIdentity.on('logout', () => {
@@ -1115,10 +1165,12 @@
 
       window.addEventListener('theChosen:persistent-store-ready', () => {
         renderNews();
+        void flushPendingNewsSync();
         void syncPostsWithRemote();
       });
 
       renderNews();
+      void flushPendingNewsSync();
       void syncPostsWithRemote();
     </script>
   </body>
