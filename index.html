@@ -292,6 +292,11 @@
         return avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Guild Member')}&background=ff7b7b&color=14070b`;
       }
 
+      function showMissingNewsPostNotice() {
+        resetNewsForm();
+        renderNews('That news article could not be found.');
+      }
+
       function readPosts() {
         try {
           const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
@@ -314,9 +319,8 @@
 
         const inferredCreatedAt = Math.max(0, total - index);
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
-        const normalizedId = String(post.id || '').trim();
         return {
-          id: normalizedId || buildId('news'),
+          id: String(post.id || '').trim() || buildId('news'),
           title: String(post.title || ''),
           body: String(post.body || ''),
           author: String(post.author || 'Guild Member'),
@@ -860,8 +864,7 @@
         const posts = readPosts();
         const targetPost = posts.find((post) => post.id === postId);
         if (!targetPost) {
-          resetNewsForm();
-          renderNews('That news article could not be found.');
+          showMissingNewsPostNotice();
           return;
         }
 
@@ -896,8 +899,7 @@
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
           if (targetIndex < 0) {
-            resetNewsForm();
-            renderNews('That news article could not be found.');
+            showMissingNewsPostNotice();
             return;
           }
           const now = Date.now();
@@ -924,7 +926,7 @@
           });
         }
 
-        let nextPosts = posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
+        let nextPosts = [...posts].sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0));
         writePosts(nextPosts);
 
         if (wantsForumPost) {
@@ -933,11 +935,14 @@
             try {
               const forumResult = await syncNewsPostToForum(targetPost, currentMember);
               if (forumResult.ok) {
-                nextPosts = nextPosts.map((post) => (
-                  post.id === savedPostId
-                    ? { ...post, postedToForum: true, forumThreadId: forumResult.forumThreadId }
-                    : post
-                ));
+                const syncedPostIndex = nextPosts.findIndex((post) => post.id === savedPostId);
+                if (syncedPostIndex >= 0) {
+                  nextPosts[syncedPostIndex] = {
+                    ...nextPosts[syncedPostIndex],
+                    postedToForum: true,
+                    forumThreadId: forumResult.forumThreadId
+                  };
+                }
                 writePosts(nextPosts);
               } else {
                 forumSyncFailed = true;
