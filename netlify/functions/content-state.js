@@ -43,6 +43,44 @@ function isValidKvKey(key) {
   return typeof key === 'string' && key.startsWith('theChosen');
 }
 
+function normalizeNewsPost(post, index, total) {
+  if (!post || typeof post !== 'object') {
+    return null;
+  }
+
+  const title = String(post.title || '').trim();
+  const body = String(post.body || '').trim();
+  if (!title || !body) {
+    return null;
+  }
+
+  const createdAt = Number(post.createdAt) || Number(post.updatedAt) || Math.max(0, total - index);
+  const updatedAt = Number(post.updatedAt) || createdAt;
+
+  return {
+    id: String(post.id || '').trim() || `news-${createdAt}-${index}`,
+    title,
+    body,
+    author: String(post.author || post.authorName || 'Guild Member'),
+    avatar: String(post.avatar || post.authorAvatar || ''),
+    createdAt,
+    updatedAt,
+    postedToForum: Boolean(post.postedToForum),
+    forumThreadId: typeof post.forumThreadId === 'string' ? post.forumThreadId : ''
+  };
+}
+
+function normalizeNewsPosts(posts) {
+  if (!Array.isArray(posts)) {
+    return [];
+  }
+
+  return posts
+    .map((post, index, all) => normalizeNewsPost(post, index, all.length))
+    .filter(Boolean)
+    .sort((left, right) => (Number(right.createdAt) || 0) - (Number(left.createdAt) || 0));
+}
+
 exports.handler = async function handler(event, context) {
   const scope = readScope(event);
   if (!scope) {
@@ -54,7 +92,10 @@ exports.handler = async function handler(event, context) {
   if (event.httpMethod === 'GET') {
     if (scope === 'news') {
       const payload = await readJson(store, NEWS_KEY, { posts: [], updatedAt: '' });
-      return json(200, payload);
+      return json(200, {
+        posts: normalizeNewsPosts(payload.posts),
+        updatedAt: payload.updatedAt || ''
+      });
     }
     if (scope === 'kv') {
       const payload = await readJson(store, KV_KEY, { items: {}, updatedAt: '' });
@@ -94,8 +135,9 @@ exports.handler = async function handler(event, context) {
     if (!Array.isArray(body.posts)) {
       return json(400, { error: 'Expected `posts` to be an array.' });
     }
+    const posts = normalizeNewsPosts(body.posts);
     const payload = {
-      posts: body.posts,
+      posts,
       updatedAt: new Date().toISOString()
     };
     await store.setJSON(NEWS_KEY, payload);
