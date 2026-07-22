@@ -309,6 +309,80 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   object-position: center;
   filter: grayscale(0.2) contrast(1.05);
 }
+.home-news {
+  display: grid;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+.home-news [hidden] { display: none !important; }
+.home-news__header {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.home-news__header .hero__eyebrow { margin-bottom: 0.35rem; }
+.home-news__title {
+  margin: 0;
+  font-family: 'Cinzel', 'Libre Baskerville', serif;
+  font-size: clamp(1.6rem, 4vw, 2.2rem);
+}
+.home-news__form { display: grid; gap: 1rem; }
+.home-news__list {
+  display: grid;
+  gap: 1rem;
+}
+.home-news__article {
+  display: grid;
+  gap: 0.9rem;
+}
+.home-news__article-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+.home-news__eyebrow {
+  margin: 0 0 0.25rem;
+  color: var(--accent);
+  font-size: 0.76rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.home-news__article-title {
+  margin: 0;
+  font-family: 'Cinzel', 'Libre Baskerville', serif;
+  font-size: 1.3rem;
+}
+.home-news__badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 0.45rem;
+}
+.home-news__author {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  color: var(--text);
+  font-weight: 600;
+}
+.home-news__timestamp {
+  color: var(--muted);
+  font-size: 0.88rem;
+  font-weight: 400;
+}
+.home-news__body {
+  margin: 0;
+  color: var(--muted);
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+.home-news__archive {
+  display: grid;
+  gap: 1rem;
+}
+.home-news__archive > .btn-torch { justify-self: start; }
 .page-title {
   margin: 0.2rem 0 0.4rem;
   font-size: 2rem;
@@ -936,6 +1010,10 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
 @media (max-width: 800px) {
   .site-header__inner { flex-direction: column; border-radius: 24px; }
   .site-nav { justify-content: center; }
+  .home-news__header,
+  .home-news__article-header { flex-direction: column; align-items: flex-start; }
+  .home-news__badges { justify-content: flex-start; }
+  .home-news__author { flex-wrap: wrap; }
   .resource-form__row { grid-template-columns: 1fr; }
   .resource-item { flex-direction: column; align-items: flex-start; }
   .roster-row { grid-template-columns: 1fr 1fr; }
