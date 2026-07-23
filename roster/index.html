@@ -25,24 +25,25 @@
         grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
       }
       .roster-table-wrap { margin-top: 1.25rem; overflow-x: auto; }
-      .roster-table {
+      .managed-roster-table {
         width: 100%;
         min-width: 780px;
         border-collapse: collapse;
       }
-      .roster-table th,
-      .roster-table td {
+      .managed-roster-table th,
+      .managed-roster-table td {
         padding: 0.75rem 0.8rem;
         border-bottom: 1px solid var(--border);
         text-align: left;
       }
-      .roster-table th {
+      .managed-roster-table th {
         font-family: 'Cinzel', serif;
         letter-spacing: 0.04em;
         font-size: 0.92rem;
       }
-      .roster-table td:nth-child(2) { text-align: center; width: 78px; }
-      .roster-table tr:hover td { background: rgba(255, 255, 255, 0.03); }
+      .managed-roster-table th:nth-child(2),
+      .managed-roster-table td:nth-child(2) { text-align: center; width: 78px; }
+      .managed-roster-table tr:hover td { background: rgba(255, 255, 255, 0.03); }
       .roster-rank { white-space: nowrap; }
       .roster-actions {
         display: inline-flex;
@@ -52,7 +53,7 @@
       .roster-owner-note { margin: 0; color: var(--muted); }
       .roster-empty { margin: 0; color: var(--muted); }
       @media (max-width: 900px) {
-        .roster-table { min-width: 640px; }
+        .managed-roster-table { min-width: 640px; }
       }
     </style>
   </head>
@@ -148,7 +149,7 @@
         </section>
 
         <section class="panel roster-table-wrap" aria-label="Guild roster table">
-          <table class="roster-table">
+          <table class="managed-roster-table">
             <thead>
               <tr>
                 <th>Name</th>
