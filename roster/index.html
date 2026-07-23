@@ -91,7 +91,7 @@
       <main class="page">
         <p class="hero__eyebrow">The Muster Roll</p>
         <h1 class="page-title">Guild Roster</h1>
-        <p class="page-subtitle">Public roster view with owner-managed updates shared across all users.</p>
+        <p class="page-subtitle">Public roster view combining guild characters and owner-approved Netlify accounts.</p>
 
         <section class="panel roster-tools" aria-label="Roster search and sorting">
           <div class="roster-tools__grid">
@@ -112,10 +112,10 @@
           <p id="rosterCount" class="roster-owner-note"></p>
         </section>
 
-        <section id="rosterOwnerPanel" class="panel roster-owner" aria-label="Owner roster editor" hidden>
+        <section id="rosterOwnerPanel" class="panel roster-owner" aria-label="Authorized roster editor" hidden>
           <h2 class="resource-section__title">Roster Manager</h2>
           <p class="roster-owner-note">
-            Owner-only controls. Changes are persistent and public across the site.
+            Authorized editor controls. Changes are persistent and public across the site.
           </p>
           <p id="rosterEditorNotice" class="resource-notice" aria-live="polite"></p>
           <form id="rosterForm" class="roster-form">
@@ -178,8 +178,8 @@
     <script src="../scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const ROSTER_STORAGE_KEY = 'theChosenRosterManagedV1';
+      const AUTHORIZED_ACCOUNT_STORAGE_KEY = 'theChosenAuthorizedRosterAccountsV1';
       const RANK_ORDER = { Leader: 0, 'Senior Officer': 1, Officer: 2, Recruit: 3 };
       const DEFAULT_ROSTER = [
         { id: 'roster-1', name: 'Karma', level: 50, className: 'SHD / MNK / SHM', rank: 'Leader', lastOn: '2026-07-21' },
@@ -241,11 +241,35 @@
         query: '',
         sort: 'rank',
         editingId: null,
-        owner: false
+        editor: false
       };
 
       function normalizeEmail(value) {
         return String(value || '').trim().toLowerCase();
+      }
+
+      function readAuthorizedAccounts() {
+        try {
+          const accounts = JSON.parse(localStorage.getItem(AUTHORIZED_ACCOUNT_STORAGE_KEY) || '[]');
+          if (!Array.isArray(accounts)) {
+            return [];
+          }
+          return accounts.map((account, index) => {
+            const lastSeenAt = String(account && account.lastSeenAt || '');
+            const parsedLastSeen = Date.parse(lastSeenAt);
+            return {
+              id: `identity-${String(account && account.id || index)}`,
+              name: String(account && account.name || 'Guild Member').trim().slice(0, 80),
+              level: null,
+              className: 'Authorized Site Account',
+              rank: String(account && account.title || account && account.level || 'Guild Member').trim().slice(0, 80),
+              lastOn: Number.isFinite(parsedLastSeen) ? new Date(parsedLastSeen).toISOString().slice(0, 10) : '',
+              identityManaged: true
+            };
+          });
+        } catch (error) {
+          return [];
+        }
       }
 
       function escapeHtml(value) {
@@ -349,8 +373,9 @@
       }
 
       function ensureSeed() {
+        const storedValue = localStorage.getItem(ROSTER_STORAGE_KEY);
         const current = readStoredEntries();
-        if (current.length) {
+        if (storedValue !== null) {
           state.entries = current;
           return;
         }
@@ -372,7 +397,7 @@
           return working.sort((a, b) => a.name.localeCompare(b.name));
         }
         if (state.sort === 'level-desc') {
-          return working.sort((a, b) => b.level - a.level || a.name.localeCompare(b.name));
+          return working.sort((a, b) => (Number(b.level) || 0) - (Number(a.level) || 0) || a.name.localeCompare(b.name));
         }
         if (state.sort === 'last-on-desc') {
           return working.sort((a, b) => {
@@ -392,15 +417,16 @@
 
       function getFilteredEntries() {
         const query = state.query.toLowerCase();
+        const allEntries = [...state.entries, ...readAuthorizedAccounts()];
         const filtered = !query
-          ? state.entries
-          : state.entries.filter((entry) => {
+          ? allEntries
+          : allEntries.filter((entry) => {
               return (
                 entry.name.toLowerCase().includes(query) ||
                 entry.className.toLowerCase().includes(query) ||
                 entry.rank.toLowerCase().includes(query) ||
                 entry.lastOn.toLowerCase().includes(query) ||
-                String(entry.level).includes(query)
+                String(entry.level ?? '').includes(query)
               );
             });
         return getSortedEntries(filtered);
@@ -420,19 +446,20 @@
 
       function render() {
         const rows = getFilteredEntries();
-        rosterCount.textContent = `Showing ${rows.length} of ${state.entries.length} roster entries`;
+        const totalEntries = state.entries.length + readAuthorizedAccounts().length;
+        rosterCount.textContent = `Showing ${rows.length} of ${totalEntries} roster entries`;
         rosterEmpty.hidden = rows.length !== 0;
-        actionsHeader.hidden = !state.owner;
+        actionsHeader.hidden = !state.editor;
 
         rosterTableBody.innerHTML = rows
           .map((entry) => {
-            const actions = state.owner
+            const actions = state.editor && !entry.identityManaged
               ? `<td><div class="roster-actions"><button class="resource-item__edit" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">Edit</button><button class="resource-item__delete" type="button" data-action="delete" data-id="${escapeHtml(entry.id)}">Delete</button></div></td>`
-              : '';
+              : (state.editor ? '<td></td>' : '');
             return `
               <tr>
                 <td>${escapeHtml(entry.name)}</td>
-                <td>${entry.level}</td>
+                <td>${entry.level ?? 'N/A'}</td>
                 <td>${escapeHtml(entry.className)}</td>
                 <td class="roster-rank">${escapeHtml(entry.rank)}</td>
                 <td>${escapeHtml(entry.lastOn || 'N/A')}</td>
@@ -456,12 +483,13 @@
 
       function refreshOwnerState() {
         const member = getCurrentMember();
-        state.owner = normalizeEmail(member && member.email) === OWNER_EMAIL;
-        rosterOwnerPanel.hidden = !state.owner;
-        if (!state.owner) {
+        const permissions = window.TheChosenGuildAccess.getPermissions(member);
+        state.editor = permissions.canEditSite;
+        rosterOwnerPanel.hidden = !state.editor;
+        if (!state.editor) {
           resetForm();
         } else {
-          setEditorNotice('Owner mode enabled. Use this form to manage public roster entries.', 'success');
+          setEditorNotice('Authorized editor mode enabled. Use this form to manage public roster entries.', 'success');
         }
         render();
       }
@@ -483,7 +511,7 @@
 
       rosterForm.addEventListener('submit', (event) => {
         event.preventDefault();
-        if (!state.owner) {
+        if (!state.editor) {
           return;
         }
 
@@ -515,7 +543,7 @@
       });
 
       rosterTableBody.addEventListener('click', (event) => {
-        if (!state.owner) {
+        if (!state.editor) {
           return;
         }
 
@@ -560,14 +588,23 @@
       });
 
       window.addEventListener('storage', (event) => {
-        if (event.key === ROSTER_STORAGE_KEY || event.key === 'theChosenCurrentMember') {
+        if (
+          event.key === ROSTER_STORAGE_KEY ||
+          event.key === AUTHORIZED_ACCOUNT_STORAGE_KEY ||
+          event.key === 'theChosenCurrentMember' ||
+          event.key === window.TheChosenGuildAccess.DIRECTORY_STORAGE_KEY
+        ) {
           state.entries = readStoredEntries();
           refreshOwnerState();
         }
       });
 
-      window.addEventListener('theChosen:persistent-store-ready', () => {
-        state.entries = readStoredEntries();
+      window.addEventListener('theChosen:persistent-store-ready', (event) => {
+        if (event.detail && event.detail.authoritative) {
+          ensureSeed();
+        } else {
+          state.entries = readStoredEntries();
+        }
         refreshOwnerState();
       });
 
@@ -581,7 +618,9 @@
         });
       }
 
-      ensureSeed();
+      if (window.TheChosenPersistentStoreReady && window.TheChosenPersistentStoreAuthoritative) {
+        ensureSeed();
+      }
       refreshOwnerState();
       render();
     </script>

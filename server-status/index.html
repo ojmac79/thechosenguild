@@ -296,7 +296,7 @@
           <button id="toggleStatusEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
         </div>
         <p id="statusEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
-          Public view is enabled. Owner sign-in is required to edit page content.
+          Public view is enabled. An approved guild account is required to edit page content.
         </p>
 
         <!-- ── Qeynos primary card ── -->
@@ -410,11 +410,11 @@
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton  = document.getElementById('footerLogoutButton');
 
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const STATUS_CONTENT_STORAGE_KEY = 'theChosenStatusPageEditableContent';
 
-      function isOwner(member) {
-        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      function canEditSite(member) {
+        const guildAccess = window.TheChosenGuildAccess;
+        return Boolean(guildAccess && guildAccess.getPermissions(member).canEditSite);
       }
 
       function getCurrentMember() {
@@ -513,20 +513,20 @@
       }
 
       function updateStatusEditAccess() {
-        const canEdit = isOwner(getCurrentMember());
+        const canEdit = canEditSite(getCurrentMember());
         statusEditButton.hidden = !canEdit;
         if (!canEdit && statusEditingEnabled) {
           setStatusEditingState(false);
         }
         statusEditNotice.textContent = canEdit
-          ? 'Owner access enabled. Use the button to edit this page.'
-          : 'Public view is enabled. Owner sign-in is required to edit page content.';
+          ? 'Authorized editor access enabled. Use the button to edit this page.'
+          : 'Public view is enabled. An approved guild account is required to edit page content.';
       }
 
       statusEditButton.addEventListener('click', () => {
         const currentMember = getCurrentMember();
-        if (!isOwner(currentMember)) {
-          statusEditNotice.textContent = 'Owner sign-in is required to edit page content.';
+        if (!canEditSite(currentMember)) {
+          statusEditNotice.textContent = 'An approved guild account is required to edit page content.';
           return;
         }
         setStatusEditingState(!statusEditingEnabled);
@@ -549,6 +549,12 @@
       applySavedStatusContent();
       setStatusEditingState(false);
       updateStatusEditAccess();
+      window.addEventListener('storage', (event) => {
+        if (event.key === window.TheChosenGuildAccess.DIRECTORY_STORAGE_KEY) {
+          updateStatusEditAccess();
+        }
+      });
+      window.addEventListener('theChosen:persistent-store-ready', updateStatusEditAccess);
 
       /* ═══════════════════════════════════════════════════
          Server Status — real-time fetch from Daybreak

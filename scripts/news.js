@@ -1,5 +1,4 @@
 (function () {
-  const OWNER_EMAIL = 'ojmac79@gmail.com';
   const ENDPOINT = '/.netlify/functions/news';
   const HOME_LIMIT = 3;
   const state = {
@@ -41,9 +40,10 @@
     return window.netlifyIdentity.currentUser();
   }
 
-  function isOwner() {
+  function canEditNews() {
+    const guildAccess = window.TheChosenGuildAccess;
     const user = currentIdentityUser();
-    return Boolean(user && String(user.email || '').trim().toLowerCase() === OWNER_EMAIL);
+    return Boolean(guildAccess && guildAccess.getPermissions(user).canEditSite);
   }
 
   function normalizePost(post) {
@@ -95,7 +95,7 @@
   }
 
   function postMarkup(post, archived) {
-    const editButton = isOwner()
+    const editButton = canEditNews()
       ? `<button class="resource-item__edit" type="button" data-news-edit="${escapeHtml(post.id)}">Edit</button>`
       : '';
     const forumBadge = post.postedToForum
@@ -125,9 +125,9 @@
   }
 
   function updateOwnerControls() {
-    const owner = isOwner();
-    newButton.hidden = !owner;
-    if (!owner) {
+    const canEdit = canEditNews();
+    newButton.hidden = !canEdit;
+    if (!canEdit) {
       closeEditor();
     }
   }
@@ -177,7 +177,7 @@
   }
 
   function openEditor(post) {
-    if (!isOwner()) {
+    if (!canEditNews()) {
       window.location.href = '/login/';
       return;
     }
@@ -226,14 +226,14 @@
 
   async function savePost(event) {
     event.preventDefault();
-    if (!isOwner()) {
+    if (!canEditNews()) {
       window.location.href = '/login/';
       return;
     }
 
     const token = await identityToken();
     if (!token) {
-      setNotice('Your owner session expired. Sign in again before publishing.', 'error');
+      setNotice('Your editor session expired. Sign in again before publishing.', 'error');
       return;
     }
 
@@ -307,6 +307,17 @@
     window.netlifyIdentity.on('login', updateOwnerControls);
     window.netlifyIdentity.on('logout', updateOwnerControls);
   }
+  window.addEventListener('storage', (event) => {
+    const guildAccess = window.TheChosenGuildAccess;
+    if (guildAccess && event.key === guildAccess.DIRECTORY_STORAGE_KEY) {
+      updateOwnerControls();
+      render();
+    }
+  });
+  window.addEventListener('theChosen:persistent-store-ready', () => {
+    updateOwnerControls();
+    render();
+  });
 
   updateOwnerControls();
   void loadPosts();

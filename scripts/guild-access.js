@@ -456,7 +456,9 @@
       canUseForums: Boolean(record && record.access.forums && statusAllowsAccess),
       canUseRoster: Boolean(record && record.access.roster && statusAllowsAccess),
       canModerateForums: Boolean(record && record.access.moderateForums && statusAllowsAccess),
-      canManageGuild: Boolean(record && record.access.management && statusAllowsAccess)
+      canManageGuild: Boolean(record && statusAllowsAccess),
+      canEditSite: Boolean(record && statusAllowsAccess),
+      canAdministerMembers: isOwner
     };
   }
 
@@ -525,5 +527,4 @@
     clone
   };
 
-  writeDirectory(readDirectory());
 })();

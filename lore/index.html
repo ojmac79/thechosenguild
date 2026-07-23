@@ -315,7 +315,7 @@
           <button id="toggleLoreEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
         </div>
         <p id="loreEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
-          Public view is enabled. Owner sign-in is required to edit lore content.
+          Public view is enabled. An approved guild account is required to edit lore content.
         </p>
 
         <!-- Search bar -->
@@ -1409,8 +1409,8 @@
     </script>
     <script src="../scripts/persistent-store.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="../scripts/guild-access.js"></script>
     <script>
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
       const LORE_CONTENT_STORAGE_KEY = 'theChosenLoreEditableContent';
       const LORE_IMAGE_STORAGE_KEY = 'theChosenLoreEditableImages';
@@ -1454,8 +1454,9 @@
         return null;
       }
 
-      function isOwner(member) {
-        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      function canEditSite(member) {
+        const guildAccess = window.TheChosenGuildAccess;
+        return Boolean(guildAccess && guildAccess.getPermissions(member).canEditSite);
       }
 
       function saveLoreContent() {
@@ -1543,14 +1544,14 @@
       }
 
       function updateLoreEditAccess() {
-        const canEdit = isOwner(readCurrentMember());
+        const canEdit = canEditSite(readCurrentMember());
         loreEditButton.hidden = !canEdit;
         if (!canEdit && loreEditingEnabled) {
           setLoreEditingState(false);
         }
         loreEditNotice.textContent = canEdit
-          ? 'Owner access enabled. You can edit all text and replace images.'
-          : 'Public view is enabled. Owner sign-in is required to edit lore content.';
+          ? 'Authorized editor access enabled. You can edit all text and replace images.'
+          : 'Public view is enabled. An approved guild account is required to edit lore content.';
       }
 
       function replaceLoreImage(targetImage) {
@@ -1580,8 +1581,8 @@
       }
 
       loreEditButton.addEventListener('click', () => {
-        if (!isOwner(readCurrentMember())) {
-          loreEditNotice.textContent = 'Owner sign-in is required to edit lore content.';
+        if (!canEditSite(readCurrentMember())) {
+          loreEditNotice.textContent = 'An approved guild account is required to edit lore content.';
           return;
         }
 
@@ -1605,7 +1606,7 @@
 
       loreImages.forEach((image) => {
         image.addEventListener('click', () => {
-          if (!loreEditingEnabled || !isOwner(readCurrentMember())) {
+          if (!loreEditingEnabled || !canEditSite(readCurrentMember())) {
             return;
           }
           replaceLoreImage(image);
@@ -1652,6 +1653,12 @@
           updateLoreEditAccess();
         });
       }
+      window.addEventListener('storage', (event) => {
+        if (event.key === window.TheChosenGuildAccess.DIRECTORY_STORAGE_KEY) {
+          updateLoreEditAccess();
+        }
+      });
+      window.addEventListener('theChosen:persistent-store-ready', updateLoreEditAccess);
 
       applySavedLoreContent();
       applySavedLoreImages();
@@ -1659,6 +1666,5 @@
       updateLoreEditAccess();
     </script>
     <script src="../scripts/site-decor.js"></script>
-    <script src="../scripts/guild-access.js"></script>
   </body>
 </html>
