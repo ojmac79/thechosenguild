@@ -68,6 +68,30 @@ function cleanText(value, maxLength) {
   return String(value || '').trim().slice(0, maxLength);
 }
 
+function cleanForumUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw.length > 2000) {
+    return '';
+  }
+  try {
+    const parsed = new URL(raw);
+    if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username || parsed.password) {
+      return '';
+    }
+    return parsed.href;
+  } catch (error) {
+    return '';
+  }
+}
+
+function cleanForumImage(value) {
+  const raw = String(value || '').trim();
+  if (/^data:image\/(?:jpeg|png|gif|webp);base64,[a-z0-9+/=\r\n]+$/i.test(raw) && raw.length <= 700000) {
+    return raw;
+  }
+  return cleanForumUrl(raw);
+}
+
 function buildId(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 }
@@ -119,6 +143,8 @@ function normalizeForumState(source) {
             categoryId: categoryIds.has(thread.categoryId) ? thread.categoryId : normalizedCategories[0].id,
             title,
             body,
+            linkUrl: cleanForumUrl(thread.linkUrl),
+            imageUrl: cleanForumImage(thread.imageUrl),
             authorName: cleanText(thread.authorName, 100) || 'Guest Adventurer',
             authorEmail: normalizeEmail(thread.authorEmail),
             authorAvatar: cleanText(thread.authorAvatar, 1000),
@@ -141,6 +167,8 @@ function normalizeForumState(source) {
             threadId,
             parentReplyId: cleanText(reply.parentReplyId, 160) || null,
             body,
+            linkUrl: cleanForumUrl(reply.linkUrl),
+            imageUrl: cleanForumImage(reply.imageUrl),
             authorName: cleanText(reply.authorName, 100) || 'Guest Adventurer',
             authorEmail: normalizeEmail(reply.authorEmail),
             authorAvatar: cleanText(reply.authorAvatar, 1000),
@@ -462,8 +490,18 @@ exports.handler = async function handler(event, context) {
     if (action === 'create-thread') {
       const title = cleanText(body.title, 180);
       const threadBody = cleanText(body.body, 12000);
+      const requestedLinkUrl = cleanText(body.linkUrl, 2001);
+      const requestedImageUrl = String(body.imageUrl || '').trim();
       if (!title || !threadBody) {
         return json(400, { error: 'A thread title and message are required.' });
+      }
+      if ((requestedLinkUrl || requestedImageUrl) && !email) {
+        return json(403, { error: 'Sign in to attach hyperlinks or images.' });
+      }
+      const linkUrl = cleanForumUrl(requestedLinkUrl);
+      const imageUrl = cleanForumImage(requestedImageUrl);
+      if ((requestedLinkUrl && !linkUrl) || (requestedImageUrl && !imageUrl)) {
+        return json(400, { error: 'Use a valid HTTP/HTTPS hyperlink and a supported forum image.' });
       }
       const categories = state[spaceKey].categories;
       const categoryId = categories.some((category) => category.id === body.categoryId)
@@ -474,6 +512,8 @@ exports.handler = async function handler(event, context) {
         categoryId,
         title,
         body: threadBody,
+        linkUrl,
+        imageUrl,
         ...author,
         createdAt: Date.now(),
         isPinned: false,
@@ -484,6 +524,8 @@ exports.handler = async function handler(event, context) {
       state[spaceKey].threads.push(thread);
     } else if (action === 'create-reply') {
       const replyBody = cleanText(body.body, 6000);
+      const requestedLinkUrl = cleanText(body.linkUrl, 2001);
+      const requestedImageUrl = String(body.imageUrl || '').trim();
       const threadId = cleanText(body.threadId, 160);
       const thread = state[spaceKey].threads.find((candidate) => candidate.id === threadId);
       if (!thread) {
@@ -495,6 +537,14 @@ exports.handler = async function handler(event, context) {
       if (!replyBody) {
         return json(400, { error: 'A reply message is required.' });
       }
+      if ((requestedLinkUrl || requestedImageUrl) && !email) {
+        return json(403, { error: 'Sign in to attach hyperlinks or images.' });
+      }
+      const linkUrl = cleanForumUrl(requestedLinkUrl);
+      const imageUrl = cleanForumImage(requestedImageUrl);
+      if ((requestedLinkUrl && !linkUrl) || (requestedImageUrl && !imageUrl)) {
+        return json(400, { error: 'Use a valid HTTP/HTTPS hyperlink and a supported forum image.' });
+      }
       const parentReplyId = cleanText(body.parentReplyId, 160);
       const parentReply = parentReplyId
         ? state[spaceKey].replies.find((reply) => reply.id === parentReplyId && reply.threadId === threadId)
@@ -504,6 +554,8 @@ exports.handler = async function handler(event, context) {
         threadId,
         parentReplyId: parentReply ? parentReply.id : null,
         body: replyBody,
+        linkUrl,
+        imageUrl,
         ...author,
         createdAt: Date.now(),
         space: spaceKey

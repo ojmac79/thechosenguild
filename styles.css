@@ -592,7 +592,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   border: 1px solid var(--border);
   flex-shrink: 0;
 }
-.forum-thread__body { margin: 0; color: var(--text); }
+.forum-thread__body { margin: 0; color: var(--text); white-space: pre-wrap; overflow-wrap: anywhere; }
 .forum-thread__actions {
   display: flex;
   align-items: center;
@@ -606,7 +606,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   gap: 0.55rem;
 }
 .forum-thread__reply-author { margin: 0 0 0.25rem; font-weight: 700; color: var(--accent); }
-.forum-thread__reply-body { margin: 0; color: var(--muted); }
+.forum-thread__reply-body { margin: 0; color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
 .forum-thread__reply-children {
   margin-top: 0.75rem;
   margin-left: 0.8rem;
@@ -634,6 +634,42 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   align-items: center;
   gap: 0.5rem;
   flex-wrap: wrap;
+}
+.forum-media-fields {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.75rem;
+}
+.forum-media-fields[hidden] { display: none; }
+.forum-media-fields > .forum2-note { grid-column: 1 / -1; }
+.forum-media-fields--reply input {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.62rem 0.74rem;
+  background: rgba(0, 0, 0, 0.25);
+  color: var(--text);
+  font: inherit;
+}
+.forum-post-link,
+.forum-post-media__link {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.forum-post-media {
+  display: grid;
+  gap: 0.65rem;
+  justify-items: start;
+}
+.forum-post-media__image {
+  display: block;
+  width: min(100%, 560px);
+  max-height: 420px;
+  object-fit: contain;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.25);
 }
 .forum-gate { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
 .forum-gate__text { margin: 0; color: var(--muted); }
