@@ -138,6 +138,19 @@
               ? payload.versions
               : {};
             conflicts.forEach(function (key) {
+              if (!Object.prototype.hasOwnProperty.call(pending, key)) {
+                const latestVersion = Number(latestVersions[key]) || 0;
+                if (latestVersion >= (Number(versions[key]) || 0)) {
+                  if (typeof latestItems[key] === 'string') {
+                    cache[key] = latestItems[key];
+                  } else {
+                    delete cache[key];
+                  }
+                  versions[key] = latestVersion;
+                  emitStorageChange(key);
+                }
+                return;
+              }
               const changedWhileSaving = pending[key] !== items[key];
               const keepLocal = changedWhileSaving && window.confirm(
                 'This content changed on the server while you were editing. Select OK to keep and resubmit your local changes, or Cancel to load the server version.'
@@ -148,14 +161,17 @@
               }
               delete pending[key];
               delete pendingVersions[key];
-              if (typeof latestItems[key] === 'string') {
-                cache[key] = latestItems[key];
-              } else {
-                delete cache[key];
+              const latestVersion = Number(latestVersions[key]) || 0;
+              if (latestVersion >= (Number(versions[key]) || 0)) {
+                if (typeof latestItems[key] === 'string') {
+                  cache[key] = latestItems[key];
+                } else {
+                  delete cache[key];
+                }
+                versions[key] = latestVersion;
+                originalRemoveItem(key);
+                emitStorageChange(key);
               }
-              versions[key] = Number(latestVersions[key]) || 0;
-              originalRemoveItem(key);
-              emitStorageChange(key);
             });
             window.dispatchEvent(new CustomEvent('theChosen:persistent-store-conflict', {
               detail: { keys: conflicts }
@@ -214,6 +230,23 @@
       queueFlush();
       emitStorageChange(key);
     }
+  }
+
+  function applyAuthoritativeValue(key, value, version) {
+    if (!isScopedKey(key) || typeof value !== 'string') {
+      return false;
+    }
+    const nextVersion = Number(version) || 0;
+    if (nextVersion < (Number(versions[key]) || 0)) {
+      return false;
+    }
+    delete pending[key];
+    delete pendingVersions[key];
+    cache[key] = value;
+    versions[key] = nextVersion;
+    originalRemoveItem(key);
+    emitStorageChange(key);
+    return true;
   }
 
   function patchStorage() {
@@ -277,6 +310,7 @@
         });
 
         const previousEntries = { ...cache };
+        const previousVersions = { ...versions };
         Object.keys(cache).forEach(function (key) {
           delete cache[key];
           if (!Object.prototype.hasOwnProperty.call(pending, key)) {
@@ -284,8 +318,17 @@
           }
         });
         remoteKeys.forEach(function (key) {
+          const remoteVersion = Number(remoteVersions[key]) || 0;
+          if (
+            remoteVersion < (Number(previousVersions[key]) || 0) &&
+            Object.prototype.hasOwnProperty.call(previousEntries, key)
+          ) {
+            cache[key] = previousEntries[key];
+            versions[key] = Number(previousVersions[key]) || 0;
+            return;
+          }
           cache[key] = items[key];
-          versions[key] = Number(remoteVersions[key]) || 0;
+          versions[key] = remoteVersion;
         });
         Object.keys(pending).forEach(function (key) {
           if (pending[key] === null) {
@@ -415,4 +458,7 @@
   if (!hydratePromise) {
     void hydrate();
   }
+  window.TheChosenPersistentStore = Object.freeze({
+    applyAuthoritativeValue
+  });
 })();

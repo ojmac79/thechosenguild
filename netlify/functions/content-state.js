@@ -31,7 +31,7 @@ function json(statusCode, body) {
 
 function readScope(event) {
   const scope = String((event.queryStringParameters && event.queryStringParameters.scope) || '').trim().toLowerCase();
-  return scope === 'news' || scope === 'forum' || scope === 'kv' ? scope : '';
+  return scope === 'news' || scope === 'forum' || scope === 'kv' || scope === 'guild-directory' ? scope : '';
 }
 
 function normalizeEmail(value) {
@@ -188,6 +188,9 @@ async function syncIdentityDirectory(store, user) {
       return null;
     }
     const now = new Date().toISOString();
+    const identityDetailsChanged = !existing ||
+      existing.verifiedNetlify !== true ||
+      cleanText(existing.name, 80) !== identityName;
     const record = {
       ...(existing || {}),
       id: cleanText(existing && existing.id, 160) || `guild-member-${Date.now()}`,
@@ -200,7 +203,7 @@ async function syncIdentityDirectory(store, user) {
       verifiedNetlify: true,
       lastSeenAt: now,
       createdAt: cleanText(existing && existing.createdAt, 80) || now,
-      updatedAt: now,
+      updatedAt: identityDetailsChanged ? now : cleanText(existing && existing.updatedAt, 80) || now,
       access: email === OWNER_EMAIL
         ? { forums: true, roster: true, moderateForums: true, management: true }
         : {
@@ -233,44 +236,137 @@ async function syncIdentityDirectory(store, user) {
   });
 }
 
-function protectDirectoryValue(value, existingItems) {
-  if (typeof value !== 'string') {
-    return '';
+function normalizeManagedMember(input, existing) {
+  const email = normalizeEmail(input && input.email);
+  if (!email) {
+    return null;
   }
-  let submitted;
-  try {
-    submitted = JSON.parse(value);
-  } catch (error) {
-    return '';
-  }
-  const members = Array.isArray(submitted && submitted.members) ? submitted.members : [];
-  const existingOwner = parseDirectory(existingItems).members.find(
-    (member) => normalizeEmail(member && member.email) === OWNER_EMAIL
-  ) || {};
-  const submittedOwner = members.find((member) => normalizeEmail(member && member.email) === OWNER_EMAIL) || {};
-  const protectedOwner = {
-    ...existingOwner,
-    ...submittedOwner,
-    email: OWNER_EMAIL,
-    level: 'leader',
-    status: 'active',
-    verifiedNetlify: true,
-    access: {
-      forums: true,
-      roster: true,
-      moderateForums: true,
-      management: true
-    }
+  const owner = email === OWNER_EMAIL;
+  const now = new Date().toISOString();
+  const current = existing && typeof existing === 'object' ? existing : {};
+  const submittedAccess = input && input.access && typeof input.access === 'object' ? input.access : {};
+  const level = owner ? 'leader' : cleanText(input && input.level, 40) || cleanText(current.level, 40) || 'applicant';
+  const status = owner ? 'active' : cleanText(input && input.status, 40) || cleanText(current.status, 40) || 'pending';
+  const member = {
+    ...current,
+    id: cleanText(current.id || (input && input.id), 160) || `guild-member-${Date.now()}`,
+    email,
+    name: cleanText(input && input.name, 80) || cleanText(current.name, 80),
+    title: cleanText(input && input.title, 80) || cleanText(current.title, 80) || (owner ? 'Guild Leader' : 'Guild Member'),
+    level: !owner && level === 'leader' ? 'officer' : level,
+    status,
+    notes: cleanText(input && input.notes, 800),
+    verifiedNetlify: owner || Boolean(current.verifiedNetlify || (input && input.verifiedNetlify)),
+    lastSeenAt: cleanText(current.lastSeenAt, 80),
+    createdAt: cleanText(current.createdAt, 80) || now,
+    updatedAt: now,
+    access: owner
+      ? { forums: true, roster: true, moderateForums: true, management: true }
+      : {
+          forums: Boolean(submittedAccess.forums),
+          roster: Boolean(submittedAccess.roster),
+          moderateForums: Boolean(submittedAccess.moderateForums),
+          management: Boolean(submittedAccess.management)
+        }
   };
-  const nextMembers = members.filter(
-    (member) => normalizeEmail(member && member.email) && normalizeEmail(member.email) !== OWNER_EMAIL
+  delete member.removedAt;
+  return member;
+}
+
+async function updateManagedDirectory(store, action, body) {
+  let savedMember = null;
+  let removedEmail = '';
+  let recordConflict = false;
+  const payload = await updateJsonAtomically(
+    store,
+    KV_KEY,
+    { items: {}, versions: {}, updatedAt: '' },
+    (existing) => {
+      const items = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const versions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      const directory = parseDirectory(items);
+      const now = new Date().toISOString();
+
+      if (action === 'upsert' || action === 'restore') {
+        const email = normalizeEmail(body && body.member && body.member.email);
+        const index = directory.members.findIndex((member) => normalizeEmail(member && member.email) === email);
+        const current = index >= 0 ? directory.members[index] : null;
+        const expectedUpdatedAt = cleanText(body && body.expectedUpdatedAt, 80);
+        const currentUpdatedAt = cleanText(current && current.updatedAt, 80);
+        const removed = current && cleanText(current.status, 40).toLowerCase() === 'removed';
+        if (
+          (removed && (action !== 'restore' || expectedUpdatedAt !== currentUpdatedAt)) ||
+          (!removed && action === 'restore') ||
+          (current && !removed && expectedUpdatedAt !== currentUpdatedAt)
+        ) {
+          recordConflict = true;
+          return null;
+        }
+        savedMember = normalizeManagedMember(body.member, current);
+        if (!savedMember) {
+          return null;
+        }
+        if (index >= 0) {
+          directory.members[index] = savedMember;
+        } else {
+          directory.members.unshift(savedMember);
+        }
+      } else if (action === 'remove') {
+        removedEmail = normalizeEmail(body && body.email);
+        if (!removedEmail || removedEmail === OWNER_EMAIL) {
+          return null;
+        }
+        const index = directory.members.findIndex((member) => normalizeEmail(member && member.email) === removedEmail);
+        const current = index >= 0 ? directory.members[index] : null;
+        if (!current) {
+          return null;
+        }
+        if (cleanText(body && body.expectedUpdatedAt, 80) !== cleanText(current.updatedAt, 80)) {
+          recordConflict = true;
+          return null;
+        }
+        directory.members[index] = {
+          ...current,
+          status: 'removed',
+          removedAt: now,
+          updatedAt: now,
+          access: {
+            forums: false,
+            roster: false,
+            moderateForums: false,
+            management: false
+          }
+        };
+      } else {
+        return null;
+      }
+
+      return {
+        items: {
+          ...items,
+          [DIRECTORY_KEY]: JSON.stringify({
+            version: directory.version,
+            updatedAt: now,
+            members: directory.members
+          })
+        },
+        versions: {
+          ...versions,
+          [DIRECTORY_KEY]: itemVersion(items, versions, DIRECTORY_KEY) + 1
+        },
+        updatedAt: now
+      };
+    }
   );
-  nextMembers.unshift(protectedOwner);
-  return JSON.stringify({
-    version: Number(submitted && submitted.version) || 1,
-    updatedAt: new Date().toISOString(),
-    members: nextMembers
-  });
+  const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+  const versions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+  return {
+    value: items[DIRECTORY_KEY] || JSON.stringify({ version: 1, updatedAt: '', members: [] }),
+    version: itemVersion(items, versions, DIRECTORY_KEY),
+    member: savedMember,
+    removedEmail,
+    conflict: recordConflict
+  };
 }
 
 function buildId(prefix) {
@@ -610,6 +706,9 @@ exports.handler = async function handler(event, context) {
         updatedAt: payload.updatedAt || ''
       });
     }
+    if (scope === 'guild-directory') {
+      return json(405, { error: 'Method not allowed.' });
+    }
     const payload = await loadForumState(store);
     const role = await getForumRole(store, getRequestEmail(context));
     return json(200, forumPayloadForRole(payload.state, role, payload.updatedAt));
@@ -635,13 +734,62 @@ exports.handler = async function handler(event, context) {
     return json(410, { error: 'News updates must use the dedicated news endpoint.' });
   }
 
+  if (scope === 'guild-directory') {
+    if (email !== OWNER_EMAIL) {
+      return json(403, { error: 'Only the site owner may update the guild directory.' });
+    }
+    if (event.httpMethod !== 'POST') {
+      return json(405, { error: 'Method not allowed.' });
+    }
+    const action = cleanText(body.action, 40);
+    if (action !== 'upsert' && action !== 'restore' && action !== 'remove') {
+      return json(400, { error: 'Expected an upsert, restore, or remove action.' });
+    }
+    if ((action === 'upsert' || action === 'restore') && !normalizeEmail(body && body.member && body.member.email)) {
+      return json(400, { error: 'A member email is required.' });
+    }
+    if (action === 'remove') {
+      const targetEmail = normalizeEmail(body && body.email);
+      if (!targetEmail || targetEmail === OWNER_EMAIL) {
+        return json(400, { error: 'A removable member email is required.' });
+      }
+    }
+    const result = await updateManagedDirectory(store, action, body);
+    if (result.conflict) {
+      return json(409, { error: 'This member changed on the server. Reload the registry and try again.' });
+    }
+    return json(200, result);
+  }
+
   if (scope === 'kv') {
     if (!body.items || typeof body.items !== 'object') {
       return json(400, { error: 'Expected `items` to be an object.' });
     }
     const submittedVersions = body.versions && typeof body.versions === 'object' ? body.versions : {};
-    if (Object.prototype.hasOwnProperty.call(body.items, DIRECTORY_KEY) && email !== OWNER_EMAIL) {
-      return json(403, { error: 'Only the site owner may update guild account authorization.' });
+    if (Object.prototype.hasOwnProperty.call(body.items, DIRECTORY_KEY)) {
+      const existing = await readJson(store, KV_KEY, { items: {}, versions: {} });
+      const existingItems = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const existingVersions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      if (!isAuthorizedEditor(existingItems, email)) {
+        return json(409, {
+          error: 'Guild directory changes require owner authorization.',
+          conflicts: [DIRECTORY_KEY],
+          items: { [DIRECTORY_KEY]: null },
+          versions: { [DIRECTORY_KEY]: 0 }
+        });
+      }
+      return json(409, {
+        error: 'Guild directory changes must use the dedicated server endpoint.',
+        conflicts: [DIRECTORY_KEY],
+        items: {
+          [DIRECTORY_KEY]: typeof existingItems[DIRECTORY_KEY] === 'string'
+            ? existingItems[DIRECTORY_KEY]
+            : null
+        },
+        versions: {
+          [DIRECTORY_KEY]: itemVersion(existingItems, existingVersions, DIRECTORY_KEY)
+        }
+      });
     }
     let denied = false;
     let conflicts = [];
@@ -676,13 +824,8 @@ exports.handler = async function handler(event, context) {
           delete nextItems[key];
           nextVersions[key] = itemVersion(existingItems, existingVersions, key) + 1;
         } else if (typeof nextValue === 'string') {
-          const protectedValue = key === DIRECTORY_KEY
-            ? protectDirectoryValue(nextValue, existingItems)
-            : nextValue;
-          if (protectedValue) {
-            nextItems[key] = protectedValue;
-            nextVersions[key] = itemVersion(existingItems, existingVersions, key) + 1;
-          }
+          nextItems[key] = nextValue;
+          nextVersions[key] = itemVersion(existingItems, existingVersions, key) + 1;
         }
       });
       return {
