@@ -8,6 +8,7 @@
       name="description"
       content="The Chosen Guild is a community-driven EverQuest guild hall with news, forums, roster, and resources."
     />
+    <link rel="preload" href="images/the-chosen-guild-logo.png" as="image" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -48,7 +49,16 @@
       <main class="page">
         <section class="hero">
           <p class="hero__eyebrow">The Guild Hall of Norrath</p>
-          <h1 class="hero__title">The Chosen</h1>
+          <h1 class="hero__title hero__title--visually-hidden">The Chosen Guild</h1>
+          <div class="hero__guild-art">
+            <img
+              src="images/the-chosen-guild-logo.png"
+              width="739"
+              height="739"
+              alt="The Chosen Guild emblem featuring a red dragon and a fellowship of Norrath adventurers"
+              fetchpriority="high"
+            />
+          </div>
           <div class="hero__tagline-wrap">
             <p id="heroTagline" class="hero__tagline">
               Bound by oath, tempered by raid wipes, undefeated in spirit. Seek
