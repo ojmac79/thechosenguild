@@ -161,7 +161,7 @@
           <button id="toggleContentEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
         </div>
         <p id="contentEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
-          Public view is enabled. Owner sign-in is required to edit page content.
+          Public view is enabled. An approved guild account is required to edit page content.
         </p>
 
         <div class="eql-search">
@@ -391,10 +391,10 @@
     </script>
     <script src="../scripts/persistent-store.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script src="../scripts/guild-access.js"></script>
     <script>
       const RESOURCE_STORAGE_KEY = 'theChosenResources';
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const thumbnailOptions = [
         { url: 'https://images.unsplash.com/photo-1500534623283-312aade485b7?auto=format&fit=crop&w=1200&q=80', alt: 'Fantasy mountain landscape' },
         { url: 'https://images.unsplash.com/photo-1519681393784-d120267933ba?auto=format&fit=crop&w=1200&q=80', alt: 'Ancient forest overlook' },
@@ -442,8 +442,9 @@
       const defaultResources = [];
       let editingResourceId = null;
 
-      function isOwner(member) {
-        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      function canEditSite(member) {
+        const guildAccess = window.TheChosenGuildAccess;
+        return Boolean(guildAccess && guildAccess.getPermissions(member).canEditSite);
       }
 
       function getNowLabel() {
@@ -576,7 +577,7 @@
       }
 
       function setFormAccess(currentMember) {
-        const canManage = isOwner(currentMember);
+        const canManage = canEditSite(currentMember);
         const controls = resourceForm.querySelectorAll('input, textarea, button');
         controls.forEach((control) => {
           if (control.id === 'resourceCancelEdit') {
@@ -601,18 +602,23 @@
 
         if (!resources.length) {
           resourceList.innerHTML = '<li class="panel resource-item resource-item--empty">No shared links are currently available.</li>';
-          resourceNotice.textContent = isOwner(currentMember)
-            ? 'Owner access enabled: you can add, edit, and delete shared links.'
-            : 'Public view is enabled. Owner sign-in is required to add, edit, or remove links.';
+          resourceNotice.textContent = canEditSite(currentMember)
+            ? 'Authorized editor access enabled: you can add, edit, and delete shared links.'
+            : 'Public view is enabled. An approved guild account is required to manage links.';
           return;
         }
 
         resourceList.innerHTML = resources
           .map((resource) => {
-            const memberActions = isOwner(currentMember)
+            const safeId = escapeHtml(resource.id);
+            const safeUrl = normalizeUrl(resource.url);
+            if (!safeId || !safeUrl) {
+              return '';
+            }
+            const memberActions = canEditSite(currentMember)
               ? `
-                <button class="resource-item__edit" type="button" data-edit-resource="${resource.id}">Edit</button>
-                <button class="resource-item__delete" type="button" data-delete-resource="${resource.id}">Delete</button>
+                <button class="resource-item__edit" type="button" data-edit-resource="${safeId}">Edit</button>
+                <button class="resource-item__delete" type="button" data-delete-resource="${safeId}">Delete</button>
               `
               : '';
 
@@ -620,7 +626,7 @@
               <li class="panel resource-item">
                 <div>
                   <h3 class="resource-item__title">
-                    <a class="resource-item__title-link" href="${escapeHtml(resource.url)}" target="_blank" rel="noreferrer">${escapeHtml(resource.name)}</a>
+                    <a class="resource-item__title-link" href="${escapeHtml(safeUrl)}" target="_blank" rel="noreferrer">${escapeHtml(resource.name)}</a>
                   </h3>
                   <p class="resource-item__desc">${escapeHtml(resource.description)}</p>
                 </div>
@@ -630,15 +636,15 @@
           })
           .join('');
 
-        resourceNotice.textContent = isOwner(currentMember)
-          ? 'Owner access enabled: you can add, edit, and delete shared links.'
-          : 'Public view is enabled. Owner sign-in is required to add, edit, or remove links.';
+        resourceNotice.textContent = canEditSite(currentMember)
+          ? 'Authorized editor access enabled: you can add, edit, and delete shared links.'
+          : 'Public view is enabled. An approved guild account is required to manage links.';
       }
 
       resourceAddLink.addEventListener('click', () => {
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
-          resourceNotice.textContent = 'Owner sign-in is required to add, edit, or remove links from the archive.';
+        if (!canEditSite(currentMember)) {
+          resourceNotice.textContent = 'An approved guild account is required to manage links.';
           return;
         }
         resourceNameInput.focus();
@@ -647,8 +653,8 @@
       resourceForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
-          resourceNotice.textContent = 'Owner sign-in is required to add, edit, or remove links from the archive.';
+        if (!canEditSite(currentMember)) {
+          resourceNotice.textContent = 'An approved guild account is required to manage links.';
           return;
         }
 
@@ -714,8 +720,8 @@
 
       resourceList.addEventListener('click', (event) => {
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
-          resourceNotice.textContent = 'Owner sign-in is required to add, edit, or remove links from the archive.';
+        if (!canEditSite(currentMember)) {
+          resourceNotice.textContent = 'An approved guild account is required to manage links.';
           return;
         }
 
@@ -786,14 +792,14 @@
       let contentEditingEnabled = false;
 
       function updateContentEditAccess() {
-        const canEdit = isOwner(readCurrentMember());
+        const canEdit = canEditSite(readCurrentMember());
         toggleContentEditButton.hidden = !canEdit;
         if (!canEdit && contentEditingEnabled) {
           setContentEditingState(false);
         }
         contentEditNotice.textContent = canEdit
-          ? 'Owner access enabled. Use the button to enable page-wide content editing.'
-          : 'Public view is enabled. Owner sign-in is required to edit page content.';
+          ? 'Authorized editor access enabled. Use the button to enable page-wide content editing.'
+          : 'Public view is enabled. An approved guild account is required to edit page content.';
       }
       window.TheChosenApp = window.TheChosenApp || {};
       window.TheChosenApp.updateEqlContentEditAccess = updateContentEditAccess;
@@ -809,8 +815,8 @@
 
       toggleContentEditButton.addEventListener('click', () => {
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
-          contentEditNotice.textContent = 'Owner sign-in is required to enable page-wide content editing.';
+        if (!canEditSite(currentMember)) {
+          contentEditNotice.textContent = 'An approved guild account is required to enable page-wide content editing.';
           return;
         }
         setContentEditingState(!contentEditingEnabled);
@@ -821,8 +827,17 @@
 
       setContentEditingState(false);
       updateContentEditAccess();
+      window.addEventListener('storage', (event) => {
+        if (event.key === window.TheChosenGuildAccess.DIRECTORY_STORAGE_KEY) {
+          renderResources();
+          updateContentEditAccess();
+        }
+      });
+      window.addEventListener('theChosen:persistent-store-ready', () => {
+        renderResources();
+        updateContentEditAccess();
+      });
     </script>
     <script src="../scripts/site-decor.js"></script>
-    <script src="../scripts/guild-access.js"></script>
   </body>
 </html>

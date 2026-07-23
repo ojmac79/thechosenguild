@@ -267,6 +267,15 @@
 
       let editingEmail = '';
 
+      function escapeHtml(value) {
+        return String(value || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
       function renderMemberBadge(member) {
         if (!member) {
           footerMember.hidden = true;
@@ -293,7 +302,7 @@
         memberForm.reset();
         memberSaveButton.textContent = 'Authorize Member';
         memberEmail.disabled = false;
-        setNotice('Owner access is active. Authorize verified Netlify members for forums, roster, and moderation.', '');
+        setNotice('Authorized editor access is active. Manage verified Netlify members, roster access, and site permissions.', '');
       }
 
       function formatDate(value) {
@@ -362,6 +371,8 @@
       function renderDirectory() {
         populateMetrics();
         const members = getFilteredMembers();
+        const permissions = guildAccess.getPermissions(guildAccess.getCurrentMember());
+        const canAdministerMembers = permissions.canAdministerMembers;
 
         if (!members.length) {
           directoryList.innerHTML = '<article class="panel guild-member-card"><p class="empty-state">No members match the current filter.</p></article>';
@@ -372,38 +383,39 @@
           .map((record) => {
             const owner = record.email === guildAccess.OWNER_EMAIL;
             const verificationBadge = record.verifiedNetlify ? 'Verified Netlify' : 'Pending First Sign-In';
-            const quickApprove = record.status === 'pending'
-              ? `<button class="resource-item__edit" type="button" data-action="approve-member" data-email="${record.email}">Approve</button>`
+            const safeEmail = escapeHtml(record.email);
+            const quickApprove = canAdministerMembers && record.status === 'pending'
+              ? `<button class="resource-item__edit" type="button" data-action="approve-member" data-email="${safeEmail}">Approve</button>`
               : '';
 
             return `
               <article class="panel guild-member-card">
                 <div class="guild-member-card__top">
                   <div>
-                    <p class="guild-member-card__title">${record.name || 'Unnamed Member'}</p>
-                    <p class="guild-member-card__email">${record.email}</p>
+                    <p class="guild-member-card__title">${escapeHtml(record.name || 'Unnamed Member')}</p>
+                    <p class="guild-member-card__email">${safeEmail}</p>
                   </div>
                   <div class="guild-badge-group">
-                    <span class="forum-badge forum-badge--member">${record.title || guildAccess.getMemberLabel(record)}</span>
-                    <span class="forum-badge">${record.status}</span>
+                    <span class="forum-badge forum-badge--member">${escapeHtml(record.title || guildAccess.getMemberLabel(record))}</span>
+                    <span class="forum-badge">${escapeHtml(record.status)}</span>
                     <span class="forum-badge">${verificationBadge}</span>
                   </div>
                 </div>
                 <div class="guild-member-card__meta">
-                  <p><strong>Level:</strong> ${record.level}</p>
+                  <p><strong>Level:</strong> ${escapeHtml(record.level)}</p>
                   <p><strong>Forums:</strong> ${record.access.forums ? 'Enabled' : 'Disabled'}</p>
                   <p><strong>Roster:</strong> ${record.access.roster ? 'Enabled' : 'Disabled'}</p>
                   <p><strong>Moderation:</strong> ${record.access.moderateForums ? 'Enabled' : 'Disabled'}</p>
                   <p><strong>Last Seen:</strong> ${formatDate(record.lastSeenAt)}</p>
                 </div>
-                <p class="guild-member-card__notes">${record.notes || 'No command notes recorded.'}</p>
+                <p class="guild-member-card__notes">${escapeHtml(record.notes || 'No command notes recorded.')}</p>
                 <div class="resource-item__actions guild-member-card__actions">
                   ${quickApprove}
-                  <button class="resource-item__edit" type="button" data-action="edit-member" data-email="${record.email}">Edit</button>
-                  ${owner ? '' : `<button class="resource-item__edit" type="button" data-action="toggle-forums" data-email="${record.email}">${record.access.forums ? 'Disable Forums' : 'Enable Forums'}</button>`}
-                  ${owner ? '' : `<button class="resource-item__edit" type="button" data-action="toggle-roster" data-email="${record.email}">${record.access.roster ? 'Disable Roster' : 'Enable Roster'}</button>`}
-                  ${owner ? '' : `<button class="resource-item__delete" type="button" data-action="toggle-suspension" data-email="${record.email}">${record.status === 'suspended' ? 'Reinstate' : 'Suspend'}</button>`}
-                  ${owner ? '' : `<button class="resource-item__delete" type="button" data-action="remove-member" data-email="${record.email}">Remove</button>`}
+                  ${canAdministerMembers ? `<button class="resource-item__edit" type="button" data-action="edit-member" data-email="${safeEmail}">Edit</button>` : ''}
+                  ${canAdministerMembers && !owner ? `<button class="resource-item__edit" type="button" data-action="toggle-forums" data-email="${safeEmail}">${record.access.forums ? 'Disable Forums' : 'Enable Forums'}</button>` : ''}
+                  ${canAdministerMembers && !owner ? `<button class="resource-item__edit" type="button" data-action="toggle-roster" data-email="${safeEmail}">${record.access.roster ? 'Disable Roster' : 'Enable Roster'}</button>` : ''}
+                  ${canAdministerMembers && !owner ? `<button class="resource-item__delete" type="button" data-action="toggle-suspension" data-email="${safeEmail}">${record.status === 'suspended' ? 'Reinstate' : 'Suspend'}</button>` : ''}
+                  ${canAdministerMembers && !owner ? `<button class="resource-item__delete" type="button" data-action="remove-member" data-email="${safeEmail}">Remove</button>` : ''}
                 </div>
               </article>
             `;
@@ -421,13 +433,14 @@
           gate.hidden = false;
           app.hidden = true;
           gateMessage.textContent = member
-            ? `Signed in as ${member.email}. Guild Management is reserved for the guild leader account.`
-            : 'Sign in with the guild leader Netlify account to manage membership, titles, and site access.';
+            ? `Signed in as ${member.email}. An owner-approved active or probation guild account is required.`
+            : 'Sign in with an owner-approved Netlify guild account to manage membership, titles, and site access.';
           return;
         }
 
         gate.hidden = true;
         app.hidden = false;
+        memberForm.closest('.panel').hidden = !permissions.canAdministerMembers;
         if (!editingEmail) {
           clearForm();
         }
@@ -454,7 +467,7 @@
       memberForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const currentMember = guildAccess.getCurrentMember();
-        if (!guildAccess.getPermissions(currentMember).canManageGuild) {
+        if (!guildAccess.getPermissions(currentMember).canAdministerMembers) {
           renderPage();
           return;
         }
@@ -484,7 +497,7 @@
             forums: leader ? true : memberForumsAccess.checked,
             roster: leader ? true : memberRosterAccess.checked,
             moderateForums: leader ? true : memberModerateAccess.checked,
-            management: leader
+            management: leader || memberStatus.value === 'active' || memberStatus.value === 'probation'
           }
         });
 
@@ -523,7 +536,7 @@
         }
 
         const currentMember = guildAccess.getCurrentMember();
-        if (!guildAccess.getPermissions(currentMember).canManageGuild) {
+        if (!guildAccess.getPermissions(currentMember).canAdministerMembers) {
           renderPage();
           return;
         }
@@ -549,7 +562,8 @@
             access: {
               ...record.access,
               forums: true,
-              roster: true
+              roster: true,
+              management: true
             }
           });
           renderDirectory();
@@ -623,6 +637,7 @@
           renderPage();
         }
       });
+      window.addEventListener('theChosen:persistent-store-ready', renderPage);
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();

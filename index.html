@@ -153,7 +153,6 @@
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
-      const OWNER_EMAIL = 'ojmac79@gmail.com';
       const NEWS_HOME_LIMIT = 3;
       const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
       const NEWS_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=news';
@@ -251,8 +250,9 @@
         remoteSynced: false
       };
 
-      function isOwner(member) {
-        return Boolean(member && String(member.email || '').toLowerCase() === OWNER_EMAIL);
+      function canEditSite(member) {
+        const guildAccess = window.TheChosenGuildAccess;
+        return Boolean(guildAccess && guildAccess.getPermissions(member).canEditSite);
       }
 
       function readCurrentMember() {
@@ -664,9 +664,9 @@
       }
 
       function getNewsNotice(currentMember, message = '') {
-        const accessNotice = isOwner(currentMember)
-          ? 'Owner access enabled: you can add or update guild news.'
-          : 'Public view is enabled. Owner sign-in is required to publish or edit news.';
+        const accessNotice = canEditSite(currentMember)
+          ? 'Authorized editor access enabled: you can add or update guild news.'
+          : 'Public view is enabled. An approved guild account is required to publish or edit news.';
         return message ? `${message} ${accessNotice}` : accessNotice;
       }
 
@@ -713,7 +713,7 @@
         }
         const posts = allPosts.slice(0, NEWS_HOME_LIMIT);
         const archivedPosts = allPosts.slice(NEWS_HOME_LIMIT);
-        const canEditNews = isOwner(currentMember);
+        const canEditNews = canEditSite(currentMember);
         newPostButton.hidden = !canEditNews;
         heroEditButton.hidden = !canEditNews;
         if (!canEditNews) {
@@ -758,7 +758,7 @@
 
       function editHeroTagline() {
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -960,7 +960,7 @@
       newPostButton.addEventListener('click', async () => {
         await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -985,7 +985,7 @@
       async function openNewsPostEditor(postId) {
         await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -1009,7 +1009,7 @@
         event.preventDefault();
         await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
-        if (!isOwner(currentMember)) {
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }

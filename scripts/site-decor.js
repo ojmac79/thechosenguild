@@ -126,44 +126,26 @@
     document.body.appendChild(container);
   }
 
-  function injectOwnerNavigation() {
+  function injectManagementNavigation() {
     const nav = document.querySelector('.site-nav');
-    if (!nav || nav.querySelector('[data-guild-management-link]')) {
+    if (!nav) {
       return;
     }
+    const existingLink = nav.querySelector('[data-guild-management-link]');
 
     const guildAccess = window.TheChosenGuildAccess;
     if (!guildAccess) {
       return;
     }
 
-    const storedMember = window.localStorage.getItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
-    if (!storedMember) {
+    const member = guildAccess.getCurrentMember();
+    if (!guildAccess.getPermissions(member).canManageGuild) {
+      if (existingLink) {
+        existingLink.remove();
+      }
       return;
     }
-
-    let parsedMember = null;
-    let parsedDirectory = null;
-    try {
-      parsedMember = JSON.parse(storedMember);
-    } catch (error) {
-      parsedMember = null;
-    }
-
-    const email = String(parsedMember && parsedMember.email ? parsedMember.email : '').trim().toLowerCase();
-    if (!email) {
-      return;
-    }
-
-    try {
-      parsedDirectory = JSON.parse(window.localStorage.getItem(guildAccess.DIRECTORY_STORAGE_KEY) || 'null');
-    } catch (error) {
-      parsedDirectory = null;
-    }
-
-    const members = Array.isArray(parsedDirectory && parsedDirectory.members) ? parsedDirectory.members : [];
-    const matchingRecord = members.find((member) => String(member && member.email ? member.email : '').trim().toLowerCase() === email);
-    if (!matchingRecord || !matchingRecord.access || matchingRecord.access.management !== true) {
+    if (existingLink) {
       return;
     }
 
@@ -181,8 +163,14 @@
   window.addEventListener("DOMContentLoaded", () => {
     document.body.setAttribute("data-eq-zone", getRouteZone());
     placeRelics();
-    injectOwnerNavigation();
+    injectManagementNavigation();
+    if (window.netlifyIdentity && typeof window.netlifyIdentity.on === 'function') {
+      window.netlifyIdentity.on('login', injectManagementNavigation);
+      window.netlifyIdentity.on('logout', injectManagementNavigation);
+    }
   });
+  window.addEventListener('storage', injectManagementNavigation);
+  window.addEventListener('theChosen:persistent-store-ready', injectManagementNavigation);
   window.addEventListener("resize", () => {
     window.clearTimeout(window.__chosenRelicResizeTimer);
     window.__chosenRelicResizeTimer = window.setTimeout(placeRelics, 180);
