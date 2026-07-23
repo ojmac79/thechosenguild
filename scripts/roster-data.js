@@ -737,10 +737,6 @@
       }
     });
 
-    if (guildAccess && memberRecord && typeof guildAccess.upsertRecord === 'function') {
-      guildAccess.upsertRecord({ ...memberRecord });
-    }
-
     return next.entries.find((entry) => entry.id === entryId) || null;
   }
 

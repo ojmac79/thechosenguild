@@ -2,6 +2,7 @@
   const DIRECTORY_STORAGE_KEY = 'theChosenGuildDirectoryV1';
   const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
   const MEMBER_AVATARS_STORAGE_KEY = 'theChosenMemberAvatarsV1';
+  const DIRECTORY_ENDPOINT = '/.netlify/functions/content-state?scope=guild-directory';
   const OWNER_EMAIL = 'ojmac79@gmail.com';
   const ACTIVE_STATUSES = new Set(['active', 'probation']);
   const MEMBER_ACTIVITY_REFRESH_MS = 5 * 60 * 1000;
@@ -258,6 +259,7 @@
     const seen = new Set();
     const members = sourceMembers
       .map(normalizeRecord)
+      .filter((record) => record && record.status !== 'removed')
       .filter((record) => {
         if (!record || seen.has(record.email)) {
           return false;
@@ -277,31 +279,85 @@
     };
   }
 
-  function writeDirectory(directory) {
-    const normalizedMembers = Array.isArray(directory && directory.members)
-      ? directory.members.map(normalizeRecord).filter(Boolean)
-      : [];
-
-    const seen = new Set();
-    const dedupedMembers = normalizedMembers.filter((record) => {
-      if (seen.has(record.email)) {
-        return false;
-      }
-      seen.add(record.email);
-      return true;
-    });
-
-    if (!seen.has(OWNER_EMAIL)) {
-      dedupedMembers.unshift(defaultRecord(OWNER_EMAIL));
+  async function getIdentityToken() {
+    if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
+      return '';
     }
+    const user = window.netlifyIdentity.currentUser();
+    if (!user || typeof user.jwt !== 'function') {
+      return '';
+    }
+    return user.jwt();
+  }
 
-    const payload = {
-      version: 1,
-      updatedAt: nowIso(),
-      members: dedupedMembers
-    };
-    localStorage.setItem(DIRECTORY_STORAGE_KEY, JSON.stringify(payload));
-    return payload;
+  async function mutateDirectoryOnServer(action, payload) {
+    const token = await getIdentityToken();
+    if (!token) {
+      throw new Error('Owner authentication is required to save guild management changes.');
+    }
+    const response = await fetch(DIRECTORY_ENDPOINT, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({ action, ...payload })
+    });
+    const result = await response.json();
+    if (!response.ok) {
+      throw new Error(result.error || 'The guild directory could not be saved.');
+    }
+    if (!result || typeof result.value !== 'string') {
+      throw new Error('The guild directory server returned an invalid response.');
+    }
+    const persistentStore = window.TheChosenPersistentStore;
+    if (!persistentStore || typeof persistentStore.applyAuthoritativeValue !== 'function') {
+      throw new Error('Persistent guild storage is unavailable.');
+    }
+    persistentStore.applyAuthoritativeValue(DIRECTORY_STORAGE_KEY, result.value, result.version);
+    return result;
+  }
+
+  async function upsertRecordOnServer(input) {
+    const normalizedInput = normalizeRecord(input);
+    if (!normalizedInput) {
+      throw new Error('A valid guild member email is required.');
+    }
+    let persistedRecord = null;
+    try {
+      const rawDirectory = JSON.parse(localStorage.getItem(DIRECTORY_STORAGE_KEY) || 'null');
+      const rawMembers = Array.isArray(rawDirectory && rawDirectory.members) ? rawDirectory.members : [];
+      persistedRecord = rawMembers.find((record) => normalizeEmail(record && record.email) === normalizedInput.email) || null;
+    } catch (error) {
+      persistedRecord = null;
+    }
+    const restoring = persistedRecord && persistedRecord.status === 'removed';
+    const existing = findRecordByEmail(normalizedInput.email);
+    await mutateDirectoryOnServer(restoring ? 'restore' : 'upsert', {
+      member: normalizedInput,
+      expectedUpdatedAt: persistedRecord
+        ? persistedRecord.updatedAt
+        : existing
+          ? existing.updatedAt
+          : ''
+    });
+    return findRecordByEmail(normalizedInput.email);
+  }
+
+  async function removeRecordOnServer(email) {
+    const normalizedEmail = normalizeEmail(email);
+    if (!normalizedEmail || normalizedEmail === OWNER_EMAIL) {
+      throw new Error('The selected guild member cannot be removed.');
+    }
+    const existing = findRecordByEmail(normalizedEmail);
+    if (!existing) {
+      throw new Error('The selected guild member no longer exists.');
+    }
+    await mutateDirectoryOnServer('remove', {
+      email: normalizedEmail,
+      expectedUpdatedAt: existing.updatedAt
+    });
+    return true;
   }
 
   function findRecordByEmail(email) {
@@ -310,54 +366,6 @@
       return null;
     }
     return readDirectory().members.find((record) => record.email === normalizedEmail) || null;
-  }
-
-  function upsertRecord(input) {
-    const normalizedInput = normalizeRecord(input);
-    if (!normalizedInput) {
-      return null;
-    }
-
-    const directory = readDirectory();
-    const index = directory.members.findIndex((record) => record.email === normalizedInput.email);
-    const existing = index >= 0 ? directory.members[index] : null;
-    const nextRecord = normalizeRecord({
-      ...(existing || defaultRecord(normalizedInput.email)),
-      ...normalizedInput,
-      access: normalizeAccess(
-        {
-          ...(existing && existing.access ? existing.access : {}),
-          ...(normalizedInput.access || {})
-        },
-        normalizedInput.email === OWNER_EMAIL
-      ),
-      updatedAt: nowIso()
-    });
-
-    if (index >= 0) {
-      directory.members[index] = nextRecord;
-    } else {
-      directory.members.unshift(nextRecord);
-    }
-
-    writeDirectory(directory);
-    return nextRecord;
-  }
-
-  function removeRecord(email) {
-    const normalizedEmail = normalizeEmail(email);
-    if (!normalizedEmail || normalizedEmail === OWNER_EMAIL) {
-      return false;
-    }
-
-    const directory = readDirectory();
-    const nextMembers = directory.members.filter((record) => record.email !== normalizedEmail);
-    if (nextMembers.length === directory.members.length) {
-      return false;
-    }
-
-    writeDirectory({ ...directory, members: nextMembers });
-    return true;
   }
 
   function getCurrentMember() {
@@ -404,7 +412,7 @@
       updatedAt: nowIso()
     });
 
-    return upsertRecord(nextRecord);
+    return nextRecord;
   }
 
   function getGuildRecord(memberOrEmail) {
@@ -510,15 +518,14 @@
     normalizeEmail,
     sanitizeMember,
     readDirectory,
-    writeDirectory,
     readStoredMember,
     saveCurrentMember,
     getCurrentMember,
     ensureMemberRecord,
     findRecordByEmail,
     getGuildRecord,
-    upsertRecord,
-    removeRecord,
+    upsertRecordOnServer,
+    removeRecordOnServer,
     getPermissions,
     getMemberLabel,
     getDashboardStats,

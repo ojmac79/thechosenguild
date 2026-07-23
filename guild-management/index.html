@@ -33,9 +33,7 @@
             <a class="site-nav__link" href="/server-status/">Status</a>
             <a class="site-nav__link" href="/stories/">EQ Stories</a>
             <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
-            <a class="site-nav__link" href="/low-level-quests/">Low Level Quests</a>
-            <a class="site-nav__link" href="/mid-level-quests/">Mid Level Quests</a>
-            <a class="site-nav__link" href="/high-level-quests/">High Level Quests</a>
+            <a class="site-nav__link" href="/quests/">Quests</a>
             <a class="site-nav__link active" href="/guild-management/" data-guild-management-link="true">Guild Management</a>
           </nav>
           <div class="site-header__auth">
@@ -297,6 +295,32 @@
         notice.className = type ? `resource-notice resource-notice--${type}` : 'resource-notice';
       }
 
+      async function persistMember(record, successMessage) {
+        setNotice('Saving guild registry changes to the server...', '');
+        try {
+          const saved = await guildAccess.upsertRecordOnServer(record);
+          renderDirectory();
+          setNotice(successMessage(saved), 'success');
+          return saved;
+        } catch (error) {
+          setNotice(error && error.message ? error.message : 'The guild registry could not be saved.', 'error');
+          return null;
+        }
+      }
+
+      async function persistRemoval(email) {
+        setNotice('Removing the member from the server registry...', '');
+        try {
+          await guildAccess.removeRecordOnServer(email);
+          renderDirectory();
+          setNotice(`${email} has been permanently removed from the guild registry.`, 'success');
+          return true;
+        } catch (error) {
+          setNotice(error && error.message ? error.message : 'The guild member could not be removed.', 'error');
+          return false;
+        }
+      }
+
       function clearForm() {
         editingEmail = '';
         memberForm.reset();
@@ -464,7 +488,7 @@
         memberForm.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
 
-      memberForm.addEventListener('submit', (event) => {
+      memberForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         const currentMember = guildAccess.getCurrentMember();
         if (!guildAccess.getPermissions(currentMember).canAdministerMembers) {
@@ -485,7 +509,8 @@
         } else if (nextLevel === 'leader') {
           nextLevel = 'officer';
         }
-        const saved = guildAccess.upsertRecord({
+        memberSaveButton.disabled = true;
+        const saved = await persistMember({
           email,
           name: memberName.value.trim(),
           level: nextLevel,
@@ -499,11 +524,12 @@
             moderateForums: leader ? true : memberModerateAccess.checked,
             management: leader || memberStatus.value === 'active' || memberStatus.value === 'probation'
           }
-        });
-
-        clearForm();
-        renderDirectory();
-        setNotice(`${saved.email} has been updated in the guild registry.`, 'success');
+        }, (record) => `${record.email} has been saved permanently in the server guild registry.`);
+        memberSaveButton.disabled = false;
+        if (saved) {
+          clearForm();
+          setNotice(`${saved.email} has been saved permanently in the server guild registry.`, 'success');
+        }
       });
 
       memberResetButton.addEventListener('click', () => {
@@ -529,7 +555,7 @@
         element.addEventListener('change', renderDirectory);
       });
 
-      directoryList.addEventListener('click', (event) => {
+      directoryList.addEventListener('click', async (event) => {
         const button = event.target.closest('[data-action]');
         if (!button) {
           return;
@@ -554,7 +580,8 @@
         }
 
         if (action === 'approve-member') {
-          guildAccess.upsertRecord({
+          button.disabled = true;
+          await persistMember({
             ...record,
             status: 'active',
             level: record.level === 'applicant' ? 'member' : record.level,
@@ -565,55 +592,54 @@
               roster: true,
               management: true
             }
-          });
-          renderDirectory();
-          setNotice(`${record.email} has been approved for guild systems.`, 'success');
+          }, (saved) => `${saved.email} has been approved and saved on the server.`);
+          button.disabled = false;
           return;
         }
 
         if (action === 'toggle-forums') {
-          guildAccess.upsertRecord({
+          button.disabled = true;
+          await persistMember({
             ...record,
             access: {
               ...record.access,
               forums: !record.access.forums
             }
-          });
-          renderDirectory();
-          setNotice(`Forum access updated for ${record.email}.`, 'success');
+          }, (saved) => `Forum access for ${saved.email} has been saved on the server.`);
+          button.disabled = false;
           return;
         }
 
         if (action === 'toggle-roster') {
-          guildAccess.upsertRecord({
+          button.disabled = true;
+          await persistMember({
             ...record,
             access: {
               ...record.access,
               roster: !record.access.roster
             }
-          });
-          renderDirectory();
-          setNotice(`Roster access updated for ${record.email}.`, 'success');
+          }, (saved) => `Roster access for ${saved.email} has been saved on the server.`);
+          button.disabled = false;
           return;
         }
 
         if (action === 'toggle-suspension') {
-          guildAccess.upsertRecord({
+          button.disabled = true;
+          await persistMember({
             ...record,
             status: record.status === 'suspended' ? 'active' : 'suspended'
-          });
-          renderDirectory();
-          setNotice(`Standing updated for ${record.email}.`, 'success');
+          }, (saved) => `Standing for ${saved.email} has been saved on the server.`);
+          button.disabled = false;
           return;
         }
 
         if (action === 'remove-member') {
-          guildAccess.removeRecord(record.email);
-          if (editingEmail === record.email) {
+          button.disabled = true;
+          const removed = await persistRemoval(record.email);
+          button.disabled = false;
+          if (removed && editingEmail === record.email) {
             clearForm();
           }
-          renderDirectory();
-          setNotice(`${record.email} has been removed from the guild registry.`, 'success');
         }
       });
 

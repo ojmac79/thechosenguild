@@ -15,6 +15,7 @@
     roster: { sword: 4, axe: 3, shield: 4, staff: 1, dagger: 2, crystal: 1 },
     discord: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 3, crystal: 2 },
     eqlInformation: { sword: 1, axe: 1, shield: 1, staff: 4, dagger: 3, crystal: 5 },
+    quests: { sword: 3, axe: 2, shield: 2, staff: 3, dagger: 2, crystal: 3 },
     login: { sword: 1, axe: 1, shield: 2, staff: 4, dagger: 2, crystal: 3 },
     default: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 2, crystal: 2 }
   });
@@ -26,6 +27,7 @@
     roster: "commonlands",
     discord: "felwithe",
     eqlInformation: "library",
+    quests: "commonlands",
     login: "nexus",
     default: "norrath"
   });
@@ -53,6 +55,14 @@
     }
     if (path.startsWith("/eql-information")) {
       return "eqlInformation";
+    }
+    if (
+      path.startsWith("/quests") ||
+      path.startsWith("/low-level-quests") ||
+      path.startsWith("/mid-level-quests") ||
+      path.startsWith("/high-level-quests")
+    ) {
+      return "quests";
     }
     if (path.startsWith("/login")) {
       return "login";

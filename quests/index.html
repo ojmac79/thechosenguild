@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>The Chosen - Quests</title>
+    <meta
+      name="description"
+      content="Choose a level range and explore The Chosen's curated classic EverQuest quest guides."
+    />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="../styles.css" />
+    <style>
+      .quest-hub__intro {
+        max-width: 74ch;
+        margin: 1rem 0 0;
+        color: var(--muted);
+        line-height: 1.75;
+      }
+      .quest-hub__path {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 0.65rem;
+        margin-top: 2rem;
+      }
+      .quest-hub__step {
+        position: relative;
+        padding: 0.75rem 0.9rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        background: rgba(255, 255, 255, 0.04);
+        color: var(--muted);
+        text-align: center;
+        font-size: 0.78rem;
+        letter-spacing: 0.1em;
+        text-transform: uppercase;
+      }
+      .quest-hub__step strong {
+        display: block;
+        color: var(--text);
+        font-family: 'Cinzel', serif;
+        font-size: 0.92rem;
+      }
+      .quest-hub__grid {
+        display: grid;
+        grid-template-columns: repeat(3, minmax(0, 1fr));
+        gap: 1rem;
+        margin-top: 1rem;
+      }
+      .quest-hub__card {
+        position: relative;
+        display: flex;
+        min-height: 360px;
+        flex-direction: column;
+        overflow: hidden;
+        border: 1px solid var(--border);
+        border-radius: 24px;
+        padding: 1.35rem;
+        background:
+          radial-gradient(circle at 90% 5%, var(--quest-glow), transparent 42%),
+          linear-gradient(165deg, rgba(24, 34, 58, 0.9), rgba(8, 13, 27, 0.94));
+        box-shadow: inset 0 1px 0 rgba(255,255,255,0.06), 0 16px 34px rgba(0,0,0,0.3);
+        transition: transform 0.2s ease, border-color 0.2s ease;
+      }
+      .quest-hub__card:hover {
+        transform: translateY(-4px);
+        border-color: var(--accent);
+      }
+      .quest-hub__card--low { --quest-glow: rgba(94, 190, 135, 0.22); }
+      .quest-hub__card--mid { --quest-glow: rgba(114, 160, 216, 0.24); }
+      .quest-hub__card--high { --quest-glow: rgba(201, 126, 225, 0.22); }
+      .quest-hub__tier {
+        margin: 0;
+        color: var(--accent);
+        font-size: 0.72rem;
+        font-weight: 700;
+        letter-spacing: 0.18em;
+        text-transform: uppercase;
+      }
+      .quest-hub__title {
+        margin: 0.45rem 0 0;
+        font-family: 'Cinzel', serif;
+        font-size: 1.55rem;
+      }
+      .quest-hub__levels {
+        display: inline-flex;
+        align-self: flex-start;
+        margin-top: 0.75rem;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 0.28rem 0.65rem;
+        color: var(--text);
+        background: rgba(0, 0, 0, 0.2);
+        font-size: 0.75rem;
+      }
+      .quest-hub__summary {
+        margin: 1rem 0 0;
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      .quest-hub__features {
+        display: grid;
+        gap: 0.45rem;
+        margin: 1rem 0 1.25rem;
+        padding: 0;
+        color: var(--muted);
+        list-style: none;
+        font-size: 0.88rem;
+      }
+      .quest-hub__features li::before {
+        content: "✦";
+        margin-right: 0.45rem;
+        color: var(--accent);
+      }
+      .quest-hub__action {
+        width: 100%;
+        margin-top: auto;
+      }
+      .quest-hub__note {
+        margin-top: 1.25rem;
+        padding: 1rem 1.1rem;
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        background: rgba(255, 255, 255, 0.035);
+        color: var(--muted);
+        line-height: 1.65;
+      }
+      @media (max-width: 800px) {
+        .quest-hub__path,
+        .quest-hub__grid {
+          grid-template-columns: 1fr;
+        }
+        .quest-hub__card {
+          min-height: 0;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="chosen-shell">
+      <header class="site-header">
+        <div class="site-header__inner">
+          <a class="brand" href="/">
+            <span class="brand__sigil" aria-hidden="true">✦</span>
+            <span class="brand__text">
+              <span class="brand__name">The Chosen</span>
+              <span class="brand__sub">EverQuest Legends</span>
+            </span>
+          </a>
+          <nav class="site-nav" aria-label="Primary">
+            <a class="site-nav__link" href="/">News</a>
+            <a class="site-nav__link" href="/forums/">Forums</a>
+            <a class="site-nav__link" href="/roster/">Roster</a>
+            <a class="site-nav__link" href="/discord/">Discord</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
+            <a class="site-nav__link" href="/lore/">Lore</a>
+            <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">EQ Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link active" href="/quests/">Quests</a>
+          </nav>
+          <div class="site-header__auth">
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+        </div>
+      </header>
+
+      <main class="page">
+        <p class="hero__eyebrow">The Adventurer's Road</p>
+        <h1 class="page-title">Quests</h1>
+        <p class="page-subtitle">Choose your stage of progression and find the right adventures for your level.</p>
+        <p class="quest-hub__intro">
+          The guild quest library is organized into three focused paths. Each guide is searchable and highlights
+          classic quests, useful rewards, important factions, and zones worth visiting as your character advances.
+        </p>
+
+        <div class="quest-hub__path" aria-label="Quest level progression">
+          <div class="quest-hub__step"><strong>Levels 1-25</strong>Begin the Journey</div>
+          <div class="quest-hub__step"><strong>Levels 26-40</strong>Build Your Legend</div>
+          <div class="quest-hub__step"><strong>Levels 41-50</strong>Face the Endgame</div>
+        </div>
+
+        <section class="quest-hub__grid" aria-label="Quest guide categories">
+          <article class="quest-hub__card quest-hub__card--low">
+            <p class="quest-hub__tier">Tier I</p>
+            <h2 class="quest-hub__title">Low Level Quests</h2>
+            <span class="quest-hub__levels">Levels 1-25</span>
+            <p class="quest-hub__summary">
+              Establish your character with starter armor, reliable experience routes, faction work, and iconic
+              early rewards.
+            </p>
+            <ul class="quest-hub__features">
+              <li>Starter city turn-ins</li>
+              <li>Early equipment upgrades</li>
+              <li>Experience and faction routes</li>
+            </ul>
+            <a class="btn-primary quest-hub__action" href="/low-level-quests/">Explore Low Level Quests</a>
+          </article>
+
+          <article class="quest-hub__card quest-hub__card--mid">
+            <p class="quest-hub__tier">Tier II</p>
+            <h2 class="quest-hub__title">Mid Level Quests</h2>
+            <span class="quest-hub__levels">Levels 26-40</span>
+            <p class="quest-hub__summary">
+              Strengthen your build through dungeon objectives, class-focused rewards, valuable keys, and broader
+              journeys across Norrath.
+            </p>
+            <ul class="quest-hub__features">
+              <li>Dungeon and key progression</li>
+              <li>Class-focused equipment</li>
+              <li>Group-ready challenges</li>
+            </ul>
+            <a class="btn-primary quest-hub__action" href="/mid-level-quests/">Explore Mid Level Quests</a>
+          </article>
+
+          <article class="quest-hub__card quest-hub__card--high">
+            <p class="quest-hub__tier">Tier III</p>
+            <h2 class="quest-hub__title">High Level Quests</h2>
+            <span class="quest-hub__levels">Levels 41-50</span>
+            <p class="quest-hub__summary">
+              Prepare for the most demanding classic encounters with high-value rewards, long-form quest lines,
+              and endgame objectives.
+            </p>
+            <ul class="quest-hub__features">
+              <li>Endgame equipment paths</li>
+              <li>Long-form quest chains</li>
+              <li>Raid and epic preparation</li>
+            </ul>
+            <a class="btn-primary quest-hub__action" href="/high-level-quests/">Explore High Level Quests</a>
+          </article>
+        </section>
+
+        <p class="quest-hub__note">
+          Not sure where to begin? Start with the guide matching your current level, then use its search field to
+          narrow results by zone, reward, quest name, or recommended level.
+        </p>
+      </main>
+
+      <footer class="site-footer">
+        <p>The Chosen - forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
+      </footer>
+    </div>
+
+    <script src="../scripts/site-decor.js"></script>
+  </body>
+</html>
