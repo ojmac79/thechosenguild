@@ -80,6 +80,17 @@
               <span>Message</span>
               <textarea id="publicThreadBody" rows="3" placeholder="Write your post" required></textarea>
             </label>
+            <div class="forum-media-fields" id="publicThreadMediaFields" hidden>
+              <label class="resource-field">
+                <span>Hyperlink URL (optional)</span>
+                <input type="url" id="publicThreadLinkUrl" maxlength="2000" placeholder="https://example.com" />
+              </label>
+              <label class="resource-field">
+                <span>Image (optional)</span>
+                <input type="file" id="publicThreadImage" accept="image/jpeg,image/png,image/webp,image/gif" />
+              </label>
+              <p class="forum2-note">Media attachments are available to signed-in users.</p>
+            </div>
             <button class="btn-primary" type="submit">Post to Public Forum</button>
           </form>
 
@@ -124,6 +135,16 @@
               <span>Message</span>
               <textarea id="privateThreadBody" rows="3" placeholder="Write your private post" required></textarea>
             </label>
+            <div class="forum-media-fields" id="privateThreadMediaFields" hidden>
+              <label class="resource-field">
+                <span>Hyperlink URL (optional)</span>
+                <input type="url" id="privateThreadLinkUrl" maxlength="2000" placeholder="https://example.com" />
+              </label>
+              <label class="resource-field">
+                <span>Image (optional)</span>
+                <input type="file" id="privateThreadImage" accept="image/jpeg,image/png,image/webp,image/gif" />
+              </label>
+            </div>
             <button class="btn-primary" type="submit">Post to Private Forum</button>
           </form>
 
@@ -188,6 +209,140 @@
 
       function canModerate(permissions) {
         return Boolean(permissions && permissions.canModerateForums);
+      }
+
+      function normalizeForumUrl(value) {
+        const raw = String(value || '').trim();
+        if (!raw || raw.length > 2000) {
+          return '';
+        }
+        try {
+          const parsed = new URL(raw);
+          if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username || parsed.password) {
+            return '';
+          }
+          return parsed.href;
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function normalizeForumImage(value) {
+        const raw = String(value || '').trim();
+        if (/^data:image\/(?:jpeg|png|gif|webp);base64,[a-z0-9+/=\r\n]+$/i.test(raw) && raw.length <= 700000) {
+          return raw;
+        }
+        return normalizeForumUrl(raw);
+      }
+
+      function fileToForumImage(file) {
+        if (!file) {
+          return Promise.resolve('');
+        }
+        const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        if (!allowedTypes.has(String(file.type || '').toLowerCase())) {
+          return Promise.reject(new Error('Choose a JPEG, PNG, WebP, or GIF image.'));
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          return Promise.reject(new Error('Choose an image smaller than 8 MB.'));
+        }
+
+        return new Promise((resolve, reject) => {
+          const objectUrl = URL.createObjectURL(file);
+          const image = new Image();
+          image.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            const maxWidth = 1000;
+            const maxHeight = 750;
+            const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+            const context = canvas.getContext('2d');
+            if (!context) {
+              reject(new Error('This browser could not prepare the image.'));
+              return;
+            }
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+            if (dataUrl.length > 700000) {
+              reject(new Error('The processed image is still too large. Choose a smaller image.'));
+              return;
+            }
+            resolve(dataUrl);
+          };
+          image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('The selected image could not be read.'));
+          };
+          image.src = objectUrl;
+        });
+      }
+
+      function appendLinkedText(element, value) {
+        const text = String(value || '');
+        const urlPattern = /https?:\/\/[^\s<]+/gi;
+        let cursor = 0;
+        let match;
+        while ((match = urlPattern.exec(text)) !== null) {
+          element.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+          const rawMatch = match[0];
+          const trailing = rawMatch.match(/[.,!?;:)\]}]+$/)?.[0] || '';
+          const candidate = rawMatch.slice(0, rawMatch.length - trailing.length);
+          const url = normalizeForumUrl(candidate);
+          if (url) {
+            const link = document.createElement('a');
+            link.className = 'forum-post-link';
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = candidate;
+            element.appendChild(link);
+          } else {
+            element.appendChild(document.createTextNode(candidate));
+          }
+          if (trailing) {
+            element.appendChild(document.createTextNode(trailing));
+          }
+          cursor = match.index + rawMatch.length;
+        }
+        element.appendChild(document.createTextNode(text.slice(cursor)));
+      }
+
+      function appendPostMedia(container, post) {
+        const linkUrl = normalizeForumUrl(post && post.linkUrl);
+        const imageUrl = normalizeForumImage(post && post.imageUrl);
+        if (!linkUrl && !imageUrl) {
+          return;
+        }
+
+        const media = document.createElement('div');
+        media.className = 'forum-post-media';
+        if (imageUrl) {
+          const imageLink = document.createElement('a');
+          imageLink.href = imageUrl;
+          imageLink.target = '_blank';
+          imageLink.rel = 'noopener noreferrer';
+          const image = document.createElement('img');
+          image.className = 'forum-post-media__image';
+          image.src = imageUrl;
+          image.alt = `Image shared by ${String(post.authorName || 'forum author')}`;
+          image.loading = 'lazy';
+          image.referrerPolicy = 'no-referrer';
+          image.addEventListener('error', () => imageLink.remove(), { once: true });
+          imageLink.appendChild(image);
+          media.appendChild(imageLink);
+        }
+        if (linkUrl) {
+          const link = document.createElement('a');
+          link.className = 'forum-post-media__link';
+          link.href = linkUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Open shared link';
+          media.appendChild(link);
+        }
+        container.appendChild(media);
       }
 
       function buildId(prefix) {
@@ -255,6 +410,8 @@
           categoryId,
           title,
           body,
+          linkUrl: normalizeForumUrl(thread.linkUrl),
+          imageUrl: normalizeForumImage(thread.imageUrl),
           authorName: String(thread.authorName || 'Guest Adventurer'),
           authorEmail: String(thread.authorEmail || ''),
           authorAvatar: String(thread.authorAvatar || ''),
@@ -280,6 +437,8 @@
           threadId: String(reply.threadId),
           parentReplyId: typeof reply.parentReplyId === 'string' && reply.parentReplyId ? reply.parentReplyId : null,
           body,
+          linkUrl: normalizeForumUrl(reply.linkUrl),
+          imageUrl: normalizeForumImage(reply.imageUrl),
           authorName: String(reply.authorName || 'Guest Adventurer'),
           authorEmail: String(reply.authorEmail || ''),
           authorAvatar: String(reply.authorAvatar || ''),
@@ -322,10 +481,21 @@
       }
 
       function writeState(state) {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+        const cacheState = JSON.parse(JSON.stringify({
           public: state.public,
           private: defaultState().private
         }));
+        cacheState.public.threads.forEach((thread) => {
+          if (String(thread.imageUrl || '').startsWith('data:image/')) {
+            thread.imageUrl = '';
+          }
+        });
+        cacheState.public.replies.forEach((reply) => {
+          if (String(reply.imageUrl || '').startsWith('data:image/')) {
+            reply.imageUrl = '';
+          }
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheState));
       }
 
       function latestForumTimestamp(state) {
@@ -527,12 +697,13 @@
         header.appendChild(author);
         header.appendChild(time);
 
-        const body = document.createElement('p');
+        const body = document.createElement('div');
         body.className = 'forum-thread__reply-body';
-        body.textContent = reply.body;
+        appendLinkedText(body, reply.body);
 
         replyEl.appendChild(header);
         replyEl.appendChild(body);
+        appendPostMedia(replyEl, reply);
 
         if (canModerate(permissions)) {
           const actions = document.createElement('div');
@@ -721,12 +892,13 @@
           header.appendChild(titleWrap);
           header.appendChild(badgeWrap);
 
-          const body = document.createElement('p');
+          const body = document.createElement('div');
           body.className = 'forum-thread__body';
-          body.textContent = thread.body;
+          appendLinkedText(body, thread.body);
 
           article.appendChild(header);
           article.appendChild(body);
+          appendPostMedia(article, thread);
 
           if (canModerate(permissions)) {
             const actions = document.createElement('div');
@@ -814,6 +986,28 @@
               textarea.id = `replyInput-${thread.id}`;
               form.appendChild(textarea);
 
+              if (permissions.isSignedIn) {
+                const mediaFields = document.createElement('div');
+                mediaFields.className = 'forum-media-fields forum-media-fields--reply';
+
+                const linkInput = document.createElement('input');
+                linkInput.type = 'url';
+                linkInput.id = `replyLink-${thread.id}`;
+                linkInput.maxLength = 2000;
+                linkInput.placeholder = 'Optional hyperlink URL';
+                linkInput.setAttribute('aria-label', 'Optional hyperlink URL');
+
+                const imageInput = document.createElement('input');
+                imageInput.type = 'file';
+                imageInput.id = `replyImage-${thread.id}`;
+                imageInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+                imageInput.setAttribute('aria-label', 'Optional image');
+
+                mediaFields.appendChild(linkInput);
+                mediaFields.appendChild(imageInput);
+                form.appendChild(mediaFields);
+              }
+
               const formActions = document.createElement('div');
               formActions.className = 'forum-reply-form__actions';
 
@@ -878,6 +1072,8 @@
 
         const publicForm = document.getElementById('publicThreadForm');
         const privateForm = document.getElementById('privateThreadForm');
+        document.getElementById('publicThreadMediaFields').hidden = !permissions.isSignedIn;
+        document.getElementById('privateThreadMediaFields').hidden = !permissions.isSignedIn;
         publicForm.querySelector('button[type="submit"]').disabled = false;
         privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
 
@@ -945,11 +1141,13 @@
         uiState[`${spaceKey}Filter`] = 'all';
       }
 
-      async function addThread(spaceKey, title, body, categoryId) {
+      async function addThread(spaceKey, title, body, categoryId, linkUrl, imageUrl) {
         await runForumOperation('create-thread', spaceKey, {
           title: String(title || '').trim(),
           body: String(body || '').trim(),
-          categoryId
+          categoryId,
+          linkUrl: String(linkUrl || '').trim(),
+          imageUrl: String(imageUrl || '').trim()
         });
       }
 
@@ -961,7 +1159,7 @@
         await runForumOperation('delete-thread', spaceKey, { threadId });
       }
 
-      async function addReply(spaceKey, threadId, body, parentReplyId) {
+      async function addReply(spaceKey, threadId, body, parentReplyId, linkUrl, imageUrl) {
         const trimmedBody = String(body || '').trim();
         if (!trimmedBody) {
           return;
@@ -969,7 +1167,9 @@
         await runForumOperation('create-reply', spaceKey, {
           threadId,
           parentReplyId: parentReplyId || null,
-          body: trimmedBody
+          body: trimmedBody,
+          linkUrl: String(linkUrl || '').trim(),
+          imageUrl: String(imageUrl || '').trim()
         });
       }
 
@@ -982,10 +1182,20 @@
         const titleInput = document.getElementById('publicThreadTitle');
         const bodyInput = document.getElementById('publicThreadBody');
         const categorySelect = document.getElementById('publicThreadCategory');
+        const linkInput = document.getElementById('publicThreadLinkUrl');
+        const imageInput = document.getElementById('publicThreadImage');
         const submitButton = event.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         try {
-          await addThread('public', titleInput.value, bodyInput.value, categorySelect.value);
+          const imageUrl = await fileToForumImage(imageInput.files && imageInput.files[0]);
+          await addThread(
+            'public',
+            titleInput.value,
+            bodyInput.value,
+            categorySelect.value,
+            linkInput.value,
+            imageUrl
+          );
           event.target.reset();
           render();
           document.getElementById('publicAuthNote').textContent = 'Public thread saved permanently.';
@@ -1007,11 +1217,21 @@
         const titleInput = document.getElementById('privateThreadTitle');
         const bodyInput = document.getElementById('privateThreadBody');
         const categorySelect = document.getElementById('privateThreadCategory');
+        const linkInput = document.getElementById('privateThreadLinkUrl');
+        const imageInput = document.getElementById('privateThreadImage');
 
         const submitButton = event.target.querySelector('button[type="submit"]');
         submitButton.disabled = true;
         try {
-          await addThread('private', titleInput.value, bodyInput.value, categorySelect.value);
+          const imageUrl = await fileToForumImage(imageInput.files && imageInput.files[0]);
+          await addThread(
+            'private',
+            titleInput.value,
+            bodyInput.value,
+            categorySelect.value,
+            linkInput.value,
+            imageUrl
+          );
           event.target.reset();
           render();
           document.getElementById('privateAuthNote').textContent = 'Member thread saved permanently.';
@@ -1118,7 +1338,17 @@
             }
             button.disabled = true;
             try {
-              await addReply(spaceKey, threadId, textarea.value, parentReplyId);
+              const linkInput = document.getElementById(`replyLink-${threadId}`);
+              const imageInput = document.getElementById(`replyImage-${threadId}`);
+              const imageUrl = await fileToForumImage(imageInput && imageInput.files && imageInput.files[0]);
+              await addReply(
+                spaceKey,
+                threadId,
+                textarea.value,
+                parentReplyId,
+                linkInput && linkInput.value,
+                imageUrl
+              );
               uiState.openReplyForms.delete(threadId);
               delete uiState.replyingToReplyId[threadId];
               render();
