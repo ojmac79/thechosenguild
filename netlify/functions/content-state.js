@@ -373,21 +373,46 @@ function buildId(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 }
 
+const CANONICAL_FORUM_CATEGORIES = Object.freeze({
+  public: Object.freeze([
+    Object.freeze({ id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' }),
+    Object.freeze({ id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' })
+  ]),
+  private: Object.freeze([
+    Object.freeze({ id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' }),
+    Object.freeze({ id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' })
+  ])
+});
+
+function forumCategoriesForSpace(spaceKey) {
+  return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
+}
+
+function classifyForumCategoryId(spaceKey, value) {
+  const normalized = String(value || '').trim().toLowerCase();
+  if (spaceKey === 'public') {
+    return /help|support|desk/.test(normalized) ? 'pub-help' : 'pub-general';
+  }
+  return /officer|council|raid|lead/.test(normalized) ? 'priv-officers' : 'priv-general';
+}
+
+function resolveForumCategoryId(spaceKey, categoryId, categoryMap) {
+  const matchedCategory = categoryMap instanceof Map ? categoryMap.get(String(categoryId || '')) : null;
+  if (matchedCategory) {
+    return classifyForumCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`);
+  }
+  return classifyForumCategoryId(spaceKey, categoryId);
+}
+
 function defaultForumState() {
   return {
     public: {
-      categories: [
-        { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
-        { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
-      ],
+      categories: forumCategoriesForSpace('public'),
       threads: [],
       replies: []
     },
     private: {
-      categories: [
-        { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
-        { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
-      ],
+      categories: forumCategoriesForSpace('private'),
       threads: [],
       replies: []
     }
@@ -399,14 +424,15 @@ function normalizeForumState(source) {
   const state = source && typeof source === 'object' ? source : {};
   ['public', 'private'].forEach((spaceKey) => {
     const sourceSpace = state[spaceKey] && typeof state[spaceKey] === 'object' ? state[spaceKey] : {};
-    const categories = Array.isArray(sourceSpace.categories)
+    const sourceCategories = Array.isArray(sourceSpace.categories)
       ? sourceSpace.categories.map((category) => ({
           id: cleanText(category && category.id, 120),
           name: cleanText(category && category.name, 80),
           description: cleanText(category && category.description, 240)
         })).filter((category) => category.id && category.name && category.description)
       : [];
-    const normalizedCategories = categories.length ? categories : fallback[spaceKey].categories;
+    const normalizedCategories = forumCategoriesForSpace(spaceKey);
+    const categoryMap = new Map(sourceCategories.map((category) => [category.id, category]));
     const categoryIds = new Set(normalizedCategories.map((category) => category.id));
     const threads = Array.isArray(sourceSpace.threads)
       ? sourceSpace.threads.map((thread) => {
@@ -417,7 +443,9 @@ function normalizeForumState(source) {
           }
           return {
             id: cleanText(thread.id, 160) || buildId(`${spaceKey}-thread`),
-            categoryId: categoryIds.has(thread.categoryId) ? thread.categoryId : normalizedCategories[0].id,
+            categoryId: categoryIds.has(resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap))
+              ? resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap)
+              : normalizedCategories[0].id,
             title,
             body,
             linkUrl: cleanForumUrl(thread.linkUrl),
@@ -525,8 +553,8 @@ async function loadForumState(store) {
 async function saveForumCategories(store, state) {
   const updatedAt = new Date().toISOString();
   await store.setJSON(FORUM_CONFIG_KEY, {
-    public: { categories: state.public.categories },
-    private: { categories: state.private.categories },
+    public: { categories: forumCategoriesForSpace('public') },
+    private: { categories: forumCategoriesForSpace('private') },
     updatedAt
   });
   return updatedAt;
