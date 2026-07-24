@@ -1027,9 +1027,25 @@
 
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const isNewPostOpen = uiState.openThreadForms[spaceKey];
+          const areRepliesOpen = uiState.openReplyLists.has(thread.id);
+          const repliesId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           let hasActions = false;
+
+          if (hasReplies) {
+            const repliesToggle = document.createElement('button');
+            repliesToggle.type = 'button';
+            repliesToggle.className = 'resource-item__edit forum-thread__replies-toggle';
+            repliesToggle.textContent = `${areRepliesOpen ? 'Hide' : 'Show'} Replies (${totalReplyCount})`;
+            repliesToggle.dataset.action = 'toggle-replies';
+            repliesToggle.dataset.space = spaceKey;
+            repliesToggle.dataset.threadId = thread.id;
+            repliesToggle.setAttribute('aria-controls', repliesId);
+            repliesToggle.setAttribute('aria-expanded', areRepliesOpen ? 'true' : 'false');
+            actions.appendChild(repliesToggle);
+            hasActions = true;
+          }
 
           if (canOpenReplyComposer && isNewPostOpen) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
@@ -1083,8 +1099,9 @@
 
           if (hasReplies) {
             const repliesContainer = document.createElement('div');
-            repliesContainer.id = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+            repliesContainer.id = repliesId;
             repliesContainer.className = 'forum-thread__replies';
+            repliesContainer.hidden = !areRepliesOpen;
             topLevelReplies.forEach((reply) => {
               repliesContainer.appendChild(buildReplyEl(reply, {
                 spaceKey,
@@ -1500,6 +1517,24 @@
             render();
             const refreshedButton = Array.from(
               document.querySelectorAll('[data-action="toggle-thread-content"]')
+            ).find((candidate) => candidate.dataset.threadId === threadId);
+            refreshedButton?.focus();
+            return;
+          }
+
+          if (action === 'toggle-replies') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openReplyLists.has(threadId)) {
+              uiState.openReplyLists.delete(threadId);
+            } else {
+              uiState.openReplyLists.add(threadId);
+            }
+            render();
+            const refreshedButton = Array.from(
+              document.querySelectorAll('[data-action="toggle-replies"]')
             ).find((candidate) => candidate.dataset.threadId === threadId);
             refreshedButton?.focus();
             return;
