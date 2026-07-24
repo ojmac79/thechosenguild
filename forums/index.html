@@ -951,6 +951,7 @@
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
           const repliesOpen = uiState.openReplyLists.has(thread.id);
+          const repliesId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
@@ -1062,7 +1063,6 @@
             toggle.dataset.action = 'toggle-replies';
             toggle.dataset.space = spaceKey;
             toggle.dataset.threadId = thread.id;
-            const repliesId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
             toggle.setAttribute('aria-controls', repliesId);
             toggle.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
             article.appendChild(toggle);
@@ -1070,7 +1070,7 @@
 
           if (hasReplies && repliesOpen) {
             const repliesContainer = document.createElement('div');
-            repliesContainer.id = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+            repliesContainer.id = repliesId;
             repliesContainer.className = 'forum-thread__replies';
             topLevelReplies.forEach((reply) => {
               repliesContainer.appendChild(buildReplyEl(reply, {
@@ -1483,6 +1483,7 @@
               uiState.openReplyForms.delete(threadId);
               delete uiState.replyingToReplyId[threadId];
             } else {
+              uiState.openReplyLists.add(threadId);
               uiState.openReplyForms.add(threadId);
             }
             render();
