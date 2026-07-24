@@ -956,8 +956,20 @@
 
           const titleWrap = document.createElement('div');
           const title = document.createElement('h3');
-          title.className = 'forum-thread__title';
-          title.textContent = thread.title;
+          title.className = 'forum-thread__title forum-thread__title--toggle';
+          title.dataset.action = 'toggle-thread-content';
+          title.dataset.space = spaceKey;
+          title.dataset.threadId = thread.id;
+          title.setAttribute('aria-controls', threadContentId);
+          title.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
+          title.setAttribute('role', 'button');
+          title.setAttribute('tabindex', '0');
+          title.appendChild(document.createTextNode(thread.title));
+          const titleIndicator = document.createElement('span');
+          titleIndicator.className = 'forum-thread__title-indicator';
+          titleIndicator.setAttribute('aria-hidden', 'true');
+          titleIndicator.textContent = threadContentOpen ? ' ▼' : ' ▶';
+          title.appendChild(titleIndicator);
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
@@ -1010,34 +1022,6 @@
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           let hasActions = false;
-
-          const contentToggle = document.createElement('button');
-          contentToggle.type = 'button';
-          contentToggle.className = 'resource-item__edit forum-thread__quick-action';
-          contentToggle.textContent = threadContentOpen ? 'Hide Post' : 'Show Post';
-          contentToggle.dataset.action = 'toggle-thread-content';
-          contentToggle.dataset.space = spaceKey;
-          contentToggle.dataset.threadId = thread.id;
-          contentToggle.setAttribute('aria-controls', threadContentId);
-          contentToggle.setAttribute('aria-label', `${threadContentOpen ? 'Hide' : 'Show'} post: ${thread.title}`);
-          contentToggle.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
-          actions.appendChild(contentToggle);
-          hasActions = true;
-
-          if (topLevelReplies.length) {
-            const repliesButton = document.createElement('button');
-            repliesButton.type = 'button';
-            repliesButton.className = 'resource-item__edit forum-thread__quick-action';
-            repliesButton.textContent = repliesOpen
-              ? `Hide Replies (${topLevelReplies.length})`
-              : `Show Replies (${topLevelReplies.length})`;
-            repliesButton.dataset.action = 'toggle-replies';
-            repliesButton.dataset.space = spaceKey;
-            repliesButton.dataset.threadId = thread.id;
-            repliesButton.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
-            actions.appendChild(repliesButton);
-            hasActions = true;
-          }
 
           if (canOpenReplyComposer && isNewPostOpen) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
@@ -1497,6 +1481,18 @@
           }
         });
 
+        document.getElementById(`${spaceKey}ThreadList`).addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+          }
+          const target = event.target.closest('[data-action="toggle-thread-content"]');
+          if (!target) {
+            return;
+          }
+          event.preventDefault();
+          target.click();
+        });
+
         document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', async (event) => {
           const button = event.target.closest('[data-action]');
           if (!button) {
@@ -1515,8 +1511,10 @@
             const threadUiKey = getThreadUiKey(spaceKey, threadId);
             if (uiState.visibleThreadBodies.has(threadUiKey)) {
               uiState.visibleThreadBodies.delete(threadUiKey);
+              uiState.openReplyLists.delete(threadId);
             } else {
               uiState.visibleThreadBodies.add(threadUiKey);
+              uiState.openReplyLists.add(threadId);
             }
             render();
             return;
