@@ -208,7 +208,7 @@
         openReplyForms: new Set(),
         openReplyLists: new Set(),
         openNestedReplyLists: new Set(),
-        autoOpenedReplyLists: new Set(),
+        autoOpenedThreadReplies: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -250,8 +250,29 @@
         return count === 1 ? singular : plural;
       }
 
-      function formatReplyToggleLabel(count, isOpen) {
-        return `${isOpen ? 'Hide' : 'Show'} Replies (${count})`;
+      function buildReplyToggleLabel(count, isOpen) {
+        return `${isOpen ? 'Collapse' : 'Expand'} Replies (${count})`;
+      }
+
+      function shortHash(value) {
+        let hash = 0;
+        const input = String(value);
+        for (let charIndex = 0; charIndex < input.length; charIndex += 1) {
+          hash = ((hash * 31) + input.charCodeAt(charIndex)) >>> 0;
+        }
+        return hash.toString(36);
+      }
+
+      function toSafeIdPart(value) {
+        const trimmed = String(value).trim();
+        const sanitized = trimmed.replace(/[^a-zA-Z0-9_-]+/g, '-');
+        const cleaned = sanitized.replace(/^-+|-+$/g, '');
+        const base = cleaned || 'item';
+        return `${base}-${shortHash(value)}`;
+      }
+
+      function buildSafeId(prefix, ...parts) {
+        return [prefix, ...parts.map((part) => toSafeIdPart(part))].join('-');
       }
 
       function truncateLabel(value, maxLength = 56) {
@@ -455,9 +476,9 @@
         for (const threadId of uiState.openReplyForms) {
           if (threads.some((thread) => thread.id === threadId)) {
             uiState.openReplyForms.delete(threadId);
-            if (uiState.autoOpenedReplyLists.has(threadId)) {
+            if (uiState.autoOpenedThreadReplies.has(threadId)) {
               uiState.openReplyLists.delete(threadId);
-              uiState.autoOpenedReplyLists.delete(threadId);
+              uiState.autoOpenedThreadReplies.delete(threadId);
             }
             if (Object.hasOwn(uiState.replyingToReplyId, threadId)) {
               delete uiState.replyingToReplyId[threadId];
@@ -883,17 +904,20 @@
         if (children.length) {
           const nestedRepliesOpen = uiState.openNestedReplyLists.has(reply.id);
           const nestedCount = children.length;
+          const nestedRepliesId = buildSafeId('nestedReplies', reply.id);
           const nestedToggle = document.createElement('button');
           nestedToggle.type = 'button';
-          nestedToggle.className = 'resource-item__edit forum-thread__replies-toggle';
-          nestedToggle.textContent = formatReplyToggleLabel(nestedCount, nestedRepliesOpen);
+          nestedToggle.className = 'forum-thread__replies-toggle';
+          nestedToggle.textContent = buildReplyToggleLabel(nestedCount, nestedRepliesOpen);
           nestedToggle.dataset.action = 'toggle-nested-replies';
           nestedToggle.dataset.replyId = reply.id;
+          nestedToggle.setAttribute('aria-controls', nestedRepliesId);
           nestedToggle.setAttribute('aria-expanded', nestedRepliesOpen ? 'true' : 'false');
           replyEl.appendChild(nestedToggle);
 
           if (nestedRepliesOpen) {
             const childrenEl = document.createElement('div');
+            childrenEl.id = nestedRepliesId;
             childrenEl.className = 'forum-thread__reply-children';
             children.forEach((child) => {
               childrenEl.appendChild(buildReplyEl(child, {
@@ -974,7 +998,7 @@
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
           const repliesOpen = uiState.openReplyLists.has(thread.id);
-          const repliesId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+          const repliesId = buildSafeId('threadReplies', spaceKey, thread.id);
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
@@ -1081,8 +1105,8 @@
             const totalReplyCount = replyCountByThread.get(thread.id) || 0;
             const toggle = document.createElement('button');
             toggle.type = 'button';
-            toggle.className = 'resource-item__edit forum-thread__replies-toggle';
-            toggle.textContent = formatReplyToggleLabel(totalReplyCount, repliesOpen);
+            toggle.className = 'forum-thread__replies-toggle';
+            toggle.textContent = buildReplyToggleLabel(totalReplyCount, repliesOpen);
             toggle.dataset.action = 'toggle-replies';
             toggle.dataset.space = spaceKey;
             toggle.dataset.threadId = thread.id;
@@ -1504,15 +1528,15 @@
             }
             if (uiState.openReplyForms.has(threadId)) {
               uiState.openReplyForms.delete(threadId);
-              if (uiState.autoOpenedReplyLists.has(threadId)) {
+              if (uiState.autoOpenedThreadReplies.has(threadId)) {
                 uiState.openReplyLists.delete(threadId);
-                uiState.autoOpenedReplyLists.delete(threadId);
+                uiState.autoOpenedThreadReplies.delete(threadId);
               }
               delete uiState.replyingToReplyId[threadId];
             } else {
               if (!uiState.openReplyLists.has(threadId)) {
                 uiState.openReplyLists.add(threadId);
-                uiState.autoOpenedReplyLists.add(threadId);
+                uiState.autoOpenedThreadReplies.add(threadId);
               }
               uiState.openReplyForms.add(threadId);
             }
@@ -1527,7 +1551,7 @@
             }
             if (uiState.openReplyLists.has(threadId)) {
               uiState.openReplyLists.delete(threadId);
-              uiState.autoOpenedReplyLists.delete(threadId);
+              uiState.autoOpenedThreadReplies.delete(threadId);
             } else {
               uiState.openReplyLists.add(threadId);
             }

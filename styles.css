@@ -636,7 +636,18 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   font-size: 0.82rem;
 }
 .forum-thread__replies-toggle {
+  border: 1px solid var(--border);
+  background: transparent;
+  color: var(--text);
+  border-radius: 999px;
+  padding: 0.4rem 0.7rem;
+  cursor: pointer;
+  font-weight: 700;
+  font-size: 0.82rem;
   margin-top: 0.45rem;
+}
+.forum-thread__replies-toggle:hover {
+  background: rgba(255, 255, 255, 0.08);
 }
 .forum-thread__replies {
   display: grid;
