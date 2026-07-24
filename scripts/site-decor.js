@@ -8,19 +8,6 @@
     crystal: "https://cdnjs.cloudflare.com/ajax/libs/twemoji/14.0.2/svg/1f52e.svg"
   });
 
-<<<<<<< HEAD
-  const routeProfiles = {
-    home: { sword: 1, axe: 1, staff: 5, dagger: 2 },
-    forums: { sword: 4, axe: 4, staff: 1, dagger: 2 },
-    roster: { sword: 4, axe: 3, staff: 1, dagger: 2 },
-    discord: { sword: 2, axe: 2, staff: 2, dagger: 3 },
-    resources: { sword: 1, axe: 1, staff: 4, dagger: 3 },
-    lore: { sword: 1, axe: 1, staff: 5, dagger: 1 },
-    serverstatus: { sword: 2, axe: 2, staff: 3, dagger: 1 },
-    login: { sword: 1, axe: 1, staff: 4, dagger: 2 },
-    default: { sword: 2, axe: 2, staff: 2, dagger: 2 }
-  };
-=======
   const routeProfiles = Object.freeze({
     home: { sword: 2, axe: 1, shield: 3, staff: 5, dagger: 2, crystal: 2 },
     forums: { sword: 4, axe: 4, shield: 3, staff: 1, dagger: 2, crystal: 1 },
@@ -29,6 +16,8 @@
     discord: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 3, crystal: 2 },
     eqlInformation: { sword: 1, axe: 1, shield: 1, staff: 4, dagger: 3, crystal: 5 },
     quests: { sword: 3, axe: 2, shield: 2, staff: 3, dagger: 2, crystal: 3 },
+    lore: { sword: 1, axe: 1, shield: 1, staff: 5, dagger: 1, crystal: 4 },
+    serverstatus: { sword: 2, axe: 2, shield: 2, staff: 3, dagger: 1, crystal: 2 },
     login: { sword: 1, axe: 1, shield: 2, staff: 4, dagger: 2, crystal: 3 },
     default: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 2, crystal: 2 }
   });
@@ -41,10 +30,11 @@
     discord: "felwithe",
     eqlInformation: "library",
     quests: "commonlands",
+    lore: "mistmoore",
+    serverstatus: "tranquility",
     login: "nexus",
     default: "norrath"
   });
->>>>>>> origin/main
 
   function randomInRange(min, max) {
     return Math.random() * (max - min) + min;
@@ -79,10 +69,10 @@
       return "quests";
     }
     if (path.startsWith("/lore")) {
-      return routeProfiles.lore;
+      return "lore";
     }
     if (path.startsWith("/server-status")) {
-      return routeProfiles.serverstatus;
+      return "serverstatus";
     }
     if (path.startsWith("/login")) {
       return "login";
