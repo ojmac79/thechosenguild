@@ -45,7 +45,7 @@
         <p class="hero__eyebrow">Guild Communications</p>
         <h1 class="page-title">Guild Forums</h1>
         <p class="page-subtitle">
-          A compact, familiar forum layout with separate public and members-only spaces.
+          A compact, familiar forum layout with separate public and members only spaces.
         </p>
 
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
@@ -703,7 +703,7 @@
         }
       }
 
-      function buildReplyEl(reply, spaceKey, permissions, canReply, childrenMap) {
+      function buildReplyEl(reply, spaceKey, permissions, canOpenReplyComposer, childrenMap) {
         const replyEl = document.createElement('div');
         replyEl.className = 'forum-thread__reply';
 
@@ -738,12 +738,12 @@
         replyEl.appendChild(body);
         appendPostMedia(replyEl, reply);
 
-        if (canReply || canModerate(permissions)) {
+        if (canOpenReplyComposer || canModerate(permissions)) {
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           actions.classList.add('forum-thread__actions--reply');
 
-          if (canReply) {
+          if (canOpenReplyComposer) {
             const replyBtn = document.createElement('button');
             replyBtn.type = 'button';
             replyBtn.className = 'resource-item__edit forum-thread__quick-action';
@@ -774,7 +774,7 @@
           const childrenEl = document.createElement('div');
           childrenEl.className = 'forum-thread__reply-children';
           children.forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, canReply, childrenMap));
+            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, canOpenReplyComposer, childrenMap));
           });
           replyEl.appendChild(childrenEl);
         }
