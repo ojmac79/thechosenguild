@@ -437,17 +437,17 @@
       }
 
       function clearReplyFormsForSpace(spaceKey) {
-        if (!uiState.openReplyForms.size) {
-          return;
-        }
         const threads = forumState[spaceKey]?.threads || [];
         if (!threads.length) {
+          return;
+        }
+        if (!uiState.openReplyForms.size) {
           return;
         }
         for (const threadId of uiState.openReplyForms) {
           if (threads.some((thread) => thread.id === threadId)) {
             uiState.openReplyForms.delete(threadId);
-            if (Object.prototype.hasOwnProperty.call(uiState.replyingToReplyId, threadId)) {
+            if (Object.hasOwn(uiState.replyingToReplyId, threadId)) {
               delete uiState.replyingToReplyId[threadId];
             }
           }
