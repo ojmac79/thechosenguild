@@ -703,7 +703,8 @@
         }
       }
 
-      function buildReplyEl(reply, spaceKey, permissions, canOpenReplyComposer, childrenMap) {
+      function buildReplyEl(reply, options) {
+        const { spaceKey, permissions, canOpenReplyComposer, childrenMap } = options;
         const replyEl = document.createElement('div');
         replyEl.className = 'forum-thread__reply';
 
@@ -774,7 +775,12 @@
           const childrenEl = document.createElement('div');
           childrenEl.className = 'forum-thread__reply-children';
           children.forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, canOpenReplyComposer, childrenMap));
+            childrenEl.appendChild(buildReplyEl(child, {
+              spaceKey,
+              permissions,
+              canOpenReplyComposer,
+              childrenMap
+            }));
           });
           replyEl.appendChild(childrenEl);
         }
@@ -985,7 +991,12 @@
             const repliesContainer = document.createElement('div');
             repliesContainer.className = 'forum-thread__replies';
             topLevelReplies.forEach((reply) => {
-              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, permissions, canOpenReplyComposer, childrenMap));
+              repliesContainer.appendChild(buildReplyEl(reply, {
+                spaceKey,
+                permissions,
+                canOpenReplyComposer,
+                childrenMap
+              }));
             });
             article.appendChild(repliesContainer);
           }
@@ -997,7 +1008,7 @@
             const replyToggle = document.createElement('button');
             replyToggle.type = 'button';
             replyToggle.className = 'resource-item__edit forum-thread__composer-toggle';
-            replyToggle.textContent = isFormOpen ? 'Close Reply Editor' : 'Reply';
+            replyToggle.textContent = isFormOpen ? 'Close Reply' : 'Reply';
             replyToggle.dataset.action = 'toggle-reply-form';
             replyToggle.dataset.space = spaceKey;
             replyToggle.dataset.threadId = thread.id;
