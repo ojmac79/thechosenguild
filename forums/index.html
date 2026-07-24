@@ -1026,6 +1026,10 @@
           container.appendChild(empty);
           return;
         }
+        if (focusedThreadId && !uiState.openReplyLists.has(focusedThreadId) && !uiState.autoOpenedThreadReplies.has(focusedThreadId)) {
+          uiState.openReplyLists.add(focusedThreadId);
+          uiState.autoOpenedThreadReplies.add(focusedThreadId);
+        }
 
         function buildThreadArticle(thread, categoryName, canReplyToThread, isFocusedThread) {
           const article = document.createElement('article');
@@ -1038,7 +1042,7 @@
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
-          const repliesOpen = isFocusedThread || uiState.openReplyLists.has(thread.id);
+          const repliesOpen = uiState.openReplyLists.has(thread.id);
           const repliesId = buildSafeId('threadReplies', spaceKey, thread.id);
 
           const title = document.createElement('h3');
