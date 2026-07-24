@@ -1156,7 +1156,7 @@
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
           const latestThread = categoryThreads.length ? categoryThreads[0] : null;
-          const latestPostText = latestThread ? `Latest post: ${truncateLabel(latestThread.title)}` : '';
+          const latestPostText = latestThread ? `Latest Post: ${truncateLabel(latestThread.title)}` : '';
           categorySummary.textContent = [category.description, countLabel, latestPostText].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);

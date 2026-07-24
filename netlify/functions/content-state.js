@@ -443,6 +443,7 @@ function normalizeForumState(source) {
         })).filter((category) => category.id && category.name && category.description)
       : [];
     const normalizedCategories = forumCategoriesForSpace(spaceKey);
+    // Source categories are only used to remap legacy/custom category IDs into the fixed board layout.
     const categoryMap = new Map(sourceCategories.map((category) => [category.id, category]));
     const categoryIds = new Set(normalizedCategories.map((category) => category.id));
     const threads = Array.isArray(sourceSpace.threads)
