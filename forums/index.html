@@ -437,6 +437,9 @@
       }
 
       function clearReplyFormsForSpace(spaceKey) {
+        if (!uiState.openReplyForms.size) {
+          return;
+        }
         const threadIds = new Set((forumState[spaceKey]?.threads || []).map((thread) => thread.id));
         if (!threadIds.size) {
           return;
@@ -1513,9 +1516,6 @@
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
             if (!threadId) {
-              return;
-            }
-            if (!uiState.openThreadForms[spaceKey]) {
               return;
             }
             if (uiState.openReplyForms.has(threadId)) {
