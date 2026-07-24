@@ -241,6 +241,14 @@
         return count === 1 ? singular : plural;
       }
 
+      function truncateLabel(value, maxLength = 56) {
+        const text = String(value || '').trim();
+        if (!text || text.length <= maxLength) {
+          return text;
+        }
+        return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+      }
+
       function redirectToLogin() {
         window.location.href = '/login/';
       }
@@ -401,12 +409,26 @@
         return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
       }
 
+      function categoryTokens(value) {
+        return String(value || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      }
+
       function classifyCategoryId(spaceKey, value) {
-        const normalized = String(value || '').trim().toLowerCase();
+        const tokens = categoryTokens(value);
         if (spaceKey === 'public') {
-          return /help|support|desk/.test(normalized) ? 'pub-help' : 'pub-general';
+          return tokens.some((token) => token === 'help' || token === 'support' || token === 'desk')
+            ? 'pub-help'
+            : 'pub-general';
         }
-        return /officer|council|raid|lead/.test(normalized) ? 'priv-officers' : 'priv-general';
+        return tokens.some((token) => (
+          token === 'officer' ||
+          token === 'officers' ||
+          token === 'council' ||
+          token === 'raid' ||
+          token === 'leadership'
+        ))
+          ? 'priv-officers'
+          : 'priv-general';
       }
 
       function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories) {
@@ -1120,7 +1142,7 @@
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
           const latestThread = categoryThreads.length ? categoryThreads[0] : null;
-          const latestLabel = latestThread ? `Latest topic: ${latestThread.title}` : '';
+          const latestLabel = latestThread ? `Latest topic: ${truncateLabel(latestThread.title)}` : '';
           categorySummary.textContent = [category.description, countLabel, latestLabel].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);

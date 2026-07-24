@@ -388,12 +388,26 @@ function forumCategoriesForSpace(spaceKey) {
   return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
 }
 
+function forumCategoryTokens(value) {
+  return String(value || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
 function classifyForumCategoryId(spaceKey, value) {
-  const normalized = String(value || '').trim().toLowerCase();
+  const tokens = forumCategoryTokens(value);
   if (spaceKey === 'public') {
-    return /help|support|desk/.test(normalized) ? 'pub-help' : 'pub-general';
+    return tokens.some((token) => token === 'help' || token === 'support' || token === 'desk')
+      ? 'pub-help'
+      : 'pub-general';
   }
-  return /officer|council|raid|lead/.test(normalized) ? 'priv-officers' : 'priv-general';
+  return tokens.some((token) => (
+    token === 'officer' ||
+    token === 'officers' ||
+    token === 'council' ||
+    token === 'raid' ||
+    token === 'leadership'
+  ))
+    ? 'priv-officers'
+    : 'priv-general';
 }
 
 function resolveForumCategoryId(spaceKey, categoryId, categoryMap) {
