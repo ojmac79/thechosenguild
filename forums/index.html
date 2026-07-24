@@ -211,7 +211,8 @@
         openThreadForms: {
           public: false,
           private: false
-        }
+        },
+        openThreadBodies: new Set()
       };
       let serverAccess = 'public';
       const META_DELIMITER = ' • ';
@@ -951,13 +952,25 @@
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
 
+          const isBodyOpen = uiState.openThreadBodies.has(thread.id);
+
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
 
           const titleWrap = document.createElement('div');
           const title = document.createElement('h3');
-          title.className = 'forum-thread__title';
+          title.className = 'forum-thread__title forum-thread__title--toggle';
+          title.dataset.action = 'toggle-thread-body';
+          title.dataset.threadId = thread.id;
+          title.setAttribute('role', 'button');
+          title.setAttribute('tabindex', '0');
+          title.setAttribute('aria-expanded', isBodyOpen ? 'true' : 'false');
           title.appendChild(document.createTextNode(thread.title));
+          const titleIndicator = document.createElement('span');
+          titleIndicator.className = 'forum-thread__title-indicator';
+          titleIndicator.setAttribute('aria-hidden', 'true');
+          titleIndicator.textContent = isBodyOpen ? ' ▾' : ' ▸';
+          title.appendChild(titleIndicator);
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
@@ -996,8 +1009,19 @@
 
           article.appendChild(header);
 
+          // Collapsible body section: contains post body, media, replies, and reply form
+          const bodySection = document.createElement('div');
+          bodySection.hidden = !isBodyOpen;
+
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const isNewPostOpen = uiState.openThreadForms[spaceKey];
+
+          const threadBodyEl = document.createElement('p');
+          threadBodyEl.className = 'forum-thread__body';
+          appendLinkedText(threadBodyEl, thread.body);
+          bodySection.appendChild(threadBodyEl);
+          appendPostMedia(bodySection, thread);
+
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           let hasActions = false;
@@ -1049,7 +1073,7 @@
           }
 
           if (hasActions) {
-            article.appendChild(actions);
+            bodySection.appendChild(actions);
           }
 
           if (hasReplies) {
@@ -1064,7 +1088,7 @@
                 childrenMap
               }));
             });
-            article.appendChild(repliesContainer);
+            bodySection.appendChild(repliesContainer);
           }
 
           // Reply form (shown when member has access and thread is not locked)
@@ -1132,15 +1156,17 @@
 
               formActions.appendChild(submitBtn);
               form.appendChild(formActions);
-              article.appendChild(form);
+              bodySection.appendChild(form);
             }
           } else if (thread.isLocked) {
             const lockedNote = document.createElement('p');
             lockedNote.className = 'forum2-note';
             lockedNote.style.marginTop = '0.2rem';
             lockedNote.textContent = 'This thread is locked.';
-            article.appendChild(lockedNote);
+            bodySection.appendChild(lockedNote);
           }
+
+          article.appendChild(bodySection);
 
           return article;
         }
@@ -1458,6 +1484,20 @@
           const member = getCurrentMember();
           const permissions = guildAccess.getPermissions(member);
 
+          if (action === 'toggle-thread-body') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openThreadBodies.has(threadId)) {
+              uiState.openThreadBodies.delete(threadId);
+            } else {
+              uiState.openThreadBodies.add(threadId);
+            }
+            render();
+            return;
+          }
+
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
             if (!threadId) {
@@ -1556,6 +1596,18 @@
           } catch (error) {
             document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
           }
+        });
+
+        document.getElementById(`${spaceKey}ThreadList`).addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+          }
+          const target = event.target.closest('[data-action="toggle-thread-body"]');
+          if (!target) {
+            return;
+          }
+          event.preventDefault();
+          target.click();
         });
       });
 
