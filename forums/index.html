@@ -1077,9 +1077,6 @@
           threadContent.id = threadContentId;
           threadContent.hidden = !threadContentOpen;
           threadContent.setAttribute('aria-hidden', threadContentOpen ? 'false' : 'true');
-          if (threadContentOpen) {
-            appendPostMedia(threadContent, thread);
-          }
           article.appendChild(threadContent);
 
           if (topLevelReplies.length && repliesOpen) {
