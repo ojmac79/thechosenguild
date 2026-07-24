@@ -16,6 +16,8 @@
     discord: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 3, crystal: 2 },
     eqlInformation: { sword: 1, axe: 1, shield: 1, staff: 4, dagger: 3, crystal: 5 },
     quests: { sword: 3, axe: 2, shield: 2, staff: 3, dagger: 2, crystal: 3 },
+    lore: { sword: 1, axe: 1, shield: 1, staff: 5, dagger: 1, crystal: 4 },
+    serverstatus: { sword: 2, axe: 2, shield: 2, staff: 3, dagger: 1, crystal: 2 },
     login: { sword: 1, axe: 1, shield: 2, staff: 4, dagger: 2, crystal: 3 },
     default: { sword: 2, axe: 2, shield: 2, staff: 2, dagger: 2, crystal: 2 }
   });
@@ -28,6 +30,8 @@
     discord: "felwithe",
     eqlInformation: "library",
     quests: "commonlands",
+    lore: "mistmoore",
+    serverstatus: "tranquility",
     login: "nexus",
     default: "norrath"
   });
@@ -63,6 +67,12 @@
       path.startsWith("/high-level-quests")
     ) {
       return "quests";
+    }
+    if (path.startsWith("/lore")) {
+      return "lore";
+    }
+    if (path.startsWith("/server-status")) {
+      return "serverstatus";
     }
     if (path.startsWith("/login")) {
       return "login";

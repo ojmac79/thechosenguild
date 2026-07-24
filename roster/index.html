@@ -111,8 +111,8 @@
         </section>
 
         <section id="rosterOwnerPanel" class="panel roster-owner" aria-label="Authorized roster editor" hidden>
-          <h2 class="resource-section__title">Roster Manager</h2>
-          <p class="roster-owner-note">
+          <h2 id="rosterPanelTitle" class="resource-section__title">Roster Manager</h2>
+          <p id="rosterPanelNote" class="roster-owner-note">
             Authorized editor controls. Changes are persistent and public across the site.
           </p>
           <p id="rosterEditorNotice" class="resource-notice" aria-live="polite"></p>
@@ -130,7 +130,7 @@
                 <span>Class</span>
                 <input id="rosterClass" type="text" maxlength="80" placeholder="PAL / DRU / BRD" required />
               </label>
-              <label class="resource-field">
+              <label id="rosterRankField" class="resource-field">
                 <span>Rank</span>
                 <input id="rosterRank" type="text" maxlength="50" required />
               </label>
@@ -183,6 +183,7 @@
       const ROSTER_STORAGE_KEY = 'theChosenRosterManagedV1';
       const AUTHORIZED_ACCOUNT_STORAGE_KEY = 'theChosenAuthorizedRosterAccountsV1';
       const RANK_ORDER = { Leader: 0, 'Senior Officer': 1, Officer: 2, Recruit: 3 };
+      const DEFAULT_RANK = 'Recruit';
       const DEFAULT_ROSTER = [
         { id: 'roster-1', name: 'Karma', level: 50, className: 'SHD / MNK / SHM', rank: 'Leader', lastOn: '2026-07-21' },
         { id: 'roster-2', name: 'Evorie', level: 10, className: 'NEC / MAG / ENC', rank: 'Senior Officer', lastOn: '2026-07-21' },
@@ -227,6 +228,9 @@
       const rosterTableBody = document.getElementById('rosterTableBody');
       const rosterEmpty = document.getElementById('rosterEmpty');
       const rosterOwnerPanel = document.getElementById('rosterOwnerPanel');
+      const rosterPanelTitle = document.getElementById('rosterPanelTitle');
+      const rosterPanelNote = document.getElementById('rosterPanelNote');
+      const rosterRankField = document.getElementById('rosterRankField');
       const actionsHeader = document.getElementById('actionsHeader');
       const rosterEditorNotice = document.getElementById('rosterEditorNotice');
       const rosterForm = document.getElementById('rosterForm');
@@ -243,7 +247,10 @@
         query: '',
         sort: 'rank',
         editingId: null,
-        editor: false
+        editor: false,
+        isOwner: false,
+        canEditRoster: false,
+        currentUserName: ''
       };
 
       function normalizeEmail(value) {
@@ -437,7 +444,12 @@
       function resetForm() {
         state.editingId = null;
         rosterForm.reset();
-        rosterSaveButton.textContent = 'Add Entry';
+        if (state.isOwner) {
+          rosterSaveButton.textContent = 'Add Entry';
+          rosterSaveButton.hidden = false;
+        } else {
+          rosterSaveButton.hidden = true;
+        }
         rosterCancelEdit.hidden = true;
       }
 
@@ -455,9 +467,18 @@
 
         rosterTableBody.innerHTML = rows
           .map((entry) => {
-            const actions = state.editor && !entry.identityManaged
-              ? `<td><div class="roster-actions"><button class="resource-item__edit" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">Edit</button><button class="resource-item__delete" type="button" data-action="delete" data-id="${escapeHtml(entry.id)}">Delete</button></div></td>`
-              : (state.editor ? '<td></td>' : '');
+            const userCanEdit = state.editor && !entry.identityManaged && (
+              state.isOwner || normalizeEmail(entry.name) === state.currentUserName
+            );
+            const userCanDelete = state.isOwner && !entry.identityManaged;
+            let actions = '';
+            if (state.editor) {
+              const editBtn = userCanEdit ? `<button class="resource-item__edit" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">Edit</button>` : '';
+              const deleteBtn = userCanDelete ? `<button class="resource-item__delete" type="button" data-action="delete" data-id="${escapeHtml(entry.id)}">Delete</button>` : '';
+              actions = editBtn || deleteBtn
+                ? `<td><div class="roster-actions">${editBtn}${deleteBtn}</div></td>`
+                : '<td></td>';
+            }
             return `
               <tr>
                 <td>${escapeHtml(entry.name)}</td>
@@ -486,12 +507,34 @@
       function refreshOwnerState() {
         const member = getCurrentMember();
         const permissions = window.TheChosenGuildAccess.getPermissions(member);
-        state.editor = permissions.canEditSite;
+        state.isOwner = permissions.isOwner;
+        // canUseRoster (defined in guild-access.js) checks access.roster flag + active status.
+        state.canEditRoster = permissions.canUseRoster;
+        state.currentUserName = member ? normalizeEmail(member.name) : '';
+        state.editor = state.isOwner || state.canEditRoster;
         rosterOwnerPanel.hidden = !state.editor;
+
         if (!state.editor) {
           resetForm();
-        } else {
+        } else if (state.isOwner) {
+          rosterRankField.hidden = false;
+          rosterRank.required = true;
+          rosterPanelTitle.textContent = 'Roster Manager';
+          rosterPanelNote.textContent = 'Authorized editor controls. Changes are persistent and public across the site.';
+          if (!state.editingId) {
+            rosterSaveButton.textContent = 'Add Entry';
+            rosterSaveButton.hidden = false;
+          }
           setEditorNotice('Authorized editor mode enabled. Use this form to manage public roster entries.', 'success');
+        } else {
+          rosterRankField.hidden = true;
+          rosterRank.required = false;
+          rosterPanelTitle.textContent = 'Edit Your Entry';
+          rosterPanelNote.textContent = 'Click the Edit button next to your character name to update your entry.';
+          if (!state.editingId) {
+            rosterSaveButton.hidden = true;
+            setEditorNotice('', '');
+          }
         }
         render();
       }
@@ -508,7 +551,11 @@
 
       rosterCancelEdit.addEventListener('click', () => {
         resetForm();
-        setEditorNotice('Edit cancelled.', '');
+        if (state.isOwner) {
+          setEditorNotice('Edit cancelled.', '');
+        } else {
+          setEditorNotice('', '');
+        }
       });
 
       rosterForm.addEventListener('submit', (event) => {
@@ -517,12 +564,26 @@
           return;
         }
 
+        const editingEntry = state.editingId ? state.entries.find((e) => e.id === state.editingId) : null;
+
+        if (!state.isOwner) {
+          if (!state.editingId) {
+            setEditorNotice('Click the Edit button next to your character name to update your entry.', 'error');
+            return;
+          }
+          if (!editingEntry || normalizeEmail(editingEntry.name) !== state.currentUserName) {
+            setEditorNotice('You can only edit your own roster entry.', 'error');
+            return;
+          }
+        }
+
         const nextEntry = sanitizeEntry({
           id: state.editingId || `roster-${Date.now()}`,
           name: rosterName.value,
           level: rosterLevel.value,
           className: rosterClass.value,
-          rank: rosterRank.value,
+          // Non-owners cannot change rank; the guard above ensures editingEntry is non-null for non-owners.
+          rank: state.isOwner ? rosterRank.value : (editingEntry ? editingEntry.rank : DEFAULT_RANK),
           lastOn: rosterLastOn.value
         });
 
@@ -561,6 +622,15 @@
           return;
         }
 
+        if (!state.isOwner) {
+          if (action === 'delete') {
+            return;
+          }
+          if (action === 'edit' && normalizeEmail(target.name) !== state.currentUserName) {
+            return;
+          }
+        }
+
         if (action === 'edit') {
           state.editingId = target.id;
           rosterName.value = target.name;
@@ -569,6 +639,7 @@
           rosterRank.value = target.rank;
           rosterLastOn.value = target.lastOn;
           rosterSaveButton.textContent = 'Save Changes';
+          rosterSaveButton.hidden = false;
           rosterCancelEdit.hidden = false;
           setEditorNotice(`Editing ${target.name}.`, '');
           return;

@@ -373,21 +373,57 @@ function buildId(prefix) {
   return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
 }
 
+const CANONICAL_FORUM_CATEGORIES = Object.freeze({
+  public: Object.freeze([
+    { id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' },
+    { id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' }
+  ].map((category) => Object.freeze(category))),
+  private: Object.freeze([
+    { id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' },
+    { id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' }
+  ].map((category) => Object.freeze(category)))
+});
+const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
+const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
+
+function forumCategoriesForSpace(spaceKey) {
+  return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
+}
+
+function forumCategoryTokens(value) {
+  return String(value || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function classifyForumCategoryId(spaceKey, value) {
+  const tokens = forumCategoryTokens(value);
+  if (spaceKey === 'public') {
+    return tokens.some((token) => PUBLIC_HELP_TOKENS.includes(token))
+      ? 'pub-help'
+      : 'pub-general';
+  }
+  return tokens.some((token) => PRIVATE_OFFICER_TOKENS.includes(token))
+    ? 'priv-officers'
+    : 'priv-general';
+}
+
+function resolveForumCategoryId(spaceKey, categoryId, categoryMap) {
+  const normalizedCategoryId = String(categoryId || '');
+  const matchedCategory = categoryMap instanceof Map ? categoryMap.get(normalizedCategoryId) : null;
+  if (matchedCategory) {
+    return classifyForumCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`);
+  }
+  return classifyForumCategoryId(spaceKey, normalizedCategoryId);
+}
+
 function defaultForumState() {
   return {
     public: {
-      categories: [
-        { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
-        { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
-      ],
+      categories: forumCategoriesForSpace('public'),
       threads: [],
       replies: []
     },
     private: {
-      categories: [
-        { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
-        { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
-      ],
+      categories: forumCategoriesForSpace('private'),
       threads: [],
       replies: []
     }
@@ -399,14 +435,16 @@ function normalizeForumState(source) {
   const state = source && typeof source === 'object' ? source : {};
   ['public', 'private'].forEach((spaceKey) => {
     const sourceSpace = state[spaceKey] && typeof state[spaceKey] === 'object' ? state[spaceKey] : {};
-    const categories = Array.isArray(sourceSpace.categories)
+    const sourceCategories = Array.isArray(sourceSpace.categories)
       ? sourceSpace.categories.map((category) => ({
           id: cleanText(category && category.id, 120),
           name: cleanText(category && category.name, 80),
           description: cleanText(category && category.description, 240)
         })).filter((category) => category.id && category.name && category.description)
       : [];
-    const normalizedCategories = categories.length ? categories : fallback[spaceKey].categories;
+    const normalizedCategories = forumCategoriesForSpace(spaceKey);
+    // Source categories are only used to remap legacy/custom category IDs into the fixed board layout.
+    const categoryMap = new Map(sourceCategories.map((category) => [category.id, category]));
     const categoryIds = new Set(normalizedCategories.map((category) => category.id));
     const threads = Array.isArray(sourceSpace.threads)
       ? sourceSpace.threads.map((thread) => {
@@ -415,9 +453,12 @@ function normalizeForumState(source) {
           if (!title || !body) {
             return null;
           }
+          const resolvedCategoryId = resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap);
           return {
             id: cleanText(thread.id, 160) || buildId(`${spaceKey}-thread`),
-            categoryId: categoryIds.has(thread.categoryId) ? thread.categoryId : normalizedCategories[0].id,
+            categoryId: categoryIds.has(resolvedCategoryId)
+              ? resolvedCategoryId
+              : normalizedCategories[0].id,
             title,
             body,
             linkUrl: cleanForumUrl(thread.linkUrl),
@@ -525,8 +566,8 @@ async function loadForumState(store) {
 async function saveForumCategories(store, state) {
   const updatedAt = new Date().toISOString();
   await store.setJSON(FORUM_CONFIG_KEY, {
-    public: { categories: state.public.categories },
-    private: { categories: state.private.categories },
+    public: { categories: forumCategoriesForSpace('public') },
+    private: { categories: forumCategoriesForSpace('private') },
     updatedAt
   });
   return updatedAt;

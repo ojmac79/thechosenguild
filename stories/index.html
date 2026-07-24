@@ -267,6 +267,13 @@
         <p class="hero__eyebrow">Canon Tales of Norrath</p>
         <h1 class="page-title">EQ Stories</h1>
         <p class="page-subtitle">A searchable library of original long-form retellings grounded in EverQuest canon, drawing from official lore, classic live events, and enduring legends of Norrath.</p>
+        <div class="resource-section__header" data-noneditable="true">
+          <h2 class="resource-section__title">Page Content</h2>
+          <button id="toggleStoriesEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
+        </div>
+        <p id="storiesEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
+          Public view is enabled. An approved guild account is required to edit page content.
+        </p>
 
         <section class="eq-stories-intro">
           <div class="eq-stories-intro__grid">
@@ -647,6 +654,68 @@
         eqStoriesSearch.focus();
       });
       applyEqStoriesFilter();
+    </script>
+    <script>
+      (function () {
+        const toggleBtn = document.getElementById('toggleStoriesEdit');
+        const editNotice = document.getElementById('storiesEditNotice');
+        const editTargets = Array.from(
+          document.querySelectorAll('.page h1, .page h2, .page h3, .page p, .page li, .page a, .page summary > span:first-child')
+        ).filter(function (el) { return !el.closest('[data-noneditable="true"]'); });
+        let editingEnabled = false;
+
+        function canEdit() {
+          const ga = window.TheChosenGuildAccess;
+          return Boolean(ga && ga.getPermissions(ga.getCurrentMember()).canEditSite);
+        }
+
+        function setEditingState(enabled) {
+          editingEnabled = enabled;
+          editTargets.forEach(function (el) {
+            el.setAttribute('contenteditable', enabled ? 'true' : 'false');
+          });
+          toggleBtn.textContent = enabled ? 'Disable Content Editing' : 'Enable Content Editing';
+          toggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        }
+
+        function updateAccess() {
+          const allowed = canEdit();
+          toggleBtn.hidden = !allowed;
+          if (!allowed && editingEnabled) {
+            setEditingState(false);
+          }
+          editNotice.textContent = allowed
+            ? 'Authorized editor access enabled. Use the button to enable content editing.'
+            : 'Public view is enabled. An approved guild account is required to edit page content.';
+        }
+
+        toggleBtn.addEventListener('click', function () {
+          if (!canEdit()) {
+            editNotice.textContent = 'An approved guild account is required to enable content editing.';
+            return;
+          }
+          setEditingState(!editingEnabled);
+          editNotice.textContent = editingEnabled
+            ? 'Content editing is enabled for this session.'
+            : 'Content editing is disabled.';
+        });
+
+        setEditingState(false);
+        updateAccess();
+        window.addEventListener('storage', function (event) {
+          if (window.TheChosenGuildAccess && event.key === window.TheChosenGuildAccess.DIRECTORY_STORAGE_KEY) {
+            updateAccess();
+          }
+        });
+        window.addEventListener('theChosen:persistent-store-ready', updateAccess);
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.on('login', updateAccess);
+          window.netlifyIdentity.on('logout', function () {
+            setEditingState(false);
+            updateAccess();
+          });
+        }
+      })();
     </script>
   </body>
 </html>
