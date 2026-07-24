@@ -950,6 +950,7 @@
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
+          const repliesOpen = uiState.openReplyLists.has(thread.id);
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
@@ -1053,6 +1054,21 @@
           }
 
           if (hasReplies) {
+            const totalReplyCount = replyCountByThread.get(thread.id) || 0;
+            const toggle = document.createElement('button');
+            toggle.type = 'button';
+            toggle.className = 'resource-item__edit forum-thread__replies-toggle';
+            toggle.textContent = repliesOpen ? `Hide Replies (${totalReplyCount})` : `Show Replies (${totalReplyCount})`;
+            toggle.dataset.action = 'toggle-replies';
+            toggle.dataset.space = spaceKey;
+            toggle.dataset.threadId = thread.id;
+            const repliesId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+            toggle.setAttribute('aria-controls', repliesId);
+            toggle.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
+            article.appendChild(toggle);
+          }
+
+          if (hasReplies && repliesOpen) {
             const repliesContainer = document.createElement('div');
             repliesContainer.id = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
             repliesContainer.className = 'forum-thread__replies';
@@ -1468,6 +1484,20 @@
               delete uiState.replyingToReplyId[threadId];
             } else {
               uiState.openReplyForms.add(threadId);
+            }
+            render();
+            return;
+          }
+
+          if (action === 'toggle-replies') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openReplyLists.has(threadId)) {
+              uiState.openReplyLists.delete(threadId);
+            } else {
+              uiState.openReplyLists.add(threadId);
             }
             render();
             return;

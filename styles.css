@@ -635,6 +635,9 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   border-radius: 999px;
   font-size: 0.82rem;
 }
+.forum-thread__replies-toggle {
+  margin-top: 0.45rem;
+}
 .forum-thread__replies {
   display: grid;
   gap: 0.55rem;
