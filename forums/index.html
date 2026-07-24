@@ -15,6 +15,7 @@
       rel="stylesheet"
     />
     <link rel="stylesheet" href="../styles.css" />
+<<<<<<< HEAD
     <style>
       /* ── Forum-specific compact layout ── */
 
@@ -387,6 +388,8 @@
         background: var(--panel);
       }
     </style>
+=======
+>>>>>>> origin/main
   </head>
   <body>
     <div class="chosen-shell">
@@ -404,9 +407,12 @@
             <a class="site-nav__link active" href="/forums/">Forums</a>
             <a class="site-nav__link" href="/roster/">Roster</a>
             <a class="site-nav__link" href="/discord/">Discord</a>
-            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
             <a class="site-nav__link" href="/lore/">Lore</a>
             <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">EQ Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link" href="/quests/">Quests</a>
           </nav>
           <div class="site-header__auth">
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -415,8 +421,9 @@
       </header>
 
       <main class="page">
-        <p class="hero__eyebrow">The Hall of Debate</p>
+        <p class="hero__eyebrow">Guild Communications</p>
         <h1 class="page-title">Guild Forums</h1>
+<<<<<<< HEAD
         <p class="page-subtitle">Strategy notes, raid plans, lore debates, and council announcements.</p>
 
         <!-- Tab navigation -->
@@ -446,11 +453,69 @@
             <div class="ft-compose__actions">
               <button class="btn-primary" type="submit">Post Publicly</button>
             </div>
+=======
+        <p class="page-subtitle">
+          A compact forum Index showing only the public and members-only discussion boards.
+        </p>
+
+        <section class="forum2-space" id="publicSpace" aria-label="Public forum">
+          <div class="forum2-space__header">
+            <h2 class="forum2-space__title">Public Forum</h2>
+            <div class="forum2-space__actions">
+              <span class="forum-badge">Open to everyone</span>
+              <button
+                class="btn-primary forum2-new-post-toggle"
+                id="publicNewPostToggle"
+                type="button"
+                aria-controls="publicThreadForm"
+                aria-expanded="false"
+              >New Post</button>
+            </div>
+          </div>
+          <p class="forum2-note" id="publicAuthNote"></p>
+
+          <div class="panel forum2-manager" id="publicCategoryManager" hidden>
+            <h3 class="forum2-manager__title">Manage Public Categories</h3>
+            <form class="forum2-inline-form" id="publicCategoryForm">
+              <input type="text" id="publicCategoryName" placeholder="Category name" required />
+              <input type="text" id="publicCategoryDescription" placeholder="Short description" required />
+              <button class="btn-primary" type="submit">Add Category</button>
+            </form>
+            <div id="publicCategoryList" class="forum2-manager__list"></div>
+          </div>
+
+          <form class="panel forum2-form" id="publicThreadForm" hidden>
+            <label class="resource-field">
+              <span>Category</span>
+              <select id="publicThreadCategory" required></select>
+            </label>
+            <label class="resource-field">
+              <span>Thread title</span>
+              <input type="text" id="publicThreadTitle" placeholder="Start a discussion" required />
+            </label>
+            <label class="resource-field">
+              <span>Message</span>
+              <textarea id="publicThreadBody" rows="3" placeholder="Write your post" required></textarea>
+            </label>
+            <div class="forum-media-fields" id="publicThreadMediaFields" hidden>
+              <label class="resource-field">
+                <span>Hyperlink URL (optional)</span>
+                <input type="url" id="publicThreadLinkUrl" maxlength="2000" placeholder="https://example.com" />
+              </label>
+              <label class="resource-field">
+                <span>Image (optional)</span>
+                <input type="file" id="publicThreadImage" accept="image/jpeg,image/png,image/webp,image/gif" />
+              </label>
+              <p class="forum2-note">Media attachments are available to signed-in users.</p>
+            </div>
+            <button class="btn-primary" type="submit">Post to Public Forum</button>
+>>>>>>> origin/main
           </form>
 
           <div class="ft-list" id="publicList" aria-live="polite"></div>
         </section>
 
+<<<<<<< HEAD
         <!-- Members-only forum panel -->
         <section id="tab-members" class="ftpanel" role="tabpanel" aria-labelledby="btn-members" hidden>
           <div class="ft-head">
@@ -490,11 +555,77 @@
           <div id="mgmtContent">
             <div class="mgmt-gate">Loading…</div>
           </div>
+=======
+        <section class="forum2-space" id="privateSpace" aria-label="Private members-only forum">
+          <div class="forum2-space__header">
+            <h2 class="forum2-space__title">Members-Only Forum</h2>
+            <div class="forum2-space__actions">
+              <span class="forum-badge forum-badge--member">Members only</span>
+              <button
+                class="btn-primary forum2-new-post-toggle"
+                id="privateNewPostToggle"
+                type="button"
+                aria-controls="privateThreadForm"
+                aria-expanded="false"
+              >New Post</button>
+            </div>
+          </div>
+          <div class="panel forum-gate" id="privateGate">
+            <p class="forum-gate__text">
+              Private categories require a verified Netlify account with guild forum authorization.
+            </p>
+            <a class="btn-torch" href="/login/">Enter the Hall</a>
+          </div>
+
+          <p class="forum2-note" id="privateAuthNote"></p>
+
+          <div class="panel forum2-manager" id="privateCategoryManager" hidden>
+            <h3 class="forum2-manager__title">Manage Private Categories</h3>
+            <form class="forum2-inline-form" id="privateCategoryForm">
+              <input type="text" id="privateCategoryName" placeholder="Category name" required />
+              <input type="text" id="privateCategoryDescription" placeholder="Short description" required />
+              <button class="btn-primary" type="submit">Add Category</button>
+            </form>
+            <div id="privateCategoryList" class="forum2-manager__list"></div>
+          </div>
+
+          <form class="panel forum2-form" id="privateThreadForm" hidden>
+            <label class="resource-field">
+              <span>Category</span>
+              <select id="privateThreadCategory" required></select>
+            </label>
+            <label class="resource-field">
+              <span>Thread title</span>
+              <input type="text" id="privateThreadTitle" placeholder="Officer and member planning" required />
+            </label>
+            <label class="resource-field">
+              <span>Message</span>
+              <textarea id="privateThreadBody" rows="3" placeholder="Write your private post" required></textarea>
+            </label>
+            <div class="forum-media-fields" id="privateThreadMediaFields" hidden>
+              <label class="resource-field">
+                <span>Hyperlink URL (optional)</span>
+                <input type="url" id="privateThreadLinkUrl" maxlength="2000" placeholder="https://example.com" />
+              </label>
+              <label class="resource-field">
+                <span>Image (optional)</span>
+                <input type="file" id="privateThreadImage" accept="image/jpeg,image/png,image/webp,image/gif" />
+              </label>
+            </div>
+            <button class="btn-primary" type="submit">Post to Private Forum</button>
+          </form>
+
+          <div class="forum-thread-list" id="privateThreadList" hidden></div>
+>>>>>>> origin/main
         </section>
       </main>
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__patreon" href="https://www.patreon.com/cw/TheChosenGuild/membership" target="_blank" rel="noopener noreferrer" aria-label="View The Chosen Guild membership options on Patreon">
+          <span class="site-footer__patreon-mark" aria-hidden="true">P</span>
+          <span class="site-footer__patreon-copy"><strong>Join The Chosen on Patreon</strong><small>View membership options</small></span>
+        </a>
         <div id="footerMember" class="site-footer__member" hidden>
           <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
           <div>
@@ -507,9 +638,11 @@
           <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
         </div>
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
       </footer>
     </div>
 
+<<<<<<< HEAD
     <script src="../scripts/site-decor.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
@@ -834,19 +967,584 @@
 
       // ── Footer badge ──────────────────────────────────────────────
       function renderFooterBadge(member) {
+=======
+    <script src="../../scripts/persistent-store.js"></script>
+    <script src="../../scripts/site-decor.js"></script>
+    <script src="../../scripts/guild-access.js"></script>
+    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
+    <script>
+      const STORAGE_KEY = 'theChosenForumStateV2';
+      const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
+      const guildAccess = window.TheChosenGuildAccess;
+      const uiState = {
+        openReplyForms: new Set(),
+        openReplyLists: new Set(),
+        replyingToReplyId: {},
+        openThreadForms: {
+          public: false,
+          private: false
+        }
+      };
+      let serverAccess = 'public';
+      const META_DELIMITER = ' • ';
+
+      function getCurrentMember() {
+        return guildAccess.getCurrentMember();
+      }
+
+      function getRoleLabel(permissions) {
+        if (permissions.isOwner) {
+          return 'Owner';
+        }
+        if (permissions.canModerateForums) {
+          return 'Officer';
+        }
+        if (permissions.canUseForums) {
+          return permissions.record && permissions.record.title ? permissions.record.title : 'Guild Member';
+        }
+        if (permissions.isSignedIn) {
+          return 'Verified Visitor';
+        }
+        return 'Guest';
+      }
+
+      function canModerate(permissions) {
+        return Boolean(permissions && permissions.canModerateForums);
+      }
+
+      function hasPrivateForumAccess(member, permissions) {
+        return Boolean(member && permissions.canUseForums && (serverAccess === 'member' || serverAccess === 'moderator'));
+      }
+
+      function pluralize(count, singular, plural) {
+        return count === 1 ? singular : plural;
+      }
+
+      function truncateLabel(value, maxLength = 56) {
+        const text = String(value || '').trim();
+        if (!text || text.length <= maxLength) {
+          return text;
+        }
+        return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+      }
+
+      function redirectToLogin() {
+        window.location.href = '/login/';
+      }
+
+      function normalizeForumUrl(value) {
+        const raw = String(value || '').trim();
+        if (!raw || raw.length > 2000) {
+          return '';
+        }
+        try {
+          const parsed = new URL(raw);
+          if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username || parsed.password) {
+            return '';
+          }
+          return parsed.href;
+        } catch (error) {
+          return '';
+        }
+      }
+
+      function normalizeForumImage(value) {
+        const raw = String(value || '').trim();
+        if (/^data:image\/(?:jpeg|png|gif|webp);base64,[a-z0-9+/=\r\n]+$/i.test(raw) && raw.length <= 700000) {
+          return raw;
+        }
+        return normalizeForumUrl(raw);
+      }
+
+      function fileToForumImage(file) {
+        if (!file) {
+          return Promise.resolve('');
+        }
+        const allowedTypes = new Set(['image/jpeg', 'image/png', 'image/webp', 'image/gif']);
+        if (!allowedTypes.has(String(file.type || '').toLowerCase())) {
+          return Promise.reject(new Error('Choose a JPEG, PNG, WebP, or GIF image.'));
+        }
+        if (file.size > 8 * 1024 * 1024) {
+          return Promise.reject(new Error('Choose an image smaller than 8 MB.'));
+        }
+
+        return new Promise((resolve, reject) => {
+          const objectUrl = URL.createObjectURL(file);
+          const image = new Image();
+          image.onload = () => {
+            URL.revokeObjectURL(objectUrl);
+            const maxWidth = 1000;
+            const maxHeight = 750;
+            const scale = Math.min(1, maxWidth / image.naturalWidth, maxHeight / image.naturalHeight);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(image.naturalWidth * scale));
+            canvas.height = Math.max(1, Math.round(image.naturalHeight * scale));
+            const context = canvas.getContext('2d');
+            if (!context) {
+              reject(new Error('This browser could not prepare the image.'));
+              return;
+            }
+            context.drawImage(image, 0, 0, canvas.width, canvas.height);
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.78);
+            if (dataUrl.length > 700000) {
+              reject(new Error('The processed image is still too large. Choose a smaller image.'));
+              return;
+            }
+            resolve(dataUrl);
+          };
+          image.onerror = () => {
+            URL.revokeObjectURL(objectUrl);
+            reject(new Error('The selected image could not be read.'));
+          };
+          image.src = objectUrl;
+        });
+      }
+
+      function appendLinkedText(element, value) {
+        const text = String(value || '');
+        const urlPattern = /https?:\/\/[^\s<]+/gi;
+        let cursor = 0;
+        let match;
+        while ((match = urlPattern.exec(text)) !== null) {
+          element.appendChild(document.createTextNode(text.slice(cursor, match.index)));
+          const rawMatch = match[0];
+          const trailing = rawMatch.match(/[.,!?;:)\]}]+$/)?.[0] || '';
+          const candidate = rawMatch.slice(0, rawMatch.length - trailing.length);
+          const url = normalizeForumUrl(candidate);
+          if (url) {
+            const link = document.createElement('a');
+            link.className = 'forum-post-link';
+            link.href = url;
+            link.target = '_blank';
+            link.rel = 'noopener noreferrer';
+            link.textContent = candidate;
+            element.appendChild(link);
+          } else {
+            element.appendChild(document.createTextNode(candidate));
+          }
+          if (trailing) {
+            element.appendChild(document.createTextNode(trailing));
+          }
+          cursor = match.index + rawMatch.length;
+        }
+        element.appendChild(document.createTextNode(text.slice(cursor)));
+      }
+
+      function appendPostMedia(container, post) {
+        const linkUrl = normalizeForumUrl(post && post.linkUrl);
+        const imageUrl = normalizeForumImage(post && post.imageUrl);
+        if (!linkUrl && !imageUrl) {
+          return;
+        }
+
+        const media = document.createElement('div');
+        media.className = 'forum-post-media';
+        if (imageUrl) {
+          const imageLink = document.createElement('a');
+          imageLink.href = imageUrl;
+          imageLink.target = '_blank';
+          imageLink.rel = 'noopener noreferrer';
+          const image = document.createElement('img');
+          image.className = 'forum-post-media__image';
+          image.src = imageUrl;
+          image.alt = `Image shared by ${String(post.authorName || 'forum author')}`;
+          image.loading = 'lazy';
+          image.referrerPolicy = 'no-referrer';
+          image.addEventListener('error', () => imageLink.remove(), { once: true });
+          imageLink.appendChild(image);
+          media.appendChild(imageLink);
+        }
+        if (linkUrl) {
+          const link = document.createElement('a');
+          link.className = 'forum-post-media__link';
+          link.href = linkUrl;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = 'Open shared link';
+          media.appendChild(link);
+        }
+        container.appendChild(media);
+      }
+
+      function buildId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return `${prefix}-${window.crypto.randomUUID()}`;
+        }
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
+      const CANONICAL_FORUM_CATEGORIES = Object.freeze({
+        public: Object.freeze([
+          { id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' },
+          { id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' }
+        ].map((category) => Object.freeze(category))),
+        private: Object.freeze([
+          { id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' },
+          { id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' }
+        ].map((category) => Object.freeze(category)))
+      });
+      const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
+      const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
+
+      function canonicalCategories(spaceKey) {
+        return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
+      }
+
+      function categoryTokens(value) {
+        return String(value || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      }
+
+      function classifyCategoryId(spaceKey, value) {
+        const tokens = categoryTokens(value);
+        if (spaceKey === 'public') {
+          return tokens.some((token) => PUBLIC_HELP_TOKENS.includes(token))
+            ? 'pub-help'
+            : 'pub-general';
+        }
+        return tokens.some((token) => PRIVATE_OFFICER_TOKENS.includes(token))
+          ? 'priv-officers'
+          : 'priv-general';
+      }
+
+      function threadToggleLabel(isOpen, baseLabel) {
+        return isOpen ? `Close ${baseLabel}` : baseLabel;
+      }
+
+      function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories, cache) {
+        const normalizedCategoryId = String(categoryId || '');
+        const hasCache = cache instanceof Map;
+        const cacheKey = `${spaceKey}:${normalizedCategoryId}`;
+        if (hasCache && cache.has(cacheKey)) {
+          return cache.get(cacheKey);
+        }
+        const matchedCategory = Array.isArray(sourceCategories)
+          ? sourceCategories.find((category) => category && category.id === normalizedCategoryId)
+          : null;
+        const resolvedCategoryId = matchedCategory
+          ? classifyCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`)
+          : classifyCategoryId(spaceKey, normalizedCategoryId);
+        if (hasCache) {
+          cache.set(cacheKey, resolvedCategoryId);
+        }
+        return resolvedCategoryId;
+      }
+
+      function defaultState() {
+        return {
+          public: {
+            categories: canonicalCategories('public'),
+            threads: [],
+            replies: []
+          },
+          private: {
+            categories: canonicalCategories('private'),
+            threads: [],
+            replies: []
+          }
+        };
+      }
+
+      function normalizeCategory(category, fallbackPrefix) {
+        if (!category || typeof category !== 'object') {
+          return null;
+        }
+        const name = String(category.name || '').trim();
+        const description = String(category.description || '').trim();
+        if (!name || !description) {
+          return null;
+        }
+        return {
+          id: typeof category.id === 'string' && category.id ? category.id : buildId(fallbackPrefix),
+          name,
+          description
+        };
+      }
+
+      function normalizeThread(thread, categories, fallbackPrefix, spaceKey, sourceCategories, categoryIdCache) {
+        if (!thread || typeof thread !== 'object') {
+          return null;
+        }
+        const title = String(thread.title || '').trim();
+        const body = String(thread.body || '').trim();
+        if (!title || !body) {
+          return null;
+        }
+        const validCategoryIds = categories.map((category) => category.id);
+        if (!validCategoryIds.length) {
+          return null;
+        }
+        const fallbackCategory = validCategoryIds[0];
+        const requestedCategoryId = resolveCanonicalCategoryId(spaceKey, thread.categoryId, sourceCategories, categoryIdCache);
+        const categoryId = validCategoryIds.includes(requestedCategoryId) ? requestedCategoryId : fallbackCategory;
+
+        return {
+          id: typeof thread.id === 'string' && thread.id ? thread.id : buildId(fallbackPrefix),
+          categoryId,
+          title,
+          body,
+          linkUrl: normalizeForumUrl(thread.linkUrl),
+          imageUrl: normalizeForumImage(thread.imageUrl),
+          authorName: String(thread.authorName || 'Guest Adventurer'),
+          authorEmail: String(thread.authorEmail || ''),
+          authorAvatar: String(thread.authorAvatar || ''),
+          createdAt: Number(thread.createdAt) || Date.now(),
+          isPinned: Boolean(thread.isPinned),
+          isLocked: Boolean(thread.isLocked)
+        };
+      }
+
+      function normalizeReply(reply, threadIds, fallbackPrefix) {
+        if (!reply || typeof reply !== 'object') {
+          return null;
+        }
+        const body = String(reply.body || '').trim();
+        if (!body) {
+          return null;
+        }
+        if (!threadIds.includes(String(reply.threadId || ''))) {
+          return null;
+        }
+        return {
+          id: typeof reply.id === 'string' && reply.id ? reply.id : buildId(fallbackPrefix),
+          threadId: String(reply.threadId),
+          parentReplyId: typeof reply.parentReplyId === 'string' && reply.parentReplyId ? reply.parentReplyId : null,
+          body,
+          linkUrl: normalizeForumUrl(reply.linkUrl),
+          imageUrl: normalizeForumImage(reply.imageUrl),
+          authorName: String(reply.authorName || 'Guest Adventurer'),
+          authorEmail: String(reply.authorEmail || ''),
+          authorAvatar: String(reply.authorAvatar || ''),
+          createdAt: Number(reply.createdAt) || Date.now()
+        };
+      }
+
+      function readState() {
+        try {
+          const parsed = JSON.parse(localStorage.getItem(STORAGE_KEY) || 'null');
+          if (!parsed || typeof parsed !== 'object') {
+            return defaultState();
+          }
+
+          const normalized = defaultState();
+          ['public', 'private'].forEach((spaceKey) => {
+            const sourceSpace = parsed[spaceKey] || {};
+            const sourceCategories = Array.isArray(sourceSpace.categories)
+              ? sourceSpace.categories.map((category) => normalizeCategory(category, `${spaceKey}-source-cat`)).filter(Boolean)
+              : [];
+            const categoryIdCache = new Map();
+            normalized[spaceKey].categories = canonicalCategories(spaceKey);
+            normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
+              ? sourceSpace.threads
+                  .map((thread) => normalizeThread(
+                    thread,
+                    normalized[spaceKey].categories,
+                    `${spaceKey}-thread`,
+                    spaceKey,
+                    sourceCategories,
+                    categoryIdCache
+                  ))
+                  .filter(Boolean)
+              : [];
+            const threadIds = normalized[spaceKey].threads.map((thread) => thread.id);
+            normalized[spaceKey].replies = Array.isArray(sourceSpace.replies)
+              ? sourceSpace.replies
+                  .map((reply) => normalizeReply(reply, threadIds, `${spaceKey}-reply`))
+                  .filter(Boolean)
+              : [];
+          });
+          normalized.private = defaultState().private;
+          return normalized;
+        } catch (error) {
+          return defaultState();
+        }
+      }
+
+      function writeState(state) {
+        const cacheState = JSON.parse(JSON.stringify({
+          public: state.public,
+          private: defaultState().private
+        }));
+        cacheState.public.threads.forEach((thread) => {
+          if (String(thread.imageUrl || '').startsWith('data:image/')) {
+            thread.imageUrl = '';
+          }
+        });
+        cacheState.public.replies.forEach((reply) => {
+          if (String(reply.imageUrl || '').startsWith('data:image/')) {
+            reply.imageUrl = '';
+          }
+        });
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(cacheState));
+      }
+
+      function latestForumTimestamp(state) {
+        if (!state || typeof state !== 'object') {
+          return 0;
+        }
+        return ['public', 'private'].reduce((latest, spaceKey) => {
+          const space = state[spaceKey] || {};
+          const threadLatest = Array.isArray(space.threads)
+            ? space.threads.reduce((acc, thread) => {
+                const value = Number(thread.createdAt) || 0;
+                return value > acc ? value : acc;
+              }, 0)
+            : 0;
+          const replyLatest = Array.isArray(space.replies)
+            ? space.replies.reduce((acc, reply) => {
+                const value = Number(reply.createdAt) || 0;
+                return value > acc ? value : acc;
+              }, 0)
+            : 0;
+          return Math.max(latest, threadLatest, replyLatest);
+        }, 0);
+      }
+
+      async function getIdentityToken() {
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
+          return '';
+        }
+        const user = window.netlifyIdentity.currentUser();
+        if (!user || typeof user.jwt !== 'function') {
+          return '';
+        }
+        try {
+          return await user.jwt();
+        } catch (error) {
+          return '';
+        }
+      }
+
+      async function runForumOperation(action, spaceKey, input) {
+        const token = await getIdentityToken();
+        const headers = { 'Content-Type': 'application/json' };
+        if (token) {
+          headers.Authorization = `Bearer ${token}`;
+        }
+        const member = getCurrentMember();
+        const response = await fetch(FORUM_REMOTE_ENDPOINT, {
+          method: 'POST',
+          headers,
+          body: JSON.stringify({
+            action,
+            space: spaceKey,
+            authorName: member && (member.name || member.email),
+            authorAvatar: member && member.avatar,
+            ...input
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || 'The forum post could not be saved.');
+        }
+        const normalized = readStateFromSource(payload.state);
+        serverAccess = String(payload.access || 'public');
+        forumState.public = normalized.public;
+        forumState.private = normalized.private;
+        writeState(normalized);
+        return payload;
+      }
+
+      async function syncForumStateWithRemote() {
+        try {
+          const token = await getIdentityToken();
+          const headers = token ? { Authorization: `Bearer ${token}` } : {};
+          const response = await fetch(FORUM_REMOTE_ENDPOINT, {
+            credentials: 'same-origin',
+            cache: 'no-store',
+            headers
+          });
+          if (!response.ok) {
+            return;
+          }
+          const payload = await response.json();
+          const remoteState = payload && payload.state ? payload.state : null;
+          const normalizedRemote = remoteState ? readStateFromSource(remoteState) : null;
+          if (normalizedRemote) {
+            serverAccess = String(payload.access || 'public');
+            forumState.public = normalizedRemote.public;
+            forumState.private = normalizedRemote.private;
+            writeState(normalizedRemote);
+            render();
+          }
+        } catch (error) {
+          // Local cache remains the fallback when the shared store is unavailable.
+        }
+      }
+
+      function readStateFromSource(source) {
+        try {
+          const parsed = source && typeof source === 'object' ? source : null;
+          if (!parsed) {
+            return defaultState();
+          }
+
+          const normalized = defaultState();
+          ['public', 'private'].forEach((spaceKey) => {
+            const sourceSpace = parsed[spaceKey] || {};
+            const sourceCategories = Array.isArray(sourceSpace.categories)
+              ? sourceSpace.categories.map((category) => normalizeCategory(category, `${spaceKey}-source-cat`)).filter(Boolean)
+              : [];
+            const categoryIdCache = new Map();
+            normalized[spaceKey].categories = canonicalCategories(spaceKey);
+            normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
+              ? sourceSpace.threads
+                  .map((thread) => normalizeThread(
+                    thread,
+                    normalized[spaceKey].categories,
+                    `${spaceKey}-thread`,
+                    spaceKey,
+                    sourceCategories,
+                    categoryIdCache
+                  ))
+                  .filter(Boolean)
+              : [];
+            const threadIds = normalized[spaceKey].threads.map((thread) => thread.id);
+            normalized[spaceKey].replies = Array.isArray(sourceSpace.replies)
+              ? sourceSpace.replies
+                  .map((reply) => normalizeReply(reply, threadIds, `${spaceKey}-reply`))
+                  .filter(Boolean)
+              : [];
+          });
+          return normalized;
+        } catch (error) {
+          return defaultState();
+        }
+      }
+
+      const forumState = readState();
+
+      const footerMember = document.getElementById('footerMember');
+      const footerMemberMenu = document.getElementById('footerMemberMenu');
+      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
+      const footerMemberName = document.getElementById('footerMemberName');
+      const footerMemberEmail = document.getElementById('footerMemberEmail');
+      const footerAccountButton = document.getElementById('footerAccountButton');
+      const footerLogoutButton = document.getElementById('footerLogoutButton');
+
+      function renderMemberBadge(member) {
+>>>>>>> origin/main
         if (!member) {
           footerMember.hidden     = true;
           footerMemberMenu.hidden = true;
           return;
         }
+<<<<<<< HEAD
         footerMemberAvatar.src = member.avatar || avatarUrl(member.name || member.email);
         footerMemberAvatar.alt = (member.name || member.email) + ' avatar';
         footerMemberName.textContent  = member.name  || member.email;
+=======
+
+        const displayName = member.name || member.email || 'Guild Member';
+        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(displayName)}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.alt = `${displayName} avatar`;
+        footerMemberName.textContent = displayName;
+>>>>>>> origin/main
         footerMemberEmail.textContent = member.email || 'Netlify member';
         footerMember.hidden     = false;
         footerMemberMenu.hidden = false;
       }
 
+<<<<<<< HEAD
       // ── Tab switching ─────────────────────────────────────────────
       var allTabs   = document.querySelectorAll('.ftab');
       var allPanels = document.querySelectorAll('.ftpanel');
@@ -1021,6 +1719,834 @@
           mgmtContent.innerHTML = '<div class="mgmt-gate">No members found.</div>';
           return;
         }
+=======
+      function categoryById(spaceKey, categoryId) {
+        return forumState[spaceKey].categories.find((category) => category.id === categoryId) || null;
+      }
+
+      function setSelectOptions(selectElement, categories) {
+        const existingValue = selectElement.value;
+        selectElement.innerHTML = '';
+        categories.forEach((category) => {
+          const option = document.createElement('option');
+          option.value = category.id;
+          option.textContent = category.name;
+          selectElement.appendChild(option);
+        });
+        const hasExisting = categories.some((category) => category.id === existingValue);
+        if (hasExisting) {
+          selectElement.value = existingValue;
+        }
+      }
+
+      function buildReplyEl(reply, options) {
+        const { spaceKey, permissions, canOpenReplyComposer, childrenMap } = options;
+        const replyEl = document.createElement('div');
+        replyEl.className = 'forum-thread__reply';
+
+        const header = document.createElement('div');
+        header.className = 'forum-thread__reply-header';
+
+        const avatarSrc = reply.authorAvatar ||
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(reply.authorName)}&background=ff7b7b&color=14070b`;
+        const avatar = document.createElement('img');
+        avatar.className = 'forum-thread__author-avatar';
+        avatar.src = avatarSrc;
+        avatar.alt = `${reply.authorName} avatar`;
+
+        const author = document.createElement('p');
+        author.className = 'forum-thread__reply-author';
+        author.textContent = reply.authorName;
+
+        const time = document.createElement('span');
+        time.className = 'forum2-note';
+        time.style.marginLeft = 'auto';
+        time.textContent = new Date(reply.createdAt).toLocaleString();
+
+        header.appendChild(avatar);
+        header.appendChild(author);
+        header.appendChild(time);
+
+        const body = document.createElement('div');
+        body.className = 'forum-thread__reply-body';
+        appendLinkedText(body, reply.body);
+
+        replyEl.appendChild(header);
+        replyEl.appendChild(body);
+        appendPostMedia(replyEl, reply);
+
+        if (canOpenReplyComposer || canModerate(permissions)) {
+          const actions = document.createElement('div');
+          actions.className = 'forum-thread__actions';
+          actions.classList.add('forum-thread__actions--reply');
+
+          if (canOpenReplyComposer) {
+            const replyBtn = document.createElement('button');
+            replyBtn.type = 'button';
+            replyBtn.className = 'resource-item__edit forum-thread__quick-action';
+            replyBtn.textContent = 'Reply';
+            replyBtn.dataset.action = 'reply-to-reply';
+            replyBtn.dataset.space = spaceKey;
+            replyBtn.dataset.threadId = reply.threadId;
+            replyBtn.dataset.replyId = reply.id;
+            actions.appendChild(replyBtn);
+          }
+
+          if (canModerate(permissions)) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'resource-item__delete forum-thread__quick-action';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.dataset.action = 'delete-reply';
+            deleteBtn.dataset.space = spaceKey;
+            deleteBtn.dataset.replyId = reply.id;
+            actions.appendChild(deleteBtn);
+          }
+
+          replyEl.appendChild(actions);
+        }
+
+        const children = (childrenMap.get(reply.id) || []).slice().sort((a, b) => a.createdAt - b.createdAt);
+        if (children.length) {
+          const childrenEl = document.createElement('div');
+          childrenEl.className = 'forum-thread__reply-children';
+          children.forEach((child) => {
+            childrenEl.appendChild(buildReplyEl(child, {
+              spaceKey,
+              permissions,
+              canOpenReplyComposer,
+              childrenMap
+            }));
+          });
+          replyEl.appendChild(childrenEl);
+        }
+
+        return replyEl;
+      }
+
+      function renderCategoryManager(spaceKey, isModerator) {
+        const manager = document.getElementById(`${spaceKey}CategoryManager`);
+        manager.hidden = true;
+        if (!isModerator) {
+          return;
+        }
+      }
+
+      function sortThreads(threads) {
+        return [...threads].sort((a, b) => {
+          if (a.isPinned !== b.isPinned) {
+            return a.isPinned ? -1 : 1;
+          }
+          return b.createdAt - a.createdAt;
+        });
+      }
+
+      function renderThreads(spaceKey, permissions, member, privateAccess) {
+        const container = document.getElementById(`${spaceKey}ThreadList`);
+        const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
+
+        // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
+        const replyCountByThread = new Map();
+        const childrenMap = new Map();
+        forumState[spaceKey].replies.forEach((reply) => {
+          replyCountByThread.set(reply.threadId, (replyCountByThread.get(reply.threadId) || 0) + 1);
+          if (reply.parentReplyId) {
+            const siblings = childrenMap.get(reply.parentReplyId) || [];
+            siblings.push(reply);
+            childrenMap.set(reply.parentReplyId, siblings);
+          }
+        });
+
+        const threads = sortThreads(forumState[spaceKey].threads);
+        const canReply = spaceKey === 'public' || (!!member && !!privateAccess);
+        const visibleCategories = forumState[spaceKey].categories;
+        const threadsByCategory = new Map();
+        threads.forEach((thread) => {
+          const existing = threadsByCategory.get(thread.categoryId) || [];
+          existing.push(thread);
+          threadsByCategory.set(thread.categoryId, existing);
+        });
+
+        container.innerHTML = '';
+        if (!visibleCategories.length) {
+          const empty = document.createElement('article');
+          empty.className = 'panel forum-thread';
+          const message = document.createElement('p');
+          message.className = 'empty-state';
+          message.textContent = 'No threads yet in this view.';
+          empty.appendChild(message);
+          container.appendChild(empty);
+          return;
+        }
+
+        function buildThreadArticle(thread, categoryName, canReplyToThread) {
+          const article = document.createElement('article');
+          article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+
+          const header = document.createElement('div');
+          header.className = 'forum-thread__header';
+
+          const titleWrap = document.createElement('div');
+          const title = document.createElement('h3');
+          title.className = 'forum-thread__title';
+          title.textContent = thread.title;
+
+          const meta = document.createElement('p');
+          meta.className = 'forum-thread__meta';
+          const postedOn = new Date(thread.createdAt).toLocaleString();
+          const totalReplyCount = replyCountByThread.get(thread.id) || 0;
+          const replyLabel = `${totalReplyCount} ${pluralize(totalReplyCount, 'reply', 'replies')}`;
+          meta.textContent = [thread.authorName, categoryName, postedOn, replyLabel].join(META_DELIMITER);
+
+          titleWrap.appendChild(title);
+          titleWrap.appendChild(meta);
+
+          const badgeWrap = document.createElement('div');
+          badgeWrap.className = 'forum2-thread-badges';
+
+          const spaceBadge = document.createElement('span');
+          spaceBadge.className = `forum-badge${spaceKey === 'private' ? ' forum-badge--member' : ''}`;
+          spaceBadge.textContent = spaceKey === 'private' ? 'Members' : 'Public';
+          badgeWrap.appendChild(spaceBadge);
+
+          if (thread.isPinned) {
+            const pinned = document.createElement('span');
+            pinned.className = 'forum-badge';
+            pinned.textContent = 'Pinned';
+            badgeWrap.appendChild(pinned);
+          }
+
+          if (thread.isLocked) {
+            const locked = document.createElement('span');
+            locked.className = 'forum-badge';
+            locked.textContent = 'Locked';
+            badgeWrap.appendChild(locked);
+          }
+
+          header.appendChild(titleWrap);
+          header.appendChild(badgeWrap);
+
+          const body = document.createElement('div');
+          body.className = 'forum-thread__body';
+          appendLinkedText(body, thread.body);
+
+          article.appendChild(header);
+          article.appendChild(body);
+          appendPostMedia(article, thread);
+
+          // Replies section
+          const topLevelReplies = forumState[spaceKey].replies
+            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
+            .sort((a, b) => a.createdAt - b.createdAt);
+
+          const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
+          const repliesOpen = uiState.openReplyLists.has(thread.id);
+          const actions = document.createElement('div');
+          actions.className = 'forum-thread__actions';
+          let hasActions = false;
+
+          if (topLevelReplies.length) {
+            const repliesButton = document.createElement('button');
+            repliesButton.type = 'button';
+            repliesButton.className = 'resource-item__edit forum-thread__quick-action';
+            repliesButton.textContent = repliesOpen
+              ? `Hide Replies (${topLevelReplies.length})`
+              : `Show Replies (${topLevelReplies.length})`;
+            repliesButton.dataset.action = 'toggle-replies';
+            repliesButton.dataset.space = spaceKey;
+            repliesButton.dataset.threadId = thread.id;
+            repliesButton.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
+            actions.appendChild(repliesButton);
+            hasActions = true;
+          }
+
+          if (canOpenReplyComposer) {
+            const isFormOpen = uiState.openReplyForms.has(thread.id);
+            const replyToggle = document.createElement('button');
+            replyToggle.type = 'button';
+            replyToggle.className = 'resource-item__edit forum-thread__composer-toggle';
+            replyToggle.textContent = isFormOpen ? 'Close Reply' : 'Reply';
+            replyToggle.dataset.action = 'toggle-reply-form';
+            replyToggle.dataset.space = spaceKey;
+            replyToggle.dataset.threadId = thread.id;
+            replyToggle.setAttribute('aria-controls', `replyForm-${thread.id}`);
+            replyToggle.setAttribute('aria-expanded', isFormOpen ? 'true' : 'false');
+            actions.appendChild(replyToggle);
+            hasActions = true;
+          }
+
+          if (canModerate(permissions)) {
+            const pinButton = document.createElement('button');
+            pinButton.type = 'button';
+            pinButton.className = 'resource-item__edit';
+            pinButton.textContent = thread.isPinned ? 'Unpin' : 'Pin';
+            pinButton.dataset.action = 'toggle-pin';
+            pinButton.dataset.space = spaceKey;
+            pinButton.dataset.threadId = thread.id;
+
+            const lockButton = document.createElement('button');
+            lockButton.type = 'button';
+            lockButton.className = 'resource-item__edit';
+            lockButton.textContent = thread.isLocked ? 'Unlock' : 'Lock';
+            lockButton.dataset.action = 'toggle-lock';
+            lockButton.dataset.space = spaceKey;
+            lockButton.dataset.threadId = thread.id;
+
+            const deleteButton = document.createElement('button');
+            deleteButton.type = 'button';
+            deleteButton.className = 'resource-item__delete';
+            deleteButton.textContent = 'Delete';
+            deleteButton.dataset.action = 'delete-thread';
+            deleteButton.dataset.space = spaceKey;
+            deleteButton.dataset.threadId = thread.id;
+
+            actions.appendChild(pinButton);
+            actions.appendChild(lockButton);
+            actions.appendChild(deleteButton);
+            hasActions = true;
+          }
+
+          if (hasActions) {
+            article.appendChild(actions);
+          }
+
+          if (topLevelReplies.length && repliesOpen) {
+            const repliesContainer = document.createElement('div');
+            repliesContainer.className = 'forum-thread__replies';
+            topLevelReplies.forEach((reply) => {
+              repliesContainer.appendChild(buildReplyEl(reply, {
+                spaceKey,
+                permissions,
+                canOpenReplyComposer,
+                childrenMap
+              }));
+            });
+            article.appendChild(repliesContainer);
+          }
+
+          // Reply form (shown when member has access and thread is not locked)
+          if (canOpenReplyComposer) {
+            const isFormOpen = uiState.openReplyForms.has(thread.id);
+            if (isFormOpen) {
+              const form = document.createElement('div');
+              form.className = 'forum-reply-form';
+              form.dataset.threadId = thread.id;
+              form.id = `replyForm-${thread.id}`;
+
+              const parentReplyId = uiState.replyingToReplyId[thread.id] || null;
+              if (parentReplyId) {
+                const parentReply = replyMap.get(parentReplyId);
+                if (parentReply) {
+                  const indicator = document.createElement('p');
+                  indicator.className = 'forum-thread__reply-target';
+                  indicator.textContent = `Replying to ${parentReply.authorName}`;
+                  form.appendChild(indicator);
+                }
+              }
+
+              const textarea = document.createElement('textarea');
+              textarea.className = 'forum-reply-form__input';
+              textarea.rows = 2;
+              textarea.placeholder = 'Write a reply…';
+              textarea.id = `replyInput-${thread.id}`;
+              form.appendChild(textarea);
+
+              if (permissions.isSignedIn) {
+                const mediaFields = document.createElement('div');
+                mediaFields.className = 'forum-media-fields forum-media-fields--reply';
+
+                const linkInput = document.createElement('input');
+                linkInput.type = 'url';
+                linkInput.id = `replyLink-${thread.id}`;
+                linkInput.maxLength = 2000;
+                linkInput.placeholder = 'Optional hyperlink URL';
+                linkInput.setAttribute('aria-label', 'Optional hyperlink URL');
+
+                const imageInput = document.createElement('input');
+                imageInput.type = 'file';
+                imageInput.id = `replyImage-${thread.id}`;
+                imageInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+                imageInput.setAttribute('aria-label', 'Optional image');
+
+                mediaFields.appendChild(linkInput);
+                mediaFields.appendChild(imageInput);
+                form.appendChild(mediaFields);
+              }
+
+              const formActions = document.createElement('div');
+              formActions.className = 'forum-reply-form__actions';
+
+              const submitBtn = document.createElement('button');
+              submitBtn.type = 'button';
+              submitBtn.className = 'btn-primary';
+              submitBtn.textContent = 'Post Reply';
+              submitBtn.dataset.action = 'post-reply';
+              submitBtn.dataset.space = spaceKey;
+              submitBtn.dataset.threadId = thread.id;
+              if (parentReplyId) {
+                submitBtn.dataset.parentReplyId = parentReplyId;
+              }
+
+              formActions.appendChild(submitBtn);
+              form.appendChild(formActions);
+              article.appendChild(form);
+            }
+          } else if (thread.isLocked) {
+            const lockedNote = document.createElement('p');
+            lockedNote.className = 'forum2-note';
+            lockedNote.style.marginTop = '0.2rem';
+            lockedNote.textContent = 'This thread is locked.';
+            article.appendChild(lockedNote);
+          }
+
+          return article;
+        }
+
+        visibleCategories.forEach((category) => {
+          const categoryThreads = threadsByCategory.get(category.id) || [];
+          const categorySection = document.createElement('section');
+          categorySection.className = 'panel forum2-category';
+
+          const categoryHeader = document.createElement('div');
+          categoryHeader.className = 'forum2-category__header';
+
+          const categoryTitle = document.createElement('h3');
+          categoryTitle.className = 'forum2-category__title';
+          categoryTitle.textContent = category.name;
+
+          const categorySummary = document.createElement('p');
+          categorySummary.className = 'forum2-category__summary';
+          const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
+          const latestThread = categoryThreads.length ? categoryThreads[0] : null;
+          const latestPostText = latestThread ? `Latest Post: ${truncateLabel(latestThread.title)}` : '';
+          categorySummary.textContent = [category.description, countLabel, latestPostText].filter(Boolean).join(META_DELIMITER);
+
+          categoryHeader.appendChild(categoryTitle);
+          categoryHeader.appendChild(categorySummary);
+          categorySection.appendChild(categoryHeader);
+
+          if (!categoryThreads.length) {
+            const emptyCategory = document.createElement('p');
+            emptyCategory.className = 'forum2-note';
+            emptyCategory.textContent = 'No posts in this category yet.';
+            categorySection.appendChild(emptyCategory);
+            container.appendChild(categorySection);
+            return;
+          }
+
+          const threadStack = document.createElement('div');
+          threadStack.className = 'forum2-category__threads';
+
+          categoryThreads.forEach((thread) => {
+            threadStack.appendChild(buildThreadArticle(thread, category.name, canReply));
+          });
+
+          categorySection.appendChild(threadStack);
+          container.appendChild(categorySection);
+        });
+      }
+
+      function updateAuthNotes(member, permissions, privateAccess) {
+        const publicAuthNote = document.getElementById('publicAuthNote');
+        const privateNote = document.getElementById('privateAuthNote');
+
+        if (!member) {
+          publicAuthNote.textContent = 'Public posting is open to everyone. Guest posts are saved permanently.';
+          privateNote.textContent = 'Private spaces unlock after the guild leader authorizes your forum access.';
+          return;
+        }
+
+        const roleText = getRoleLabel(permissions);
+        publicAuthNote.textContent = `Signed in as ${member.email}. Public posting is enabled. Role: ${roleText}.`;
+        privateNote.textContent = privateAccess
+          ? 'Private posting enabled for your account.'
+          : 'Your account can read public threads, but private guild forum access is not enabled.';
+      }
+
+      function render() {
+        const member = getCurrentMember();
+        const permissions = guildAccess.getPermissions(member);
+        const moderator = serverAccess === 'moderator';
+        const privateAccess = hasPrivateForumAccess(member, permissions);
+
+        renderMemberBadge(member);
+        updateAuthNotes(member, permissions, privateAccess);
+
+        const publicThreadCategory = document.getElementById('publicThreadCategory');
+        const privateThreadCategory = document.getElementById('privateThreadCategory');
+
+        setSelectOptions(publicThreadCategory, forumState.public.categories);
+        setSelectOptions(privateThreadCategory, forumState.private.categories);
+
+        const publicForm = document.getElementById('publicThreadForm');
+        const privateForm = document.getElementById('privateThreadForm');
+        const publicToggle = document.getElementById('publicNewPostToggle');
+        const privateToggle = document.getElementById('privateNewPostToggle');
+        document.getElementById('publicThreadMediaFields').hidden = !permissions.isSignedIn;
+        document.getElementById('privateThreadMediaFields').hidden = !permissions.isSignedIn;
+        publicForm.querySelector('button[type="submit"]').disabled = false;
+        privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
+
+        const privateGate = document.getElementById('privateGate');
+        const privateList = document.getElementById('privateThreadList');
+
+        privateGate.hidden = privateAccess;
+        publicForm.hidden = !uiState.openThreadForms.public;
+        privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
+        privateList.hidden = !privateAccess;
+        publicToggle.textContent = threadToggleLabel(uiState.openThreadForms.public, 'New Post');
+        privateToggle.textContent = threadToggleLabel(uiState.openThreadForms.private, 'New Post');
+        publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
+        privateToggle.setAttribute('aria-expanded', uiState.openThreadForms.private ? 'true' : 'false');
+        privateToggle.hidden = !privateAccess;
+
+        renderCategoryManager('public', moderator);
+        renderCategoryManager('private', moderator && privateAccess);
+
+        renderThreads('public', permissions, member, privateAccess);
+
+        if (privateAccess) {
+          renderThreads('private', permissions, member, privateAccess);
+        }
+      }
+
+      async function addCategory(spaceKey, name, description) {
+        const trimmedName = String(name || '').trim();
+        const trimmedDescription = String(description || '').trim();
+        if (!trimmedName || !trimmedDescription) {
+          return;
+        }
+        await runForumOperation('create-category', spaceKey, {
+          name: trimmedName,
+          description: trimmedDescription
+        });
+      }
+
+      async function renameCategory(spaceKey, categoryId) {
+        const category = categoryById(spaceKey, categoryId);
+        if (!category) {
+          return;
+        }
+        const nextName = window.prompt('Rename category', category.name);
+        if (!nextName) {
+          return;
+        }
+        const nextDescription = window.prompt('Update description', category.description);
+        if (!nextDescription) {
+          return;
+        }
+        await runForumOperation('rename-category', spaceKey, {
+          categoryId,
+          name: nextName.trim(),
+          description: nextDescription.trim()
+        });
+      }
+
+      async function deleteCategory(spaceKey, categoryId) {
+        const categories = forumState[spaceKey].categories;
+        if (categories.length <= 1) {
+          window.alert('At least one category is required.');
+          return;
+        }
+
+        await runForumOperation('delete-category', spaceKey, { categoryId });
+      }
+
+      async function addThread(spaceKey, title, body, categoryId, linkUrl, imageUrl) {
+        await runForumOperation('create-thread', spaceKey, {
+          title: String(title || '').trim(),
+          body: String(body || '').trim(),
+          categoryId,
+          linkUrl: String(linkUrl || '').trim(),
+          imageUrl: String(imageUrl || '').trim()
+        });
+      }
+
+      async function updateThread(spaceKey, threadId, action) {
+        await runForumOperation(action, spaceKey, { threadId });
+      }
+
+      async function deleteThread(spaceKey, threadId) {
+        await runForumOperation('delete-thread', spaceKey, { threadId });
+      }
+
+      async function addReply(spaceKey, threadId, body, parentReplyId, linkUrl, imageUrl) {
+        const trimmedBody = String(body || '').trim();
+        if (!trimmedBody) {
+          return;
+        }
+        await runForumOperation('create-reply', spaceKey, {
+          threadId,
+          parentReplyId: parentReplyId || null,
+          body: trimmedBody,
+          linkUrl: String(linkUrl || '').trim(),
+          imageUrl: String(imageUrl || '').trim()
+        });
+      }
+
+      async function deleteReply(spaceKey, replyId) {
+        await runForumOperation('delete-reply', spaceKey, { replyId });
+      }
+
+      document.getElementById('publicThreadForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const titleInput = document.getElementById('publicThreadTitle');
+        const bodyInput = document.getElementById('publicThreadBody');
+        const categorySelect = document.getElementById('publicThreadCategory');
+        const linkInput = document.getElementById('publicThreadLinkUrl');
+        const imageInput = document.getElementById('publicThreadImage');
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        try {
+          const imageUrl = await fileToForumImage(imageInput.files && imageInput.files[0]);
+          await addThread(
+            'public',
+            titleInput.value,
+            bodyInput.value,
+            categorySelect.value,
+            linkInput.value,
+            imageUrl
+          );
+          event.target.reset();
+          uiState.openThreadForms.public = false;
+          render();
+          document.getElementById('publicAuthNote').textContent = 'Public thread saved permanently.';
+        } catch (error) {
+          document.getElementById('publicAuthNote').textContent = error.message;
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      document.getElementById('privateThreadForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const member = getCurrentMember();
+        if (!guildAccess.getPermissions(member).canUseForums) {
+          redirectToLogin();
+          return;
+        }
+
+        const titleInput = document.getElementById('privateThreadTitle');
+        const bodyInput = document.getElementById('privateThreadBody');
+        const categorySelect = document.getElementById('privateThreadCategory');
+        const linkInput = document.getElementById('privateThreadLinkUrl');
+        const imageInput = document.getElementById('privateThreadImage');
+
+        const submitButton = event.target.querySelector('button[type="submit"]');
+        submitButton.disabled = true;
+        try {
+          const imageUrl = await fileToForumImage(imageInput.files && imageInput.files[0]);
+          await addThread(
+            'private',
+            titleInput.value,
+            bodyInput.value,
+            categorySelect.value,
+            linkInput.value,
+            imageUrl
+          );
+          event.target.reset();
+          uiState.openThreadForms.private = false;
+          render();
+          document.getElementById('privateAuthNote').textContent = 'Member thread saved permanently.';
+        } catch (error) {
+          document.getElementById('privateAuthNote').textContent = error.message;
+        } finally {
+          submitButton.disabled = false;
+        }
+      });
+
+      ['public', 'private'].forEach((spaceKey) => {
+        const categoryForm = document.getElementById(`${spaceKey}CategoryForm`);
+        categoryForm.addEventListener('submit', async (event) => {
+          event.preventDefault();
+          const permissions = guildAccess.getPermissions(getCurrentMember());
+          if (!canModerate(permissions)) {
+            return;
+          }
+
+          const nameInput = document.getElementById(`${spaceKey}CategoryName`);
+          const descriptionInput = document.getElementById(`${spaceKey}CategoryDescription`);
+          try {
+            await addCategory(spaceKey, nameInput.value, descriptionInput.value);
+            event.target.reset();
+            render();
+          } catch (error) {
+            document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
+          }
+        });
+
+        document.getElementById(`${spaceKey}CategoryList`).addEventListener('click', async (event) => {
+          const button = event.target.closest('[data-action]');
+          if (!button) {
+            return;
+          }
+
+          const permissions = guildAccess.getPermissions(getCurrentMember());
+          if (!canModerate(permissions)) {
+            return;
+          }
+
+          const action = button.dataset.action;
+          const categoryId = button.dataset.categoryId;
+          if (!categoryId) {
+            return;
+          }
+
+          try {
+            if (action === 'rename-category') {
+              await renameCategory(spaceKey, categoryId);
+            }
+            if (action === 'delete-category') {
+              await deleteCategory(spaceKey, categoryId);
+            }
+            render();
+          } catch (error) {
+            document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
+          }
+        });
+
+        document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', async (event) => {
+          const button = event.target.closest('[data-action]');
+          if (!button) {
+            return;
+          }
+
+          const action = button.dataset.action;
+          const member = getCurrentMember();
+          const permissions = guildAccess.getPermissions(member);
+
+          if (action === 'toggle-reply-form') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openReplyForms.has(threadId)) {
+              uiState.openReplyForms.delete(threadId);
+              delete uiState.replyingToReplyId[threadId];
+            } else {
+              uiState.openReplyForms.add(threadId);
+            }
+            render();
+            return;
+          }
+
+          if (action === 'toggle-replies') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openReplyLists.has(threadId)) {
+              uiState.openReplyLists.delete(threadId);
+            } else {
+              uiState.openReplyLists.add(threadId);
+            }
+            render();
+            return;
+          }
+
+          if (action === 'reply-to-reply') {
+            const threadId = button.dataset.threadId;
+            const replyId = button.dataset.replyId;
+            if (!threadId || !replyId) {
+              return;
+            }
+            uiState.openReplyLists.add(threadId);
+            uiState.openReplyForms.add(threadId);
+            uiState.replyingToReplyId[threadId] = replyId;
+            render();
+            return;
+          }
+
+          if (action === 'post-reply') {
+            const threadId = button.dataset.threadId;
+            const parentReplyId = button.dataset.parentReplyId || null;
+            if (!threadId || (spaceKey === 'private' && !member)) {
+              return;
+            }
+            const textarea = document.getElementById(`replyInput-${threadId}`);
+            if (!textarea || !textarea.value.trim()) {
+              return;
+            }
+            button.disabled = true;
+            try {
+              const linkInput = document.getElementById(`replyLink-${threadId}`);
+              const imageInput = document.getElementById(`replyImage-${threadId}`);
+              const imageUrl = await fileToForumImage(imageInput && imageInput.files && imageInput.files[0]);
+              await addReply(
+                spaceKey,
+                threadId,
+                textarea.value,
+                parentReplyId,
+                linkInput && linkInput.value,
+                imageUrl
+              );
+              uiState.openReplyLists.add(threadId);
+              uiState.openReplyForms.delete(threadId);
+              delete uiState.replyingToReplyId[threadId];
+              render();
+              document.getElementById(`${spaceKey}AuthNote`).textContent = 'Reply saved permanently.';
+            } catch (error) {
+              document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
+              button.disabled = false;
+            }
+            return;
+          }
+
+          if (!canModerate(permissions)) {
+            return;
+          }
+
+          const threadId = button.dataset.threadId;
+          try {
+            if (action === 'toggle-pin') {
+              if (!threadId) {
+                return;
+              }
+              await updateThread(spaceKey, threadId, 'toggle-pin');
+            }
+            if (action === 'toggle-lock') {
+              if (!threadId) {
+                return;
+              }
+              await updateThread(spaceKey, threadId, 'toggle-lock');
+            }
+            if (action === 'delete-thread') {
+              if (!threadId) {
+                return;
+              }
+              await deleteThread(spaceKey, threadId);
+            }
+            if (action === 'delete-reply') {
+              const replyId = button.dataset.replyId;
+              if (!replyId) {
+                return;
+              }
+              await deleteReply(spaceKey, replyId);
+            }
+            render();
+          } catch (error) {
+            document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
+          }
+        });
+      });
+
+      document.getElementById('publicNewPostToggle').addEventListener('click', () => {
+        uiState.openThreadForms.public = !uiState.openThreadForms.public;
+        render();
+      });
+
+      document.getElementById('privateNewPostToggle').addEventListener('click', () => {
+        const member = getCurrentMember();
+        const permissions = guildAccess.getPermissions(member);
+        const hasPrivateAccess = hasPrivateForumAccess(member, permissions);
+        if (!hasPrivateAccess) {
+          redirectToLogin();
+          return;
+        }
+        uiState.openThreadForms.private = !uiState.openThreadForms.private;
+        render();
+      });
+>>>>>>> origin/main
 
         var html =
           '<div class="mgmt-section">' +
@@ -1118,6 +2644,7 @@
         window.location.href = '/login/';
       });
 
+<<<<<<< HEAD
       footerLogoutButton.addEventListener('click', function () {
         if (window.netlifyIdentity) window.netlifyIdentity.logout();
         clearMember();
@@ -1135,6 +2662,53 @@
 
       renderForums();
     }());
+=======
+      footerLogoutButton.addEventListener('click', () => {
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.logout();
+        }
+        localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+        serverAccess = 'public';
+        forumState.private = defaultState().private;
+        writeState(forumState);
+        render();
+      });
+
+      window.addEventListener('storage', (event) => {
+        if (
+          event.key === STORAGE_KEY ||
+          event.key === guildAccess.CURRENT_MEMBER_STORAGE_KEY ||
+          event.key === guildAccess.DIRECTORY_STORAGE_KEY
+        ) {
+          const latestState = readState();
+          forumState.public = latestState.public;
+          if (serverAccess === 'public') {
+            forumState.private = latestState.private;
+          }
+          render();
+        }
+      });
+
+      if (window.netlifyIdentity) {
+        window.netlifyIdentity.init();
+        window.netlifyIdentity.on('login', () => {
+          guildAccess.ensureMemberRecord(getCurrentMember());
+          render();
+          void syncForumStateWithRemote();
+        });
+        window.netlifyIdentity.on('logout', () => {
+          localStorage.removeItem(guildAccess.CURRENT_MEMBER_STORAGE_KEY);
+          serverAccess = 'public';
+          forumState.private = defaultState().private;
+          writeState(forumState);
+          render();
+          void syncForumStateWithRemote();
+        });
+      }
+
+      render();
+      void syncForumStateWithRemote();
+>>>>>>> origin/main
     </script>
   </body>
 </html>

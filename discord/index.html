@@ -3,14 +3,14 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>The Chosen — Discord</title>
+    <title>The Chosen - Discord</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
       href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=EB+Garamond:wght@400;500;600&display=swap"
       rel="stylesheet"
     />
-    <link rel="stylesheet" href="../../styles.css" />
+    <link rel="stylesheet" href="../styles.css" />
   </head>
   <body>
     <div class="chosen-shell">
@@ -28,9 +28,12 @@
             <a class="site-nav__link" href="/forums/">Forums</a>
             <a class="site-nav__link" href="/roster/">Roster</a>
             <a class="site-nav__link active" href="/discord/">Discord</a>
-            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
             <a class="site-nav__link" href="/lore/">Lore</a>
             <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">EQ Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link" href="/quests/">Quests</a>
           </nav>
           <div class="site-header__auth">
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -40,112 +43,33 @@
 
       <main class="page">
         <p class="hero__eyebrow">Voice of the Guild</p>
-        <h1 class="page-title">Meet Us on Discord</h1>
-        <p class="page-subtitle">
-          Join the live server feed and hop straight into The Chosen community.
-        </p>
-
-        <div class="panel discord-wrap">
-          <p class="discord-wrap__intro">
-            Guild server widget
-          </p>
+        <h1 class="page-title">Discord</h1>
+        <p class="page-subtitle">Join the guild server and chat with the community in real time.</p>
+        <section class="card discord-wrap" aria-label="Discord server widget">
+          <p class="discord-wrap__intro">Live member list and chat access via the official Discord widget.</p>
           <div class="discord-widget">
-            <iframe src="https://discord.com/widget?id=1525890254169440256&theme=dark" width="350" height="500" allowtransparency="true" frameborder="0" sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"></iframe>
+            <iframe
+              src="https://discord.com/widget?id=1525890254169440256&theme=dark"
+              width="350"
+              height="500"
+              allowtransparency="true"
+              frameborder="0"
+              sandbox="allow-popups allow-popups-to-escape-sandbox allow-same-origin allow-scripts"
+            ></iframe>
           </div>
-          <a class="btn-torch" href="https://discord.gg/Chsm6MvG" target="_blank" rel="noopener noreferrer">
-            Join Our Discord
-          </a>
-        </div>
+        </section>
       </main>
 
       <footer class="site-footer">
-        <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
-        <div id="footerMember" class="site-footer__member" hidden>
-          <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
-          <div>
-            <div id="footerMemberName" class="site-footer__member-name"></div>
-            <div id="footerMemberEmail" class="site-footer__member-email"></div>
-          </div>
-        </div>
-        <div id="footerMemberMenu" class="site-footer__member-menu" hidden>
-          <button class="site-header__menu-button" type="button" id="footerAccountButton">Account Settings</button>
-          <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
-        </div>
+        <p>The Chosen - forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__patreon" href="https://www.patreon.com/cw/TheChosenGuild/membership" target="_blank" rel="noopener noreferrer" aria-label="View The Chosen Guild membership options on Patreon">
+          <span class="site-footer__patreon-mark" aria-hidden="true">P</span>
+          <span class="site-footer__patreon-copy"><strong>Join The Chosen on Patreon</strong><small>View membership options</small></span>
+        </a>
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
       </footer>
     </div>
 
-    <script src="../../scripts/site-decor.js"></script>
-    <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
-    <script>
-      const footerMember = document.getElementById('footerMember');
-      const footerMemberMenu = document.getElementById('footerMemberMenu');
-      const footerMemberAvatar = document.getElementById('footerMemberAvatar');
-      const footerMemberName = document.getElementById('footerMemberName');
-      const footerMemberEmail = document.getElementById('footerMemberEmail');
-      const footerAccountButton = document.getElementById('footerAccountButton');
-      const footerLogoutButton = document.getElementById('footerLogoutButton');
-
-      function getCurrentMember() {
-        const stored = localStorage.getItem('theChosenCurrentMember');
-        if (stored) {
-          try {
-            return JSON.parse(stored);
-          } catch (error) {
-            return null;
-          }
-        }
-
-        if (window.netlifyIdentity && window.netlifyIdentity.currentUser()) {
-          const user = window.netlifyIdentity.currentUser();
-          const member = {
-            id: user.id || user.email,
-            name: user.user_metadata?.full_name || user.email.split('@')[0],
-            email: user.email,
-            avatar: user.user_metadata?.avatar_url || user.avatar_url || ''
-          };
-          localStorage.setItem('theChosenCurrentMember', JSON.stringify(member));
-          return member;
-        }
-
-        return null;
-      }
-
-      function renderMemberBadge(member) {
-        if (!member) {
-          footerMember.hidden = true;
-          footerMemberMenu.hidden = true;
-          return;
-        }
-
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
-        footerMemberAvatar.alt = `${member.name || member.email} avatar`;
-        footerMemberName.textContent = member.name || member.email;
-        footerMemberEmail.textContent = member.email || 'Netlify member';
-        footerMember.hidden = false;
-        footerMemberMenu.hidden = false;
-      }
-
-      footerAccountButton.addEventListener('click', () => {
-        window.location.href = '/login/';
-      });
-      footerLogoutButton.addEventListener('click', () => {
-        if (window.netlifyIdentity) {
-          window.netlifyIdentity.logout();
-        }
-        localStorage.removeItem('theChosenCurrentMember');
-        renderMemberBadge(null);
-      });
-
-      if (window.netlifyIdentity) {
-        window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderMemberBadge(getCurrentMember()));
-        window.netlifyIdentity.on('logout', () => {
-          localStorage.removeItem('theChosenCurrentMember');
-          renderMemberBadge(null);
-        });
-      }
-      renderMemberBadge(getCurrentMember());
-    </script>
   </body>
 </html>

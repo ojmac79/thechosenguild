@@ -8,6 +8,7 @@
       name="description"
       content="The Chosen Guild is a community-driven EverQuest guild hall with news, forums, roster, and resources."
     />
+    <link rel="preload" href="images/the-chosen-guild-logo.png" as="image" type="image/png" />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
@@ -32,9 +33,12 @@
             <a class="site-nav__link" href="/forums/">Forums</a>
             <a class="site-nav__link" href="/roster/">Roster</a>
             <a class="site-nav__link" href="/discord/">Discord</a>
-            <a class="site-nav__link" href="/resources/">Resources</a>
+            <a class="site-nav__link" href="/eql-information/">EQL Information</a>
             <a class="site-nav__link" href="/lore/">Lore</a>
             <a class="site-nav__link" href="/server-status/">Status</a>
+            <a class="site-nav__link" href="/stories/">EQ Stories</a>
+            <a class="site-nav__link" href="/multiclassing/">Multi-Classing</a>
+            <a class="site-nav__link" href="/quests/">Quests</a>
           </nav>
           <div class="site-header__auth">
             <a class="btn-torch" href="/login/">Enter the Hall</a>
@@ -43,36 +47,43 @@
       </header>
 
       <main class="page">
-        <div class="construction-banner" role="status" aria-label="Site under construction">
-          Site Under Construction
-        </div>
-
         <section class="hero">
           <p class="hero__eyebrow">The Guild Hall of Norrath</p>
-          <h1 class="hero__title">The Chosen</h1>
+          <h1 class="hero__title hero__title--visually-hidden">The Chosen Guild</h1>
+          <div class="hero__guild-art">
+            <img
+              src="images/the-chosen-guild-logo.png"
+              width="739"
+              height="739"
+              alt="The Chosen Guild emblem featuring a red dragon and a fellowship of Norrath adventurers"
+              fetchpriority="high"
+            />
+          </div>
           <div class="hero__tagline-wrap">
             <p id="heroTagline" class="hero__tagline">
               Bound by oath, tempered by raid wipes, undefeated in spirit. Seek
               word of the guild below, or cast your search further afield.
             </p>
-            <button class="hero__edit" id="heroEditButton" type="button" onclick="editHeroTagline()">Edit</button>
+            <button class="hero__edit" id="heroEditButton" type="button" onclick="editHeroTagline()" hidden>Edit</button>
           </div>
-          <form class="search-console">
+          <form class="search-console" id="heroSearchForm">
             <div class="search-console__row">
               <input
                 class="search-console__input"
+                id="heroSearchInput"
                 type="text"
-                placeholder="Search guild news and announcements…"
+                placeholder="Search the guild site…"
               />
               <button type="submit" class="search-console__submit">
                 Search Hall
               </button>
             </div>
             <div class="search-console__scope">
-              <button type="button" class="scope-btn active">This Site</button>
-              <button type="button" class="scope-btn">The Web</button>
+              <button type="button" class="scope-btn active" id="heroScopeSite">This Site</button>
+              <button type="button" class="scope-btn" id="heroScopeWeb">The Web</button>
             </div>
           </form>
+          <div id="heroSearchResults" class="panel empty-state" role="region" aria-live="polite" aria-label="Search results" hidden></div>
         </section>
 
         <div class="divider-rune" aria-hidden="true">✦</div>
@@ -83,29 +94,39 @@
           <div class="thumbnail-card"><img src="https://images.unsplash.com/photo-1501785888041-af3ef285b470?auto=format&fit=crop&w=600&q=80" alt="Fantasy forest" /></div>
         </div>
 
-        <section class="news-section" aria-label="Guild news">
-          <div class="news-section__header">
-            <h2 class="news-section__title">Latest News</h2>
-            <button class="btn-torch news-section__new" id="newPostButton" type="button">New Post</button>
+        <section class="home-news" aria-labelledby="homeNewsHeading">
+          <div class="home-news__header">
+            <div>
+              <p class="hero__eyebrow">Word from the Guild Hall</p>
+              <h2 class="home-news__title" id="homeNewsHeading">Latest News</h2>
+            </div>
+            <button class="btn-torch" id="homeNewsNewButton" type="button" hidden>Post News</button>
           </div>
 
-          <div id="newsList"></div>
-          <div class="news-section__editor">
-            <p id="newsNotice" class="resource-notice" aria-live="polite"></p>
-            <form class="panel forum-form" id="newsForm" hidden>
-              <label class="resource-field">
-                <span>Post Title</span>
-                <input id="newsTitle" type="text" placeholder="Announce the next guild event" required />
-              </label>
-              <label class="resource-field">
-                <span>Message</span>
-                <textarea id="newsBody" rows="5" placeholder="Share council updates, raid plans, or heroic news..." required></textarea>
-              </label>
-              <div class="auth-actions">
-                <button class="btn-primary" type="submit">Save News Post</button>
-                <button class="btn-torch" type="button" id="cancelNewsEdit">Cancel</button>
-              </div>
-            </form>
+          <p class="resource-notice" id="homeNewsNotice" aria-live="polite"></p>
+          <form class="panel forum-form home-news__form" id="homeNewsForm" hidden>
+            <label class="resource-field">
+              <span>Article Title</span>
+              <input id="homeNewsTitle" type="text" maxlength="180" placeholder="Announce the next guild event" required />
+            </label>
+            <label class="resource-field">
+              <span>News Article</span>
+              <textarea id="homeNewsBody" rows="6" maxlength="12000" placeholder="Share guild updates, raid plans, or heroic news..." required></textarea>
+            </label>
+            <label class="resource-checkbox">
+              <input id="homeNewsPostToForum" type="checkbox" />
+              <span>Also copy this article to the public forum</span>
+            </label>
+            <div class="auth-actions">
+              <button class="btn-primary" id="homeNewsSubmit" type="submit">Publish News</button>
+              <button class="btn-torch" id="homeNewsCancel" type="button">Cancel</button>
+            </div>
+          </form>
+
+          <div class="home-news__list" id="homeNewsList"></div>
+          <div class="home-news__archive" id="homeNewsArchive" hidden>
+            <button class="btn-torch" id="homeNewsArchiveToggle" type="button" hidden></button>
+            <div class="home-news__list" id="homeNewsArchiveList" hidden></div>
           </div>
         </section>
 
@@ -118,6 +139,10 @@
 
       <footer class="site-footer">
         <p>The Chosen — forged in the fires of Norrath. Guild hall maintained by the officer council.</p>
+        <a class="site-footer__patreon" href="https://www.patreon.com/cw/TheChosenGuild/membership" target="_blank" rel="noopener noreferrer" aria-label="View The Chosen Guild membership options on Patreon">
+          <span class="site-footer__patreon-mark" aria-hidden="true">P</span>
+          <span class="site-footer__patreon-copy"><strong>Join The Chosen on Patreon</strong><small>View membership options</small></span>
+        </a>
         <div id="footerMember" class="site-footer__member" hidden>
           <img id="footerMemberAvatar" class="site-footer__member-avatar" alt="Member avatar" />
           <div>
@@ -130,19 +155,40 @@
           <button class="site-header__menu-button" type="button" id="footerLogoutButton">Log Out</button>
         </div>
         <a class="site-footer__support" href="mailto:ojmac79@gmail.com?subject=The%20Chosen%20Support" aria-label="Contact support by email">Contact Support</a>
+        <p class="site-footer__credits"><a class="site-footer__support" href="https://github.com/features/copilot" target="_blank" rel="noopener noreferrer">Built using GitHub Copilot Pro</a> &middot; <a class="site-footer__support" href="https://www.netlify.com/" target="_blank" rel="noopener noreferrer">Hosting Services by Netlify</a></p>
       </footer>
     </div>
 
+    <script src="scripts/persistent-store.js"></script>
     <script src="scripts/site-decor.js"></script>
+    <script src="scripts/guild-access.js"></script>
     <script src="https://identity.netlify.com/v1/netlify-identity-widget.js"></script>
     <script>
       const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
+      const NEWS_HOME_LIMIT = 3;
       const NEWS_STORAGE_KEY = 'theChosenNewsPosts';
+      const NEWS_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=news';
+      const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
+      const DEFAULT_PUBLIC_FORUM_CATEGORY = 'pub-general';
+      const DEFAULT_PUBLIC_FORUM_CATEGORIES = Object.freeze([
+        Object.freeze({ id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' }),
+        Object.freeze({ id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' })
+      ]);
+      const DEFAULT_PRIVATE_FORUM_CATEGORIES = Object.freeze([
+        Object.freeze({ id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' }),
+        Object.freeze({ id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' })
+      ]);
+      const NEWS_BADGE_LABEL = 'News';
+      const ARCHIVE_BADGE_LABEL = 'Archive';
       const heroTagline = document.getElementById('heroTagline');
       const newsForm = document.getElementById('newsForm');
       const newsTitle = document.getElementById('newsTitle');
       const newsBody = document.getElementById('newsBody');
+      const newsPostToForum = document.getElementById('newsPostToForum');
       const newsList = document.getElementById('newsList');
+      const newsArchiveSection = document.getElementById('newsArchiveSection');
+      const newsArchiveToggle = document.getElementById('newsArchiveToggle');
+      const newsArchiveList = document.getElementById('newsArchiveList');
       const newsNotice = document.getElementById('newsNotice');
       const newPostButton = document.getElementById('newPostButton');
       const cancelNewsEdit = document.getElementById('cancelNewsEdit');
@@ -181,7 +227,45 @@
       const footerMemberEmail = document.getElementById('footerMemberEmail');
       const footerAccountButton = document.getElementById('footerAccountButton');
       const footerLogoutButton = document.getElementById('footerLogoutButton');
+      const heroSearchForm = document.getElementById('heroSearchForm');
+      const heroSearchInput = document.getElementById('heroSearchInput');
+      const heroScopeSite = document.getElementById('heroScopeSite');
+      const heroScopeWeb = document.getElementById('heroScopeWeb');
+      const heroSearchResults = document.getElementById('heroSearchResults');
+      const siteSearchPages = [
+        { path: '/', title: 'Home' },
+        { path: '/forums/', title: 'Forums' },
+        { path: '/roster/', title: 'Roster' },
+        { path: '/discord/', title: 'Discord' },
+        { path: '/eql-information/', title: 'EQL Information' },
+        { path: '/lore/', title: 'Lore' },
+        { path: '/server-status/', title: 'Status' },
+        { path: '/stories/', title: 'Stories' },
+        { path: '/multiclassing/', title: 'Multi-Classing' },
+        { path: '/low-level-quests/', title: 'Low Level Quests' },
+        { path: '/mid-level-quests/', title: 'Mid Level Quests' },
+        { path: '/login/', title: 'Login' },
+        { path: '/guild-management/', title: 'Guild Management' }
+      ];
+      const siteSearchContentCache = new Map();
+      const SEARCH_INDEX_REMOVAL_SELECTOR = 'script, style, noscript, nav, header, footer';
+      const MAX_SITE_RESULTS = 5;
+      const SNIPPET_CHARS_BEFORE_MATCH = 70;
+      const SNIPPET_CHARS_AFTER_MATCH = 90;
       let editingPostId = null;
+      let showArchivedNews = false;
+      const newsState = {
+        posts: [],
+        loaded: false,
+        loadPromise: null,
+        pendingSyncPosts: null,
+        remoteSynced: false
+      };
+
+      function canEditSite(member) {
+        const guildAccess = window.TheChosenGuildAccess;
+        return Boolean(guildAccess && guildAccess.getPermissions(member).canEditSite);
+      }
 
       function readCurrentMember() {
         const stored = localStorage.getItem(CURRENT_MEMBER_STORAGE_KEY);
@@ -208,19 +292,24 @@
         return null;
       }
 
-      function readPosts() {
-        try {
-          const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
-          if (Array.isArray(stored)) {
-            return stored
-              .map((post, index) => normalizePost(post, index, stored.length))
-              .filter(Boolean)
-              .sort((a, b) => b.createdAt - a.createdAt);
-          }
-        } catch (error) {
-          // Fall back to the default empty state.
+      function buildId(prefix) {
+        if (window.crypto && typeof window.crypto.randomUUID === 'function') {
+          return `${prefix}-${window.crypto.randomUUID()}`;
         }
-        return [];
+        return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
+      }
+
+      function getMemberDisplayName(member) {
+        return (member && (member.name || member.email)) || 'Guild Member';
+      }
+
+      function getAvatarUrl(name, avatar) {
+        return avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(name || 'Guild Member')}&background=ff7b7b&color=14070b`;
+      }
+
+      function showMissingNewsPostNotice() {
+        resetNewsForm();
+        renderNews('That news article could not be found.');
       }
 
       function normalizePost(post, index = 0, total = 0) {
@@ -228,21 +317,322 @@
           return null;
         }
 
+        const title = String(post.title || '').trim();
+        const body = String(post.body || '').trim();
+        if (!title || !body) {
+          return null;
+        }
+
         const inferredCreatedAt = Math.max(0, total - index);
         const createdAt = Number(post.createdAt) || Number(post.updatedAt) || inferredCreatedAt;
         return {
-          id: post.id || `news-${Date.now()}-${Math.floor(Math.random() * 100000)}`,
-          title: String(post.title || ''),
-          body: String(post.body || ''),
-          author: String(post.author || 'Guild Member'),
-          avatar: String(post.avatar || ''),
+          id: String(post.id || '').trim() || buildId('news'),
+          title: title,
+          body: body,
+          author: String(post.author || post.authorName || 'Guild Member'),
+          avatar: String(post.avatar || post.authorAvatar || ''),
           createdAt,
-          updatedAt: Number(post.updatedAt) || createdAt
+          updatedAt: Number(post.updatedAt) || createdAt,
+          postedToForum: Boolean(post.postedToForum),
+          forumThreadId: typeof post.forumThreadId === 'string' ? post.forumThreadId : ''
         };
       }
 
+      function normalizeNewsPosts(posts) {
+        if (!Array.isArray(posts)) {
+          return [];
+        }
+
+        return posts
+          .map((post, index, all) => normalizePost(post, index, all.length))
+          .filter(Boolean)
+          .sort((left, right) => {
+            const createdDelta = (Number(right.createdAt) || 0) - (Number(left.createdAt) || 0);
+            if (createdDelta !== 0) {
+              return createdDelta;
+            }
+            const updatedDelta = (Number(right.updatedAt) || 0) - (Number(left.updatedAt) || 0);
+            if (updatedDelta !== 0) {
+              return updatedDelta;
+            }
+            return String(left.title || '').localeCompare(String(right.title || ''));
+          });
+      }
+
+      function readLegacyNewsPosts() {
+        try {
+          const stored = JSON.parse(localStorage.getItem(NEWS_STORAGE_KEY) || 'null');
+          return normalizeNewsPosts(Array.isArray(stored) ? stored : []);
+        } catch (error) {
+          return [];
+        }
+      }
+
+      function persistNewsPosts(posts) {
+        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(normalizeNewsPosts(posts)));
+      }
+
+      function readPosts() {
+        return newsState.posts.slice();
+      }
+
       function writePosts(posts) {
-        localStorage.setItem(NEWS_STORAGE_KEY, JSON.stringify(posts));
+        newsState.posts = normalizeNewsPosts(posts);
+        persistNewsPosts(newsState.posts);
+        newsState.loaded = true;
+      }
+
+      function latestPostTimestamp(posts) {
+        if (!Array.isArray(posts) || !posts.length) {
+          return 0;
+        }
+
+        return posts.reduce((latest, post) => {
+          const next = Number(post.updatedAt) || Number(post.createdAt) || 0;
+          return next > latest ? next : latest;
+        }, 0);
+      }
+
+      function hydrateNewsFromLocalCache() {
+        if (newsState.loaded) {
+          return newsState.posts;
+        }
+
+        const localPosts = readLegacyNewsPosts();
+        writePosts(localPosts);
+        return newsState.posts;
+      }
+
+      async function getIdentityToken() {
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
+          return '';
+        }
+        const user = window.netlifyIdentity.currentUser();
+        if (!user || typeof user.jwt !== 'function') {
+          return '';
+        }
+        try {
+          return await user.jwt();
+        } catch (error) {
+          return '';
+        }
+      }
+
+      async function fetchNewsPostsFromRemote() {
+        const response = await fetch(NEWS_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+        if (!response.ok) {
+          throw new Error('Unable to read news posts.');
+        }
+        const payload = await response.json();
+        return normalizeNewsPosts(payload && payload.posts);
+      }
+
+      async function savePostsToRemote(posts) {
+        const token = await getIdentityToken();
+        if (!token) {
+          return false;
+        }
+        const response = await fetch(NEWS_REMOTE_ENDPOINT, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ posts: normalizeNewsPosts(posts) })
+        });
+        return response.ok;
+      }
+
+      async function flushPendingNewsSync() {
+        const pendingPosts = newsState.pendingSyncPosts;
+        if (!Array.isArray(pendingPosts) || !pendingPosts.length) {
+          return true;
+        }
+
+        const saved = await savePostsToRemote(pendingPosts);
+        if (saved) {
+          newsState.pendingSyncPosts = null;
+        }
+        return saved;
+      }
+
+      async function queueNewsSync(posts) {
+        newsState.pendingSyncPosts = normalizeNewsPosts(posts);
+        persistNewsPosts(newsState.pendingSyncPosts);
+        return flushPendingNewsSync();
+      }
+
+      async function ensureNewsPostsLoaded() {
+        if (newsState.remoteSynced && !newsState.loadPromise) {
+          return newsState.posts;
+        }
+
+        if (newsState.loadPromise) {
+          return newsState.loadPromise;
+        }
+
+        hydrateNewsFromLocalCache();
+        newsState.loadPromise = (async () => {
+          try {
+            const remotePosts = await fetchNewsPostsFromRemote();
+            writePosts(remotePosts);
+            newsState.remoteSynced = true;
+            return newsState.posts;
+          } catch (error) {
+            const localPosts = readLegacyNewsPosts();
+            writePosts(localPosts);
+            newsState.remoteSynced = true;
+            return newsState.posts;
+          } finally {
+            newsState.loaded = true;
+            newsState.loadPromise = null;
+          }
+        })();
+
+        return newsState.loadPromise;
+      }
+
+      async function syncPostsWithRemote() {
+        hydrateNewsFromLocalCache();
+        void ensureNewsPostsLoaded();
+        renderNews();
+      }
+
+      function defaultForumState() {
+        return {
+          public: {
+            categories: DEFAULT_PUBLIC_FORUM_CATEGORIES.map((category) => ({ ...category })),
+            threads: [],
+            replies: []
+          },
+          private: {
+            categories: DEFAULT_PRIVATE_FORUM_CATEGORIES.map((category) => ({ ...category })),
+            threads: [],
+            replies: []
+          }
+        };
+      }
+
+      function normalizeForumCategory(category, fallbackPrefix) {
+        if (!category || typeof category !== 'object') {
+          return null;
+        }
+        const name = String(category.name || '').trim();
+        const description = String(category.description || '').trim();
+        if (!name || !description) {
+          return null;
+        }
+        return {
+          id: typeof category.id === 'string' && category.id ? category.id : buildId(fallbackPrefix),
+          name,
+          description
+        };
+      }
+
+      function readForumStateFromSource(source) {
+        const fallback = defaultForumState();
+        if (!source || typeof source !== 'object') {
+          return fallback;
+        }
+
+        return ['public', 'private'].reduce((state, spaceKey) => {
+          const fallbackSpace = fallback[spaceKey];
+          const sourceSpace = source[spaceKey];
+          const categories = Array.isArray(sourceSpace && sourceSpace.categories)
+            ? sourceSpace.categories
+                .map((category) => normalizeForumCategory(category, `${spaceKey}-category`))
+                .filter(Boolean)
+            : [];
+
+          state[spaceKey] = {
+            categories: categories.length ? categories : fallbackSpace.categories.map((category) => ({ ...category })),
+            threads: Array.isArray(sourceSpace && sourceSpace.threads)
+              ? sourceSpace.threads.filter((thread) => thread && typeof thread === 'object').map((thread) => ({ ...thread }))
+              : [],
+            replies: Array.isArray(sourceSpace && sourceSpace.replies)
+              ? sourceSpace.replies.filter((reply) => reply && typeof reply === 'object').map((reply) => ({ ...reply }))
+              : []
+          };
+          return state;
+        }, {});
+      }
+
+      async function fetchForumStateFromRemote() {
+        const response = await fetch(FORUM_REMOTE_ENDPOINT, { credentials: 'same-origin' });
+        if (!response.ok) {
+          throw new Error('Unable to read forum state.');
+        }
+        const payload = await response.json();
+        return readForumStateFromSource(payload && payload.state);
+      }
+
+      async function saveForumStateToRemote(state) {
+        const token = await getIdentityToken();
+        if (!token) {
+          return false;
+        }
+        const response = await fetch(FORUM_REMOTE_ENDPOINT, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ state })
+        });
+        return response.ok;
+      }
+
+      async function syncNewsPostToForum(post, member) {
+        const forumState = await fetchForumStateFromRemote();
+        const publicCategories = Array.isArray(forumState.public && forumState.public.categories) && forumState.public.categories.length
+          ? forumState.public.categories
+          : DEFAULT_PUBLIC_FORUM_CATEGORIES.map((category) => ({ ...category }));
+        const firstPublicCategory = publicCategories[0] || DEFAULT_PUBLIC_FORUM_CATEGORIES[0];
+        const categoryId = publicCategories.some((category) => category.id === DEFAULT_PUBLIC_FORUM_CATEGORY)
+          ? DEFAULT_PUBLIC_FORUM_CATEGORY
+          : firstPublicCategory.id;
+        if (!categoryId) {
+          return {
+            ok: false,
+            forumThreadId: post.forumThreadId || '',
+            error: 'Public forum categories are unavailable.'
+          };
+        }
+        const threadId = post.forumThreadId || buildId('public-thread');
+        const existingIndex = Array.isArray(forumState.public.threads)
+          ? forumState.public.threads.findIndex((thread) => String(thread.id || '') === threadId)
+          : -1;
+
+        const threadPayload = {
+          id: threadId,
+          categoryId,
+          title: post.title,
+          body: post.body,
+          authorName: getMemberDisplayName(member),
+          authorEmail: member.email || '',
+          authorAvatar: member.avatar || '',
+          createdAt: existingIndex >= 0
+            ? Number(forumState.public.threads[existingIndex].createdAt) || Date.now()
+            : Date.now(),
+          isPinned: existingIndex >= 0 ? Boolean(forumState.public.threads[existingIndex].isPinned) : false,
+          isLocked: existingIndex >= 0 ? Boolean(forumState.public.threads[existingIndex].isLocked) : false
+        };
+
+        if (existingIndex >= 0) {
+          forumState.public.threads[existingIndex] = {
+            ...forumState.public.threads[existingIndex],
+            ...threadPayload
+          };
+        } else {
+          forumState.public.threads.push(threadPayload);
+        }
+
+        const ok = await saveForumStateToRemote(forumState);
+        return {
+          ok,
+          forumThreadId: ok ? threadId : post.forumThreadId || '',
+          error: ok ? '' : 'The public forum could not be updated.'
+        };
       }
 
       function resetNewsForm() {
@@ -250,6 +640,7 @@
         newsForm.hidden = true;
         newsTitle.value = '';
         newsBody.value = '';
+        newsPostToForum.checked = false;
       }
 
       function randomizeThumbnailCards() {
@@ -277,18 +668,64 @@
           return;
         }
 
-        footerMemberAvatar.src = member.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(member.name || member.email || 'Guild Member')}&background=ff7b7b&color=14070b`;
+        footerMemberAvatar.src = getAvatarUrl(member.name || member.email, member.avatar);
         footerMemberAvatar.alt = `${member.name || member.email} avatar`;
         footerMemberName.textContent = member.name || member.email;
         footerMemberEmail.textContent = member.email || 'Netlify member';
         footerMember.hidden = false;
       }
 
-      function renderNews() {
+      function getNewsNotice(currentMember, message = '') {
+        const accessNotice = canEditSite(currentMember)
+          ? 'Authorized editor access enabled: you can add or update guild news.'
+          : 'Public view is enabled. An approved guild account is required to publish or edit news.';
+        return message ? `${message} ${accessNotice}` : accessNotice;
+      }
+
+      function renderNewsPost(post, canEditNews, badgeLabel) {
+        const editButton = canEditNews
+          ? `<button class="resource-item__edit" type="button" data-edit-post="${escapeHtml(post.id)}">Edit</button>`
+          : '';
+        const avatarUrl = getAvatarUrl(post.author, post.avatar);
+
+        return `
+          <article class="panel forum-thread" id="news-${escapeHtml(post.id)}">
+            <div class="forum-thread__header">
+              <div>
+                <h3 class="forum-thread__title">${escapeHtml(post.title)}</h3>
+                <div class="forum-thread__author">
+                  <img class="forum-thread__author-avatar" src="${escapeHtml(avatarUrl)}" alt="${escapeHtml(post.author)} avatar" />
+                  <span class="forum-thread__author-name">${escapeHtml(post.author)}</span>
+                </div>
+              </div>
+              <span class="forum-badge">${escapeHtml(badgeLabel)}</span>
+            </div>
+            <p class="forum-thread__body">${escapeHtml(post.body)}</p>
+            <div class="resource-item__actions">${editButton}</div>
+          </article>
+        `;
+      }
+
+      function renderNews(statusMessage = '') {
         const currentMember = readCurrentMember();
         renderMemberBadge(currentMember);
-        const posts = readPosts().slice(0, 3);
-        const canEditNews = Boolean(currentMember);
+        if (!newsState.loaded) {
+          hydrateNewsFromLocalCache();
+        }
+        const allPosts = readPosts();
+        if (!newsState.loaded) {
+          newsList.innerHTML = '<div class="panel empty-state"><p>Loading news posts from the server...</p></div>';
+          showArchivedNews = false;
+          newsArchiveSection.hidden = true;
+          newsArchiveToggle.hidden = true;
+          newsArchiveList.hidden = true;
+          newsArchiveList.innerHTML = '';
+          newsNotice.textContent = getNewsNotice(currentMember, statusMessage);
+          return;
+        }
+        const posts = allPosts.slice(0, NEWS_HOME_LIMIT);
+        const archivedPosts = allPosts.slice(NEWS_HOME_LIMIT);
+        const canEditNews = canEditSite(currentMember);
         newPostButton.hidden = !canEditNews;
         heroEditButton.hidden = !canEditNews;
         if (!canEditNews) {
@@ -297,44 +734,43 @@
 
         if (!posts.length) {
           newsList.innerHTML = '<div class="panel empty-state"><p>No news has been posted yet. Start a fresh entry for the guild hall.</p></div>';
-          newsNotice.textContent = currentMember
-            ? 'Signed in Netlify members can add or update guild news.'
-            : 'Sign in with your Netlify account to publish or edit news.';
+          showArchivedNews = false;
+          newsArchiveSection.hidden = true;
+          newsArchiveToggle.hidden = true;
+          newsArchiveList.hidden = true;
+          newsArchiveList.innerHTML = '';
+          newsNotice.textContent = getNewsNotice(currentMember, statusMessage);
           return;
         }
 
         newsList.innerHTML = posts
-          .map((post) => {
-            const editButton = canEditNews
-              ? `<button class="resource-item__delete" type="button" data-edit-post="${post.id}">Edit</button>`
-              : '';
-            return `
-              <article class="panel forum-thread">
-                <div class="forum-thread__header">
-                  <div>
-                    <h3 class="forum-thread__title">${post.title}</h3>
-                    <div class="forum-thread__author">
-                      <img class="forum-thread__author-avatar" src="${post.avatar || 'https://ui-avatars.com/api/?name=' + encodeURIComponent(post.author || 'Guild Member') + '&background=ff7b7b&color=14070b'}" alt="${post.author} avatar" />
-                      <span class="forum-thread__author-name">${post.author}</span>
-                    </div>
-                  </div>
-                  <span class="forum-badge">News</span>
-                </div>
-                <p class="forum-thread__body">${post.body}</p>
-                <div class="resource-item__actions">${editButton}</div>
-              </article>
-            `;
-          })
+          .map((post) => renderNewsPost(post, canEditNews, NEWS_BADGE_LABEL))
           .join('');
 
-        newsNotice.textContent = currentMember
-          ? 'Signed in Netlify members can add or update guild news.'
-          : 'Sign in with your Netlify account to publish or edit news.';
+        if (!archivedPosts.length) {
+          showArchivedNews = false;
+          newsArchiveSection.hidden = true;
+          newsArchiveToggle.hidden = true;
+          newsArchiveList.hidden = true;
+          newsArchiveList.innerHTML = '';
+        } else {
+          newsArchiveSection.hidden = false;
+          newsArchiveToggle.hidden = false;
+          newsArchiveToggle.textContent = showArchivedNews
+            ? 'Hide Older News'
+            : `Show ${archivedPosts.length} Older News Article${archivedPosts.length === 1 ? '' : 's'}`;
+          newsArchiveList.hidden = !showArchivedNews;
+          newsArchiveList.innerHTML = showArchivedNews
+            ? archivedPosts.map((post) => renderNewsPost(post, canEditNews, ARCHIVE_BADGE_LABEL)).join('')
+            : '';
+        }
+
+        newsNotice.textContent = getNewsNotice(currentMember, statusMessage);
       }
 
       function editHeroTagline() {
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -347,9 +783,196 @@
         }
       }
 
-      newPostButton.addEventListener('click', () => {
+      function setActiveSearchScope(scope) {
+        heroScopeSite.classList.toggle('active', scope === 'site');
+        heroScopeWeb.classList.toggle('active', scope === 'web');
+      }
+
+      function escapeHtml(value) {
+        return String(value || '')
+          .replaceAll('&', '&amp;')
+          .replaceAll('<', '&lt;')
+          .replaceAll('>', '&gt;')
+          .replaceAll('"', '&quot;')
+          .replaceAll("'", '&#39;');
+      }
+
+      function normalizeSearchValue(value) {
+        return String(value || '')
+          .toLowerCase()
+          .replace(/\s+/g, ' ')
+          .trim();
+      }
+
+      function createSearchSnippet(text, query) {
+        const normalizedText = normalizeSearchValue(text);
+        const normalizedQuery = normalizeSearchValue(query);
+        const matchIndex = normalizedText.indexOf(normalizedQuery);
+        if (matchIndex < 0) {
+          return '';
+        }
+
+        const start = Math.max(0, matchIndex - SNIPPET_CHARS_BEFORE_MATCH);
+        const end = Math.min(text.length, matchIndex + normalizedQuery.length + SNIPPET_CHARS_AFTER_MATCH);
+        const prefix = start > 0 ? '…' : '';
+        const suffix = end < text.length ? '…' : '';
+        return `${prefix}${text.slice(start, end).trim()}${suffix}`;
+      }
+
+      async function readPageSearchText(path) {
+        if (siteSearchContentCache.has(path)) {
+          return siteSearchContentCache.get(path);
+        }
+
+        try {
+          const response = await fetch(path, { credentials: 'same-origin' });
+          if (!response.ok) {
+            siteSearchContentCache.set(path, '');
+            return '';
+          }
+          const html = await response.text();
+          const doc = new DOMParser().parseFromString(html, 'text/html');
+          doc.querySelectorAll(SEARCH_INDEX_REMOVAL_SELECTOR).forEach((element) => element.remove());
+          const content = String(doc.body && doc.body.textContent ? doc.body.textContent : '')
+            .replace(/\s+/g, ' ')
+            .trim();
+          siteSearchContentCache.set(path, content);
+          return content;
+        } catch (error) {
+          siteSearchContentCache.set(path, '');
+          return '';
+        }
+      }
+
+      async function searchNewsArticles(query) {
+        const normalizedQuery = normalizeSearchValue(query);
+        if (!normalizedQuery) {
+          return [];
+        }
+
+        await ensureNewsPostsLoaded();
+        const matches = [];
+        for (const post of newsState.posts) {
+          const searchText = `${post.title} ${post.body} ${post.author}`;
+          if (!normalizeSearchValue(searchText).includes(normalizedQuery)) {
+            continue;
+          }
+
+          matches.push({
+            path: `/#news-${encodeURIComponent(post.id)}`,
+            title: `News: ${post.title}`,
+            snippet: createSearchSnippet(searchText, query)
+          });
+
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
+        }
+
+        return matches;
+      }
+
+      async function searchEntireSite(query) {
+        const normalizedQuery = normalizeSearchValue(query);
+        if (!normalizedQuery) {
+          return [];
+        }
+
+        const matches = [];
+
+        for (const page of siteSearchPages) {
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
+          const pageText = await readPageSearchText(page.path);
+          if (!normalizeSearchValue(pageText).includes(normalizedQuery)) {
+            continue;
+          }
+
+          matches.push({
+            ...page,
+            snippet: createSearchSnippet(pageText, query)
+          });
+
+          if (matches.length >= MAX_SITE_RESULTS) {
+            break;
+          }
+        }
+
+        return matches;
+      }
+
+      function renderSiteSearchResults(results, query) {
+        heroSearchResults.hidden = false;
+
+        if (!results.length) {
+          heroSearchResults.innerHTML = `
+              <h2 class="news-section__title">No site matches found</h2>
+            <p>No matches were found on this site for “${escapeHtml(query)}”.</p>
+            <button type="button" class="btn-torch" id="heroSearchWebFallback">Search the Web Instead</button>
+          `;
+          const webFallbackButton = document.getElementById('heroSearchWebFallback');
+          if (webFallbackButton) {
+            webFallbackButton.addEventListener('click', () => runWebSearch(query));
+          }
+          return;
+        }
+
+        heroSearchResults.innerHTML = `
+          <h2 class="news-section__title">Site search results</h2>
+          <p><strong>Found ${results.length}</strong> matching page${results.length === 1 ? '' : 's'} on this site for “${escapeHtml(query)}”:</p>
+          <ul>
+            ${results
+              .map((result) => `<li><a href="${escapeHtml(result.path)}">${escapeHtml(result.title)}</a>${result.snippet ? ` — ${escapeHtml(result.snippet)}` : ''}</li>`)
+              .join('')}
+          </ul>
+        `;
+      }
+
+      function runWebSearch(query) {
+        const webSearchUrl = `https://duckduckgo.com/?q=${encodeURIComponent(String(query || '').trim())}`;
+        window.open(webSearchUrl, '_blank', 'noopener,noreferrer');
+      }
+
+      async function runHeroSearch(query) {
+        const searchQuery = String(query || '').trim();
+        if (!searchQuery) {
+          heroSearchResults.hidden = true;
+          heroSearchResults.innerHTML = '';
+          return;
+        }
+
+        setActiveSearchScope('site');
+        const matches = await searchEntireSite(searchQuery);
+        renderSiteSearchResults(matches, searchQuery);
+
+        if (!matches.length) {
+          setActiveSearchScope('web');
+        }
+      }
+
+      heroScopeSite.addEventListener('click', () => {
+        setActiveSearchScope('site');
+      });
+
+      heroScopeWeb.addEventListener('click', () => {
+        setActiveSearchScope('web');
+      });
+
+      heroSearchForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        if (heroScopeWeb.classList.contains('active')) {
+          runWebSearch(heroSearchInput.value);
+          return;
+        }
+        await runHeroSearch(heroSearchInput.value);
+      });
+
+      if (newPostButton) {
+      newPostButton.addEventListener('click', async () => {
+        await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -357,6 +980,7 @@
         editingPostId = null;
         newsTitle.value = '';
         newsBody.value = '';
+        newsPostToForum.checked = false;
         newsForm.hidden = false;
         newsTitle.focus();
       });
@@ -365,10 +989,39 @@
         resetNewsForm();
       });
 
-      newsForm.addEventListener('submit', (event) => {
-        event.preventDefault();
+      newsArchiveToggle.addEventListener('click', () => {
+        showArchivedNews = !showArchivedNews;
+        renderNews();
+      });
+
+      async function openNewsPostEditor(postId) {
+        await ensureNewsPostsLoaded();
         const currentMember = readCurrentMember();
-        if (!currentMember) {
+        if (!canEditSite(currentMember)) {
+          window.location.href = '/login/';
+          return;
+        }
+
+        const posts = readPosts();
+        const targetPost = posts.find((post) => post.id === postId);
+        if (!targetPost) {
+          showMissingNewsPostNotice();
+          return;
+        }
+
+        editingPostId = targetPost.id;
+        newsTitle.value = targetPost.title;
+        newsBody.value = targetPost.body;
+        newsPostToForum.checked = Boolean(targetPost.postedToForum);
+        newsForm.hidden = false;
+        newsTitle.focus();
+      }
+
+      newsForm.addEventListener('submit', async (event) => {
+        event.preventDefault();
+        await ensureNewsPostsLoaded();
+        const currentMember = readCurrentMember();
+        if (!canEditSite(currentMember)) {
           window.location.href = '/login/';
           return;
         }
@@ -380,35 +1033,91 @@
         }
 
         const posts = readPosts();
+        const isEditing = Boolean(editingPostId);
+        const wantsForumPost = newsPostToForum.checked;
+        let forumSyncFailed = false;
+        let forumSyncMessage = '';
+        let savedPostId = '';
         if (editingPostId) {
           const targetIndex = posts.findIndex((post) => post.id === editingPostId);
-          if (targetIndex >= 0) {
-            const now = Date.now();
-            posts[targetIndex] = {
-              ...posts[targetIndex],
-              title,
-              body,
-              author: currentMember.name,
-              avatar: currentMember.avatar || '',
-              updatedAt: now
-            };
+          if (targetIndex < 0) {
+            showMissingNewsPostNotice();
+            return;
           }
-        } else {
           const now = Date.now();
-          posts.unshift({
-            id: `news-${Date.now()}`,
+          savedPostId = posts[targetIndex].id;
+          posts[targetIndex] = {
+            ...posts[targetIndex],
             title,
             body,
-            author: currentMember.name,
+            author: getMemberDisplayName(currentMember),
+            avatar: currentMember.avatar || '',
+            updatedAt: now
+          };
+        } else {
+          const now = Date.now();
+          savedPostId = buildId('news');
+          posts.unshift({
+            id: savedPostId,
+            title,
+            body,
+            author: getMemberDisplayName(currentMember),
             avatar: currentMember.avatar || '',
             createdAt: now,
             updatedAt: now
           });
         }
 
-        writePosts(posts.sort((a, b) => (b.createdAt || 0) - (a.createdAt || 0)));
+        let nextPosts = sortNewsPosts(posts);
+        writePosts(nextPosts);
+
+        if (wantsForumPost) {
+          const targetPost = nextPosts.find((post) => post.id === savedPostId);
+          if (targetPost) {
+            try {
+              const forumResult = await syncNewsPostToForum(targetPost, currentMember);
+              if (forumResult.ok) {
+                const syncedPostIndex = nextPosts.findIndex((post) => post.id === savedPostId);
+                if (syncedPostIndex >= 0) {
+                  nextPosts[syncedPostIndex] = {
+                    ...nextPosts[syncedPostIndex],
+                    postedToForum: true,
+                    forumThreadId: forumResult.forumThreadId
+                  };
+                }
+                writePosts(nextPosts);
+              } else {
+                forumSyncFailed = true;
+                forumSyncMessage = forumResult.error || 'Public forum sync could not be completed.';
+              }
+            } catch (error) {
+              forumSyncFailed = true;
+              forumSyncMessage = error && error.message
+                ? `Public forum sync failed: ${error.message}`
+                : 'Public forum sync could not be completed.';
+              console.error('Failed to sync news to forum:', error);
+              // Keep the saved news article even if the optional forum sync fails.
+            }
+          } else {
+            forumSyncFailed = true;
+            forumSyncMessage = 'Public forum sync could not be completed because the news article was not found.';
+            console.error('Failed to sync news to forum: saved post was not found locally.');
+          }
+        }
+
+        const savedNewsRemotely = await queueNewsSync(nextPosts);
+
         resetNewsForm();
-        renderNews();
+        const savedPost = nextPosts.find((post) => post.id === savedPostId);
+        const postedToForum = Boolean(savedPost && savedPost.postedToForum);
+        const statusParts = [`News article ${isEditing ? 'updated' : 'saved'}.`];
+        if (!savedNewsRemotely) {
+          statusParts.push('Server sync is pending.');
+        }
+        if (wantsForumPost) {
+          statusParts.push(!forumSyncFailed && postedToForum ? 'Public forum post synced.' : forumSyncMessage || 'Public forum sync could not be completed.');
+        }
+        renderNews(statusParts.join(' '));
       });
 
       newsList.addEventListener('click', (event) => {
@@ -416,25 +1125,17 @@
         if (!button) {
           return;
         }
-
-        const currentMember = readCurrentMember();
-        if (!currentMember) {
-          window.location.href = '/login/';
-          return;
-        }
-
-        const posts = readPosts();
-        const targetPost = posts.find((post) => post.id === button.getAttribute('data-edit-post'));
-        if (!targetPost) {
-          return;
-        }
-
-        editingPostId = targetPost.id;
-        newsTitle.value = targetPost.title;
-        newsBody.value = targetPost.body;
-        newsForm.hidden = false;
-        newsTitle.focus();
+        void openNewsPostEditor(button.getAttribute('data-edit-post'));
       });
+
+      newsArchiveList.addEventListener('click', (event) => {
+        const button = event.target.closest('[data-edit-post]');
+        if (!button) {
+          return;
+        }
+        void openNewsPostEditor(button.getAttribute('data-edit-post'));
+      });
+      }
 
       footerAccountButton.addEventListener('click', () => {
         window.location.href = '/login/';
@@ -445,20 +1146,21 @@
         }
         localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
         renderMemberBadge(null);
-        renderNews();
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
-        window.netlifyIdentity.on('login', () => renderNews());
+        window.netlifyIdentity.on('login', () => {
+          renderMemberBadge(readCurrentMember());
+        });
         window.netlifyIdentity.on('logout', () => {
           localStorage.removeItem(CURRENT_MEMBER_STORAGE_KEY);
           renderMemberBadge(null);
-          renderNews();
         });
       }
 
-      renderNews();
+      renderMemberBadge(readCurrentMember());
     </script>
+    <script src="scripts/news.js"></script>
   </body>
 </html>

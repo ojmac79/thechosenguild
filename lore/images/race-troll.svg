@@ -1,0 +1,63 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#030a02"/>
+      <stop offset="100%" stop-color="#050d03"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)"/>
+    </filter>
+  </defs>
+<rect width="600" height="280" fill="url(#bg)"/>
+    <g opacity="0.7">
+    <!-- water -->
+    <ellipse cx="300" cy="200" rx="280" ry="40" fill="#0d2a0d"/>
+    <!-- ripples -->
+    <ellipse cx="200" cy="195" rx="60" ry="8" fill="none" stroke="#2d5a2d" stroke-width="2" opacity="0.5"/>
+    <ellipse cx="400" cy="205" rx="45" ry="6" fill="none" stroke="#2d5a2d" stroke-width="1.5" opacity="0.4"/>
+    <!-- trees/moss hanging -->
+    <g fill="#0d2a0d" opacity="0.8">
+      <rect x="30"  y="60" width="15" height="150"/>
+      <ellipse cx="37" cy="60" rx="30" ry="25"/>
+      <rect x="550" y="80" width="15" height="130"/>
+      <ellipse cx="557" cy="80" rx="28" ry="22"/>
+      <rect x="150" y="50" width="12" height="120"/>
+      <ellipse cx="156" cy="50" rx="22" ry="18"/>
+    </g>
+    <!-- lily pads -->
+    <ellipse cx="180" cy="205" rx="18" ry="7" fill="#2d6b1a" opacity="0.8"/>
+    <ellipse cx="380" cy="198" rx="14" ry="5" fill="#2d6b1a" opacity="0.8"/>
+    <circle cx="185" cy="202" r="4" fill="#ff6699" opacity="0.6"/>
+  </g>
+  <!-- troll silhouette -->
+  <g transform="translate(300,150)" fill="#204010" opacity="0.6">
+    <ellipse cx="0" cy="-20" rx="35" ry="40"/>
+    <ellipse cx="0" cy="35"  rx="28" ry="35"/>
+    <ellipse cx="-35" cy="20" rx="18" ry="10" transform="rotate(-20)"/>
+    <ellipse cx="35"  cy="20" rx="18" ry="10" transform="rotate(20)"/>
+    <ellipse cx="-15" cy="65" rx="12" ry="25"/>
+    <ellipse cx="15"  cy="65" rx="12" ry="25"/>
+  </g>
+  <rect x="6" y="6" width="588" height="268" fill="none" stroke="#40a030" stroke-width="1" stroke-opacity="0.45" rx="6"/>
+  <rect x="10" y="10" width="580" height="260" fill="none" stroke="#40a030" stroke-width="0.5" stroke-opacity="0.23" rx="4"/>
+  <g stroke="#40a030" stroke-width="1.8" fill="none" stroke-opacity="0.7">
+    <path d="M22,22 L22,40 M22,22 L40,22"/>
+    <path d="M578,22 L578,40 M578,22 L560,22"/>
+    <path d="M22,258 L22,240 M22,258 L40,258"/>
+    <path d="M578,258 L578,240 M578,258 L560,258"/>
+  </g>
+  <line x1="80" y1="226" x2="520" y2="226" stroke="#40a030" stroke-width="0.6" stroke-opacity="0.4"/>
+  <text x="300" y="240" font-family="Georgia,serif" font-size="20" font-weight="bold"
+        fill="#40a030" text-anchor="middle" filter="url(#glow)">Trolls</text>
+  <text x="300" y="260" font-family="Georgia,serif" font-size="12"
+        fill="#40a030" text-anchor="middle" opacity="0.65">Grobb · Innothule Swamp</text>
+
+</svg>

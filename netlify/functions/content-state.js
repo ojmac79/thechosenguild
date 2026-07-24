@@ -1,0 +1,1094 @@
+const { connectLambda, getStore } = require('@netlify/blobs');
+
+const OWNER_EMAIL = 'ojmac79@gmail.com';
+const STORE_NAME = 'the-chosen-content';
+const NEWS_KEY = 'news-posts-v1';
+const FORUM_KEY = 'forum-state-v1';
+const FORUM_CONFIG_KEY = 'forum-config-v1';
+const FORUM_THREAD_PREFIX = 'forum-threads/';
+const FORUM_REPLY_PREFIX = 'forum-replies/';
+const KV_KEY = 'kv-state-v1';
+const DIRECTORY_KEY = 'theChosenGuildDirectoryV1';
+const AUTHORIZED_ROSTER_KEY = 'theChosenAuthorizedRosterAccountsV1';
+const ACTIVE_MEMBER_STATUSES = new Set(['active', 'probation']);
+const LOCAL_ONLY_KV_KEYS = new Set([
+  'theChosenCurrentMember',
+  'theChosenForumStateV2',
+  'theChosenNewsPosts',
+  'theChosenMemberAvatarsV1'
+]);
+
+function json(statusCode, body) {
+  return {
+    statusCode,
+    headers: {
+      'Content-Type': 'application/json; charset=utf-8',
+      'Cache-Control': 'no-store'
+    },
+    body: JSON.stringify(body)
+  };
+}
+
+function readScope(event) {
+  const scope = String((event.queryStringParameters && event.queryStringParameters.scope) || '').trim().toLowerCase();
+  return scope === 'news' || scope === 'forum' || scope === 'kv' || scope === 'guild-directory' ? scope : '';
+}
+
+function normalizeEmail(value) {
+  return String(value || '').trim().toLowerCase();
+}
+
+function getRequestEmail(context) {
+  const user = context && context.clientContext && context.clientContext.user;
+  return normalizeEmail(user && user.email);
+}
+
+function getRequestUser(context) {
+  return context && context.clientContext && context.clientContext.user;
+}
+
+async function readJson(store, key, fallback) {
+  const value = await store.get(key, { type: 'json' });
+  if (!value || typeof value !== 'object') {
+    return fallback;
+  }
+  return value;
+}
+
+async function updateJsonAtomically(store, key, fallback, update) {
+  for (let attempt = 0; attempt < 8; attempt += 1) {
+    const entry = await store.getWithMetadata(key, { type: 'json' });
+    const current = entry && entry.data && typeof entry.data === 'object' ? entry.data : fallback;
+    const next = update(current);
+    if (!next) {
+      return current;
+    }
+    if (entry && !entry.etag) {
+      throw new Error(`Cannot safely update ${key} without an ETag.`);
+    }
+    const condition = entry ? { onlyIfMatch: entry.etag } : { onlyIfNew: true };
+    // setJSON in @netlify/blobs 10.7.9 drops conditional-write options.
+    const result = await store.set(key, JSON.stringify(next), condition);
+    if (result.modified) {
+      return next;
+    }
+  }
+  throw new Error(`Could not update ${key} because concurrent changes did not settle.`);
+}
+
+async function readBlobCollection(store, prefix) {
+  const result = await store.list({ prefix });
+  const blobs = Array.isArray(result && result.blobs) ? result.blobs : [];
+  const values = await Promise.all(blobs.map((blob) => readJson(store, blob.key, null)));
+  return values.filter((value) => value && typeof value === 'object');
+}
+
+function isValidKvKey(key) {
+  return typeof key === 'string' &&
+    key.startsWith('theChosen') &&
+    key !== AUTHORIZED_ROSTER_KEY &&
+    !LOCAL_ONLY_KV_KEYS.has(key);
+}
+
+function cleanText(value, maxLength) {
+  return String(value || '').trim().slice(0, maxLength);
+}
+
+function cleanForumUrl(value) {
+  const raw = String(value || '').trim();
+  if (!raw || raw.length > 2000) {
+    return '';
+  }
+  try {
+    const parsed = new URL(raw);
+    if ((parsed.protocol !== 'http:' && parsed.protocol !== 'https:') || parsed.username || parsed.password) {
+      return '';
+    }
+    return parsed.href;
+  } catch (error) {
+    return '';
+  }
+}
+
+function cleanForumImage(value) {
+  const raw = String(value || '').trim();
+  if (/^data:image\/(?:jpeg|png|gif|webp);base64,[a-z0-9+/=\r\n]+$/i.test(raw) && raw.length <= 700000) {
+    return raw;
+  }
+  return cleanForumUrl(raw);
+}
+
+function parseDirectory(items) {
+  const rawDirectory = items && items[DIRECTORY_KEY];
+  if (typeof rawDirectory !== 'string') {
+    return { version: 1, updatedAt: '', members: [] };
+  }
+  try {
+    const directory = JSON.parse(rawDirectory);
+    return {
+      version: Number(directory && directory.version) || 1,
+      updatedAt: cleanText(directory && directory.updatedAt, 80),
+      members: Array.isArray(directory && directory.members) ? directory.members : []
+    };
+  } catch (error) {
+    return { version: 1, updatedAt: '', members: [] };
+  }
+}
+
+function isAuthorizedEditor(items, email) {
+  if (email === OWNER_EMAIL) {
+    return true;
+  }
+  const member = parseDirectory(items).members.find(
+    (candidate) => normalizeEmail(candidate && candidate.email) === email
+  );
+  return Boolean(member && ACTIVE_MEMBER_STATUSES.has(cleanText(member.status, 40).toLowerCase()));
+}
+
+function itemVersion(items, versions, key) {
+  const storedVersion = Number(versions && versions[key]) || 0;
+  return typeof (items && items[key]) === 'string' ? Math.max(1, storedVersion) : storedVersion;
+}
+
+function publicAuthorizedRoster(items) {
+  return parseDirectory(items).members
+    .filter((member) => (
+      member &&
+      member.verifiedNetlify === true &&
+      ACTIVE_MEMBER_STATUSES.has(cleanText(member.status, 40).toLowerCase())
+    ))
+    .map((member) => ({
+      name: cleanText(member.name, 80) || 'Guild Member',
+      title: cleanText(member.title, 80) || 'Guild Member',
+      level: cleanText(member.level, 40) || 'member'
+    }));
+}
+
+async function syncIdentityDirectory(store, user) {
+  const email = normalizeEmail(user && user.email);
+  if (!email) {
+    return readJson(store, KV_KEY, { items: {}, versions: {}, updatedAt: '' });
+  }
+  return updateJsonAtomically(store, KV_KEY, { items: {}, versions: {}, updatedAt: '' }, (payload) => {
+    const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+    const versions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+    const directory = parseDirectory(items);
+    const metadata = user && user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
+    const index = directory.members.findIndex((member) => normalizeEmail(member && member.email) === email);
+    const existing = index >= 0 ? directory.members[index] : null;
+    const identityName = cleanText(metadata.full_name || (existing && existing.name) || email.split('@')[0], 80);
+    const previousLastSeen = Date.parse(cleanText(existing && existing.lastSeenAt, 80));
+    if (
+      existing &&
+      existing.verifiedNetlify === true &&
+      cleanText(existing.name, 80) === identityName &&
+      Number.isFinite(previousLastSeen) &&
+      Date.now() - previousLastSeen < 5 * 60 * 1000
+    ) {
+      return null;
+    }
+    const now = new Date().toISOString();
+    const identityDetailsChanged = !existing ||
+      existing.verifiedNetlify !== true ||
+      cleanText(existing.name, 80) !== identityName;
+    const record = {
+      ...(existing || {}),
+      id: cleanText(existing && existing.id, 160) || `guild-member-${Date.now()}`,
+      email,
+      name: identityName,
+      title: cleanText(existing && existing.title, 80) || (email === OWNER_EMAIL ? 'Guild Leader' : 'Verified Visitor'),
+      level: email === OWNER_EMAIL ? 'leader' : cleanText(existing && existing.level, 40) || 'applicant',
+      status: email === OWNER_EMAIL ? 'active' : cleanText(existing && existing.status, 40) || 'pending',
+      notes: cleanText(existing && existing.notes, 800),
+      verifiedNetlify: true,
+      lastSeenAt: now,
+      createdAt: cleanText(existing && existing.createdAt, 80) || now,
+      updatedAt: identityDetailsChanged ? now : cleanText(existing && existing.updatedAt, 80) || now,
+      access: email === OWNER_EMAIL
+        ? { forums: true, roster: true, moderateForums: true, management: true }
+        : {
+            forums: Boolean(existing && existing.access && existing.access.forums),
+            roster: Boolean(existing && existing.access && existing.access.roster),
+            moderateForums: Boolean(existing && existing.access && existing.access.moderateForums),
+            management: Boolean(existing && existing.access && existing.access.management)
+          }
+    };
+    if (index >= 0) {
+      directory.members[index] = record;
+    } else {
+      directory.members.push(record);
+    }
+    return {
+      items: {
+        ...items,
+        [DIRECTORY_KEY]: JSON.stringify({
+          version: directory.version,
+          updatedAt: now,
+          members: directory.members
+        })
+      },
+      versions: {
+        ...versions,
+        [DIRECTORY_KEY]: itemVersion(items, versions, DIRECTORY_KEY) + 1
+      },
+      updatedAt: payload.updatedAt || now
+    };
+  });
+}
+
+function normalizeManagedMember(input, existing) {
+  const email = normalizeEmail(input && input.email);
+  if (!email) {
+    return null;
+  }
+  const owner = email === OWNER_EMAIL;
+  const now = new Date().toISOString();
+  const current = existing && typeof existing === 'object' ? existing : {};
+  const submittedAccess = input && input.access && typeof input.access === 'object' ? input.access : {};
+  const level = owner ? 'leader' : cleanText(input && input.level, 40) || cleanText(current.level, 40) || 'applicant';
+  const status = owner ? 'active' : cleanText(input && input.status, 40) || cleanText(current.status, 40) || 'pending';
+  const member = {
+    ...current,
+    id: cleanText(current.id || (input && input.id), 160) || `guild-member-${Date.now()}`,
+    email,
+    name: cleanText(input && input.name, 80) || cleanText(current.name, 80),
+    title: cleanText(input && input.title, 80) || cleanText(current.title, 80) || (owner ? 'Guild Leader' : 'Guild Member'),
+    level: !owner && level === 'leader' ? 'officer' : level,
+    status,
+    notes: cleanText(input && input.notes, 800),
+    verifiedNetlify: owner || Boolean(current.verifiedNetlify || (input && input.verifiedNetlify)),
+    lastSeenAt: cleanText(current.lastSeenAt, 80),
+    createdAt: cleanText(current.createdAt, 80) || now,
+    updatedAt: now,
+    access: owner
+      ? { forums: true, roster: true, moderateForums: true, management: true }
+      : {
+          forums: Boolean(submittedAccess.forums),
+          roster: Boolean(submittedAccess.roster),
+          moderateForums: Boolean(submittedAccess.moderateForums),
+          management: Boolean(submittedAccess.management)
+        }
+  };
+  delete member.removedAt;
+  return member;
+}
+
+async function updateManagedDirectory(store, action, body) {
+  let savedMember = null;
+  let removedEmail = '';
+  let recordConflict = false;
+  const payload = await updateJsonAtomically(
+    store,
+    KV_KEY,
+    { items: {}, versions: {}, updatedAt: '' },
+    (existing) => {
+      const items = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const versions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      const directory = parseDirectory(items);
+      const now = new Date().toISOString();
+
+      if (action === 'upsert' || action === 'restore') {
+        const email = normalizeEmail(body && body.member && body.member.email);
+        const index = directory.members.findIndex((member) => normalizeEmail(member && member.email) === email);
+        const current = index >= 0 ? directory.members[index] : null;
+        const expectedUpdatedAt = cleanText(body && body.expectedUpdatedAt, 80);
+        const currentUpdatedAt = cleanText(current && current.updatedAt, 80);
+        const removed = current && cleanText(current.status, 40).toLowerCase() === 'removed';
+        if (
+          (removed && (action !== 'restore' || expectedUpdatedAt !== currentUpdatedAt)) ||
+          (!removed && action === 'restore') ||
+          (current && !removed && expectedUpdatedAt !== currentUpdatedAt)
+        ) {
+          recordConflict = true;
+          return null;
+        }
+        savedMember = normalizeManagedMember(body.member, current);
+        if (!savedMember) {
+          return null;
+        }
+        if (index >= 0) {
+          directory.members[index] = savedMember;
+        } else {
+          directory.members.unshift(savedMember);
+        }
+      } else if (action === 'remove') {
+        removedEmail = normalizeEmail(body && body.email);
+        if (!removedEmail || removedEmail === OWNER_EMAIL) {
+          return null;
+        }
+        const index = directory.members.findIndex((member) => normalizeEmail(member && member.email) === removedEmail);
+        const current = index >= 0 ? directory.members[index] : null;
+        if (!current) {
+          return null;
+        }
+        if (cleanText(body && body.expectedUpdatedAt, 80) !== cleanText(current.updatedAt, 80)) {
+          recordConflict = true;
+          return null;
+        }
+        directory.members[index] = {
+          ...current,
+          status: 'removed',
+          removedAt: now,
+          updatedAt: now,
+          access: {
+            forums: false,
+            roster: false,
+            moderateForums: false,
+            management: false
+          }
+        };
+      } else {
+        return null;
+      }
+
+      return {
+        items: {
+          ...items,
+          [DIRECTORY_KEY]: JSON.stringify({
+            version: directory.version,
+            updatedAt: now,
+            members: directory.members
+          })
+        },
+        versions: {
+          ...versions,
+          [DIRECTORY_KEY]: itemVersion(items, versions, DIRECTORY_KEY) + 1
+        },
+        updatedAt: now
+      };
+    }
+  );
+  const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+  const versions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+  return {
+    value: items[DIRECTORY_KEY] || JSON.stringify({ version: 1, updatedAt: '', members: [] }),
+    version: itemVersion(items, versions, DIRECTORY_KEY),
+    member: savedMember,
+    removedEmail,
+    conflict: recordConflict
+  };
+}
+
+function buildId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 1000000)}`;
+}
+
+const CANONICAL_FORUM_CATEGORIES = Object.freeze({
+  public: Object.freeze([
+    { id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' },
+    { id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' }
+  ].map((category) => Object.freeze(category))),
+  private: Object.freeze([
+    { id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' },
+    { id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' }
+  ].map((category) => Object.freeze(category)))
+});
+const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
+const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
+
+function forumCategoriesForSpace(spaceKey) {
+  return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
+}
+
+function forumCategoryTokens(value) {
+  return String(value || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+}
+
+function classifyForumCategoryId(spaceKey, value) {
+  const tokens = forumCategoryTokens(value);
+  if (spaceKey === 'public') {
+    return tokens.some((token) => PUBLIC_HELP_TOKENS.includes(token))
+      ? 'pub-help'
+      : 'pub-general';
+  }
+  return tokens.some((token) => PRIVATE_OFFICER_TOKENS.includes(token))
+    ? 'priv-officers'
+    : 'priv-general';
+}
+
+function resolveForumCategoryId(spaceKey, categoryId, categoryMap) {
+  const normalizedCategoryId = String(categoryId || '');
+  const matchedCategory = categoryMap instanceof Map ? categoryMap.get(normalizedCategoryId) : null;
+  if (matchedCategory) {
+    return classifyForumCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`);
+  }
+  return classifyForumCategoryId(spaceKey, normalizedCategoryId);
+}
+
+function defaultForumState() {
+  return {
+    public: {
+      categories: forumCategoriesForSpace('public'),
+      threads: [],
+      replies: []
+    },
+    private: {
+      categories: forumCategoriesForSpace('private'),
+      threads: [],
+      replies: []
+    }
+  };
+}
+
+function normalizeForumState(source) {
+  const fallback = defaultForumState();
+  const state = source && typeof source === 'object' ? source : {};
+  ['public', 'private'].forEach((spaceKey) => {
+    const sourceSpace = state[spaceKey] && typeof state[spaceKey] === 'object' ? state[spaceKey] : {};
+    const sourceCategories = Array.isArray(sourceSpace.categories)
+      ? sourceSpace.categories.map((category) => ({
+          id: cleanText(category && category.id, 120),
+          name: cleanText(category && category.name, 80),
+          description: cleanText(category && category.description, 240)
+        })).filter((category) => category.id && category.name && category.description)
+      : [];
+    const normalizedCategories = forumCategoriesForSpace(spaceKey);
+    // Source categories are only used to remap legacy/custom category IDs into the fixed board layout.
+    const categoryMap = new Map(sourceCategories.map((category) => [category.id, category]));
+    const categoryIds = new Set(normalizedCategories.map((category) => category.id));
+    const threads = Array.isArray(sourceSpace.threads)
+      ? sourceSpace.threads.map((thread) => {
+          const title = cleanText(thread && thread.title, 180);
+          const body = cleanText(thread && thread.body, 12000);
+          if (!title || !body) {
+            return null;
+          }
+          const resolvedCategoryId = resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap);
+          return {
+            id: cleanText(thread.id, 160) || buildId(`${spaceKey}-thread`),
+            categoryId: categoryIds.has(resolvedCategoryId)
+              ? resolvedCategoryId
+              : normalizedCategories[0].id,
+            title,
+            body,
+            linkUrl: cleanForumUrl(thread.linkUrl),
+            imageUrl: cleanForumImage(thread.imageUrl),
+            authorName: cleanText(thread.authorName, 100) || 'Guest Adventurer',
+            authorEmail: normalizeEmail(thread.authorEmail),
+            authorAvatar: cleanText(thread.authorAvatar, 1000),
+            createdAt: Number(thread.createdAt) || Date.now(),
+            isPinned: Boolean(thread.isPinned),
+            isLocked: Boolean(thread.isLocked)
+          };
+        }).filter(Boolean)
+      : [];
+    const threadIds = new Set(threads.map((thread) => thread.id));
+    const replies = Array.isArray(sourceSpace.replies)
+      ? sourceSpace.replies.map((reply) => {
+          const body = cleanText(reply && reply.body, 6000);
+          const threadId = cleanText(reply && reply.threadId, 160);
+          if (!body || !threadIds.has(threadId)) {
+            return null;
+          }
+          return {
+            id: cleanText(reply.id, 160) || buildId(`${spaceKey}-reply`),
+            threadId,
+            parentReplyId: cleanText(reply.parentReplyId, 160) || null,
+            body,
+            linkUrl: cleanForumUrl(reply.linkUrl),
+            imageUrl: cleanForumImage(reply.imageUrl),
+            authorName: cleanText(reply.authorName, 100) || 'Guest Adventurer',
+            authorEmail: normalizeEmail(reply.authorEmail),
+            authorAvatar: cleanText(reply.authorAvatar, 1000),
+            createdAt: Number(reply.createdAt) || Date.now()
+          };
+        }).filter(Boolean)
+      : [];
+    fallback[spaceKey] = { categories: normalizedCategories, threads, replies };
+  });
+  return fallback;
+}
+
+async function migrateLegacyForumState(store) {
+  const legacy = await readJson(store, FORUM_KEY, { state: null, updatedAt: '' });
+  const state = normalizeForumState(legacy.state);
+  const hasLegacyPosts = state.public.threads.length || state.public.replies.length ||
+    state.private.threads.length || state.private.replies.length;
+  const config = await readJson(store, FORUM_CONFIG_KEY, null);
+
+  if (hasLegacyPosts) {
+    const writes = [];
+    ['public', 'private'].forEach((spaceKey) => {
+      state[spaceKey].threads.forEach((thread) => {
+        writes.push(store.setJSON(`${FORUM_THREAD_PREFIX}${spaceKey}/${thread.id}`, { ...thread, space: spaceKey }));
+      });
+      state[spaceKey].replies.forEach((reply) => {
+        writes.push(store.setJSON(`${FORUM_REPLY_PREFIX}${spaceKey}/${reply.id}`, { ...reply, space: spaceKey }));
+      });
+    });
+    await Promise.all(writes);
+  }
+
+  if (!config) {
+    await store.setJSON(FORUM_CONFIG_KEY, {
+      public: { categories: state.public.categories },
+      private: { categories: state.private.categories },
+      updatedAt: legacy.updatedAt || new Date().toISOString()
+    });
+  }
+
+  if (hasLegacyPosts) {
+    await store.setJSON(FORUM_KEY, {
+      state: {
+        public: { categories: state.public.categories, threads: [], replies: [] },
+        private: { categories: state.private.categories, threads: [], replies: [] }
+      },
+      updatedAt: new Date().toISOString()
+    });
+  }
+}
+
+async function loadForumState(store) {
+  await migrateLegacyForumState(store);
+  const [config, threads, replies] = await Promise.all([
+    readJson(store, FORUM_CONFIG_KEY, null),
+    readBlobCollection(store, FORUM_THREAD_PREFIX),
+    readBlobCollection(store, FORUM_REPLY_PREFIX)
+  ]);
+  const state = normalizeForumState({
+    public: {
+      categories: config && config.public && config.public.categories,
+      threads: threads.filter((thread) => thread.space === 'public'),
+      replies: replies.filter((reply) => reply.space === 'public')
+    },
+    private: {
+      categories: config && config.private && config.private.categories,
+      threads: threads.filter((thread) => thread.space === 'private'),
+      replies: replies.filter((reply) => reply.space === 'private')
+    }
+  });
+  return {
+    state,
+    updatedAt: (config && config.updatedAt) || ''
+  };
+}
+
+async function saveForumCategories(store, state) {
+  const updatedAt = new Date().toISOString();
+  await store.setJSON(FORUM_CONFIG_KEY, {
+    public: { categories: forumCategoriesForSpace('public') },
+    private: { categories: forumCategoriesForSpace('private') },
+    updatedAt
+  });
+  return updatedAt;
+}
+
+async function getForumRole(store, email) {
+  if (!email) {
+    return 'public';
+  }
+  if (email === OWNER_EMAIL) {
+    return 'moderator';
+  }
+  const payload = await readJson(store, KV_KEY, { items: {} });
+  const rawDirectory = payload.items && payload.items[DIRECTORY_KEY];
+  if (typeof rawDirectory !== 'string') {
+    return 'public';
+  }
+  let directory;
+  try {
+    directory = JSON.parse(rawDirectory);
+  } catch (error) {
+    return 'public';
+  }
+  const members = Array.isArray(directory && directory.members) ? directory.members : [];
+  const member = members.find((candidate) => normalizeEmail(candidate && candidate.email) === email);
+  if (
+    !member ||
+    !ACTIVE_MEMBER_STATUSES.has(cleanText(member.status, 40).toLowerCase()) ||
+    !member.access ||
+    member.access.forums !== true
+  ) {
+    return 'public';
+  }
+  return member.access.moderateForums === true ? 'moderator' : 'member';
+}
+
+function forumPayloadForRole(state, role, updatedAt) {
+  const normalized = normalizeForumState(state);
+  ['public', 'private'].forEach((spaceKey) => {
+    normalized[spaceKey].threads = normalized[spaceKey].threads.map((thread) => {
+      const { authorEmail, ...publicThread } = thread;
+      return publicThread;
+    });
+    normalized[spaceKey].replies = normalized[spaceKey].replies.map((reply) => {
+      const { authorEmail, ...publicReply } = reply;
+      return publicReply;
+    });
+  });
+  return {
+    state: role === 'member' || role === 'moderator'
+      ? normalized
+      : { public: normalized.public, private: defaultForumState().private },
+    updatedAt: updatedAt || '',
+    access: role
+  };
+}
+
+function forumAuthor(context, body) {
+  const user = getRequestUser(context);
+  const email = normalizeEmail(user && user.email);
+  const metadata = user && user.user_metadata && typeof user.user_metadata === 'object' ? user.user_metadata : {};
+  return {
+    authorName: cleanText(metadata.full_name || body.authorName, 100) || (email ? email.split('@')[0] : 'Guest Adventurer'),
+    authorEmail: email,
+    authorAvatar: cleanText(metadata.avatar_url || body.authorAvatar, 1000)
+  };
+}
+
+function normalizeNewsPost(post, index, total) {
+  if (!post || typeof post !== 'object') {
+    return null;
+  }
+
+  const title = String(post.title || '').trim();
+  const body = String(post.body || '').trim();
+  if (!title || !body) {
+    return null;
+  }
+
+  const createdAt = Number(post.createdAt) || Number(post.updatedAt) || Math.max(0, total - index);
+  const updatedAt = Number(post.updatedAt) || createdAt;
+
+  return {
+    id: String(post.id || '').trim() || `news-${createdAt}-${index}`,
+    title,
+    body,
+    author: String(post.author || post.authorName || 'Guild Member'),
+    avatar: String(post.avatar || post.authorAvatar || ''),
+    createdAt,
+    updatedAt,
+    postedToForum: Boolean(post.postedToForum),
+    forumThreadId: typeof post.forumThreadId === 'string' ? post.forumThreadId : ''
+  };
+}
+
+function normalizeNewsPosts(posts) {
+  if (!Array.isArray(posts)) {
+    return [];
+  }
+
+  return posts
+    .map((post, index, all) => normalizeNewsPost(post, index, all.length))
+    .filter(Boolean)
+    .sort((left, right) => (Number(right.createdAt) || 0) - (Number(left.createdAt) || 0));
+}
+
+exports.handler = async function handler(event, context) {
+  const scope = readScope(event);
+  if (!scope) {
+    return json(400, { error: 'Invalid scope.' });
+  }
+
+  connectLambda(event);
+  const store = getStore(STORE_NAME);
+
+  if (event.httpMethod === 'GET') {
+    if (scope === 'news') {
+      const payload = await readJson(store, NEWS_KEY, { posts: [], updatedAt: '' });
+      return json(200, {
+        posts: normalizeNewsPosts(payload.posts),
+        updatedAt: payload.updatedAt || ''
+      });
+    }
+    if (scope === 'kv') {
+      const payload = await syncIdentityDirectory(store, getRequestUser(context));
+      const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+      const versions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+      const filteredItems = {};
+      const filteredVersions = {};
+      const email = getRequestEmail(context);
+      Object.keys(items).forEach((key) => {
+        if (!isValidKvKey(key) || typeof items[key] !== 'string') {
+          return;
+        }
+        if (key === DIRECTORY_KEY) {
+          if (!email) {
+            return;
+          }
+          if (isAuthorizedEditor(items, email)) {
+            filteredItems[key] = items[key];
+            filteredVersions[key] = itemVersion(items, versions, key);
+            return;
+          }
+          try {
+            const directory = JSON.parse(items[key]);
+            const members = Array.isArray(directory && directory.members) ? directory.members : [];
+            const member = members.find((candidate) => normalizeEmail(candidate && candidate.email) === email);
+            if (member) {
+              filteredItems[key] = JSON.stringify({
+                version: directory.version || 1,
+                updatedAt: directory.updatedAt || '',
+                members: [{
+                  id: member.id,
+                  email: member.email,
+                  name: member.name,
+                  title: member.title,
+                  level: member.level,
+                  status: member.status,
+                  verifiedNetlify: Boolean(member.verifiedNetlify),
+                  access: member.access
+                }]
+              });
+              filteredVersions[key] = itemVersion(items, versions, key);
+            }
+          } catch (error) {
+            return;
+          }
+        } else {
+          filteredItems[key] = items[key];
+          filteredVersions[key] = itemVersion(items, versions, key);
+        }
+      });
+      filteredItems[AUTHORIZED_ROSTER_KEY] = JSON.stringify(publicAuthorizedRoster(items));
+      return json(200, {
+        items: filteredItems,
+        versions: filteredVersions,
+        updatedAt: payload.updatedAt || ''
+      });
+    }
+    if (scope === 'guild-directory') {
+      return json(405, { error: 'Method not allowed.' });
+    }
+    const payload = await loadForumState(store);
+    const role = await getForumRole(store, getRequestEmail(context));
+    return json(200, forumPayloadForRole(payload.state, role, payload.updatedAt));
+  }
+
+  if (event.httpMethod !== 'PUT' && event.httpMethod !== 'POST') {
+    return json(405, { error: 'Method not allowed.' });
+  }
+
+  const email = getRequestEmail(context);
+  if (!email && (scope !== 'forum' || event.httpMethod !== 'POST')) {
+    return json(401, { error: 'Authentication required.' });
+  }
+
+  let body = null;
+  try {
+    body = event.body ? JSON.parse(event.body) : {};
+  } catch (error) {
+    return json(400, { error: 'Invalid JSON body.' });
+  }
+
+  if (scope === 'news') {
+    return json(410, { error: 'News updates must use the dedicated news endpoint.' });
+  }
+
+  if (scope === 'guild-directory') {
+    if (email !== OWNER_EMAIL) {
+      return json(403, { error: 'Only the site owner may update the guild directory.' });
+    }
+    if (event.httpMethod !== 'POST') {
+      return json(405, { error: 'Method not allowed.' });
+    }
+    const action = cleanText(body.action, 40);
+    if (action !== 'upsert' && action !== 'restore' && action !== 'remove') {
+      return json(400, { error: 'Expected an upsert, restore, or remove action.' });
+    }
+    if ((action === 'upsert' || action === 'restore') && !normalizeEmail(body && body.member && body.member.email)) {
+      return json(400, { error: 'A member email is required.' });
+    }
+    if (action === 'remove') {
+      const targetEmail = normalizeEmail(body && body.email);
+      if (!targetEmail || targetEmail === OWNER_EMAIL) {
+        return json(400, { error: 'A removable member email is required.' });
+      }
+    }
+    const result = await updateManagedDirectory(store, action, body);
+    if (result.conflict) {
+      return json(409, { error: 'This member changed on the server. Reload the registry and try again.' });
+    }
+    return json(200, result);
+  }
+
+  if (scope === 'kv') {
+    if (!body.items || typeof body.items !== 'object') {
+      return json(400, { error: 'Expected `items` to be an object.' });
+    }
+    const submittedVersions = body.versions && typeof body.versions === 'object' ? body.versions : {};
+    if (Object.prototype.hasOwnProperty.call(body.items, DIRECTORY_KEY)) {
+      const existing = await readJson(store, KV_KEY, { items: {}, versions: {} });
+      const existingItems = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const existingVersions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      if (!isAuthorizedEditor(existingItems, email)) {
+        return json(409, {
+          error: 'Guild directory changes require owner authorization.',
+          conflicts: [DIRECTORY_KEY],
+          items: { [DIRECTORY_KEY]: null },
+          versions: { [DIRECTORY_KEY]: 0 }
+        });
+      }
+      return json(409, {
+        error: 'Guild directory changes must use the dedicated server endpoint.',
+        conflicts: [DIRECTORY_KEY],
+        items: {
+          [DIRECTORY_KEY]: typeof existingItems[DIRECTORY_KEY] === 'string'
+            ? existingItems[DIRECTORY_KEY]
+            : null
+        },
+        versions: {
+          [DIRECTORY_KEY]: itemVersion(existingItems, existingVersions, DIRECTORY_KEY)
+        }
+      });
+    }
+    let denied = false;
+    let conflicts = [];
+    const payload = await updateJsonAtomically(store, KV_KEY, { items: {}, versions: {}, updatedAt: '' }, (existing) => {
+      const existingItems = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const existingVersions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      if (!isAuthorizedEditor(existingItems, email)) {
+        denied = true;
+        return null;
+      }
+      conflicts = Object.keys(body.items).filter((key) => (
+        isValidKvKey(key) &&
+        (Number(submittedVersions[key]) || 0) !== itemVersion(existingItems, existingVersions, key)
+      ));
+      if (conflicts.length) {
+        return null;
+      }
+      const nextItems = { ...existingItems };
+      const nextVersions = { ...existingVersions };
+      Object.keys(body.items).forEach((key) => {
+        if (!isValidKvKey(key)) {
+          return;
+        }
+        if (key === DIRECTORY_KEY && email !== OWNER_EMAIL) {
+          return;
+        }
+        const nextValue = body.items[key];
+        if (nextValue === null) {
+          if (key === DIRECTORY_KEY) {
+            return;
+          }
+          delete nextItems[key];
+          nextVersions[key] = itemVersion(existingItems, existingVersions, key) + 1;
+        } else if (typeof nextValue === 'string') {
+          nextItems[key] = nextValue;
+          nextVersions[key] = itemVersion(existingItems, existingVersions, key) + 1;
+        }
+      });
+      return {
+        items: nextItems,
+        versions: nextVersions,
+        updatedAt: new Date().toISOString()
+      };
+    });
+    if (denied) {
+      return json(403, { error: 'An approved guild account is required to edit site content.' });
+    }
+    if (conflicts.length) {
+      const conflictItems = {};
+      const conflictVersions = {};
+      const latestItems = payload.items && typeof payload.items === 'object' ? payload.items : {};
+      const latestVersions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+      conflicts.forEach((key) => {
+        conflictItems[key] = typeof latestItems[key] === 'string' ? latestItems[key] : null;
+        conflictVersions[key] = itemVersion(latestItems, latestVersions, key);
+      });
+      return json(409, {
+        error: 'Content changed on the server. The latest version has been restored.',
+        conflicts,
+        items: conflictItems,
+        versions: conflictVersions
+      });
+    }
+    return json(200, payload);
+  }
+
+  const existing = await loadForumState(store);
+  const state = existing.state;
+  const role = await getForumRole(store, email);
+
+  if (event.httpMethod === 'POST') {
+    const action = cleanText(body.action, 40);
+    const spaceKey = body.space === 'private' ? 'private' : 'public';
+    if (spaceKey === 'private' && role !== 'member' && role !== 'moderator') {
+      return json(403, { error: 'Authorized member forum access is required.' });
+    }
+    const author = forumAuthor(context, body);
+
+    if (action === 'create-thread') {
+      const title = cleanText(body.title, 180);
+      const threadBody = cleanText(body.body, 12000);
+      const requestedLinkUrl = cleanText(body.linkUrl, 2001);
+      const requestedImageUrl = String(body.imageUrl || '').trim();
+      if (!title || !threadBody) {
+        return json(400, { error: 'A thread title and message are required.' });
+      }
+      if ((requestedLinkUrl || requestedImageUrl) && !email) {
+        return json(403, { error: 'Sign in to attach hyperlinks or images.' });
+      }
+      const linkUrl = cleanForumUrl(requestedLinkUrl);
+      const imageUrl = cleanForumImage(requestedImageUrl);
+      if ((requestedLinkUrl && !linkUrl) || (requestedImageUrl && !imageUrl)) {
+        return json(400, { error: 'Use a valid HTTP/HTTPS hyperlink and a supported forum image.' });
+      }
+      const categories = state[spaceKey].categories;
+      const categoryId = categories.some((category) => category.id === body.categoryId)
+        ? body.categoryId
+        : categories[0].id;
+      const thread = {
+        id: buildId(`${spaceKey}-thread`),
+        categoryId,
+        title,
+        body: threadBody,
+        linkUrl,
+        imageUrl,
+        ...author,
+        createdAt: Date.now(),
+        isPinned: false,
+        isLocked: false,
+        space: spaceKey
+      };
+      await store.setJSON(`${FORUM_THREAD_PREFIX}${spaceKey}/${thread.id}`, thread);
+      state[spaceKey].threads.push(thread);
+    } else if (action === 'create-reply') {
+      const replyBody = cleanText(body.body, 6000);
+      const requestedLinkUrl = cleanText(body.linkUrl, 2001);
+      const requestedImageUrl = String(body.imageUrl || '').trim();
+      const threadId = cleanText(body.threadId, 160);
+      const thread = state[spaceKey].threads.find((candidate) => candidate.id === threadId);
+      if (!thread) {
+        return json(404, { error: 'Forum thread not found.' });
+      }
+      if (thread.isLocked) {
+        return json(409, { error: 'This thread is locked.' });
+      }
+      if (!replyBody) {
+        return json(400, { error: 'A reply message is required.' });
+      }
+      if ((requestedLinkUrl || requestedImageUrl) && !email) {
+        return json(403, { error: 'Sign in to attach hyperlinks or images.' });
+      }
+      const linkUrl = cleanForumUrl(requestedLinkUrl);
+      const imageUrl = cleanForumImage(requestedImageUrl);
+      if ((requestedLinkUrl && !linkUrl) || (requestedImageUrl && !imageUrl)) {
+        return json(400, { error: 'Use a valid HTTP/HTTPS hyperlink and a supported forum image.' });
+      }
+      const parentReplyId = cleanText(body.parentReplyId, 160);
+      const parentReply = parentReplyId
+        ? state[spaceKey].replies.find((reply) => reply.id === parentReplyId && reply.threadId === threadId)
+        : null;
+      const reply = {
+        id: buildId(`${spaceKey}-reply`),
+        threadId,
+        parentReplyId: parentReply ? parentReply.id : null,
+        body: replyBody,
+        linkUrl,
+        imageUrl,
+        ...author,
+        createdAt: Date.now(),
+        space: spaceKey
+      };
+      await store.setJSON(`${FORUM_REPLY_PREFIX}${spaceKey}/${reply.id}`, reply);
+      state[spaceKey].replies.push(reply);
+    } else if (
+      action === 'create-category' ||
+      action === 'rename-category' ||
+      action === 'delete-category' ||
+      action === 'toggle-pin' ||
+      action === 'toggle-lock' ||
+      action === 'delete-thread' ||
+      action === 'delete-reply'
+    ) {
+      if (role !== 'moderator') {
+        return json(403, { error: 'Forum moderator access is required.' });
+      }
+      if (action === 'create-category') {
+        const name = cleanText(body.name, 80);
+        const description = cleanText(body.description, 240);
+        if (!name || !description) {
+          return json(400, { error: 'A category name and description are required.' });
+        }
+        state[spaceKey].categories.push({
+          id: buildId(`${spaceKey}-category`),
+          name,
+          description
+        });
+        await saveForumCategories(store, state);
+      } else if (action === 'rename-category') {
+        const category = state[spaceKey].categories.find((candidate) => candidate.id === body.categoryId);
+        const name = cleanText(body.name, 80);
+        const description = cleanText(body.description, 240);
+        if (!category) {
+          return json(404, { error: 'Forum category not found.' });
+        }
+        if (!name || !description) {
+          return json(400, { error: 'A category name and description are required.' });
+        }
+        category.name = name;
+        category.description = description;
+        await saveForumCategories(store, state);
+      } else if (action === 'delete-category') {
+        const categories = state[spaceKey].categories;
+        if (categories.length <= 1) {
+          return json(409, { error: 'At least one category is required.' });
+        }
+        const categoryIndex = categories.findIndex((category) => category.id === body.categoryId);
+        if (categoryIndex < 0) {
+          return json(404, { error: 'Forum category not found.' });
+        }
+        categories.splice(categoryIndex, 1);
+        const fallbackCategoryId = categories[0].id;
+        const affectedThreads = state[spaceKey].threads.filter((thread) => thread.categoryId === body.categoryId);
+        await Promise.all(affectedThreads.map((thread) => {
+          thread.categoryId = fallbackCategoryId;
+          return store.setJSON(`${FORUM_THREAD_PREFIX}${spaceKey}/${thread.id}`, { ...thread, space: spaceKey });
+        }));
+        await saveForumCategories(store, state);
+      } else if (action === 'toggle-pin' || action === 'toggle-lock') {
+        const thread = state[spaceKey].threads.find((candidate) => candidate.id === body.threadId);
+        if (!thread) {
+          return json(404, { error: 'Forum thread not found.' });
+        }
+        if (action === 'toggle-pin') {
+          thread.isPinned = !thread.isPinned;
+        } else {
+          thread.isLocked = !thread.isLocked;
+        }
+        await store.setJSON(`${FORUM_THREAD_PREFIX}${spaceKey}/${thread.id}`, { ...thread, space: spaceKey });
+      } else if (action === 'delete-thread') {
+        const threadId = cleanText(body.threadId, 160);
+        const thread = state[spaceKey].threads.find((candidate) => candidate.id === threadId);
+        if (!thread) {
+          return json(404, { error: 'Forum thread not found.' });
+        }
+        const replies = state[spaceKey].replies.filter((reply) => reply.threadId === threadId);
+        await Promise.all([
+          store.delete(`${FORUM_THREAD_PREFIX}${spaceKey}/${threadId}`),
+          ...replies.map((reply) => store.delete(`${FORUM_REPLY_PREFIX}${spaceKey}/${reply.id}`))
+        ]);
+        state[spaceKey].threads = state[spaceKey].threads.filter((candidate) => candidate.id !== threadId);
+        state[spaceKey].replies = state[spaceKey].replies.filter((reply) => reply.threadId !== threadId);
+      } else if (action === 'delete-reply') {
+        const replyId = cleanText(body.replyId, 160);
+        const toRemove = new Set([replyId]);
+        let found = state[spaceKey].replies.some((reply) => reply.id === replyId);
+        if (!found) {
+          return json(404, { error: 'Forum reply not found.' });
+        }
+        let changed = true;
+        while (changed) {
+          changed = false;
+          state[spaceKey].replies.forEach((reply) => {
+            if (reply.parentReplyId && toRemove.has(reply.parentReplyId) && !toRemove.has(reply.id)) {
+              toRemove.add(reply.id);
+              changed = true;
+            }
+          });
+        }
+        await Promise.all([...toRemove].map((id) => store.delete(`${FORUM_REPLY_PREFIX}${spaceKey}/${id}`)));
+        state[spaceKey].replies = state[spaceKey].replies.filter((reply) => !toRemove.has(reply.id));
+      }
+    } else {
+      return json(400, { error: 'Unsupported forum action.' });
+    }
+
+    const updatedAt = new Date().toISOString();
+    return json(200, forumPayloadForRole(state, role, updatedAt));
+  }
+
+  return json(405, { error: 'Use targeted forum operations.' });
+};

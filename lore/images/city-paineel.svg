@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#070508"/>
+      <stop offset="100%" stop-color="#0e0810"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)"/>
+    </filter>
+  </defs>
+<rect width="600" height="280" fill="url(#bg)"/>
+    <g opacity="0.8">
+    <!-- cave ceiling stalactites -->
+    <polygon points="0,0 30,0 15,60"    fill="#200030"/>
+    <polygon points="60,0 100,0 80,80"  fill="#200030"/>
+    <polygon points="140,0 165,0 152,55" fill="#200030"/>
+    <polygon points="200,0 230,0 215,70" fill="#200030"/>
+    <polygon points="270,0 300,0 285,65" fill="#200030"/>
+    <polygon points="340,0 370,0 355,75" fill="#200030"/>
+    <polygon points="410,0 440,0 425,58" fill="#200030"/>
+    <polygon points="480,0 510,0 495,68" fill="#200030"/>
+    <polygon points="545,0 580,0 562,52" fill="#200030"/>
+    <!-- floor stalagmites -->
+    <polygon points="50,280 80,280 65,200"  fill="#200030"/>
+    <polygon points="150,280 180,280 165,210" fill="#200030"/>
+    <polygon points="300,280 330,280 315,190" fill="#200030"/>
+    <polygon points="420,280 450,280 435,205" fill="#200030"/>
+    <polygon points="530,280 560,280 545,215" fill="#200030"/>
+    <!-- crystals -->
+    <polygon points="120,210 130,180 140,210" fill="#a030c0" opacity="0.7"/>
+    <polygon points="250,200 262,165 274,200" fill="#a030c0" opacity="0.6"/>
+    <polygon points="370,215 380,188 390,215" fill="#a030c0" opacity="0.7"/>
+  </g>
+  <!-- The Hole - massive rift -->
+  <ellipse cx="300" cy="230" rx="180" ry="50" fill="#050008" opacity="0.85"/>
+  <ellipse cx="300" cy="225" rx="120" ry="30" fill="black" opacity="0.9"/>
+  <g stroke="#8020a0" stroke-width="2" opacity="0.5">
+    <line x1="120" y1="210" x2="180" y2="270"/>
+    <line x1="480" y1="210" x2="420" y2="270"/>
+    <line x1="300" y1="200" x2="300" y2="270"/>
+  </g>
+  <rect x="6" y="6" width="588" height="268" fill="none" stroke="#c040e0" stroke-width="1" stroke-opacity="0.45" rx="6"/>
+  <rect x="10" y="10" width="580" height="260" fill="none" stroke="#c040e0" stroke-width="0.5" stroke-opacity="0.23" rx="4"/>
+  <g stroke="#c040e0" stroke-width="1.8" fill="none" stroke-opacity="0.7">
+    <path d="M22,22 L22,40 M22,22 L40,22"/>
+    <path d="M578,22 L578,40 M578,22 L560,22"/>
+    <path d="M22,258 L22,240 M22,258 L40,258"/>
+    <path d="M578,258 L578,240 M578,258 L560,258"/>
+  </g>
+  <line x1="80" y1="226" x2="520" y2="226" stroke="#c040e0" stroke-width="0.6" stroke-opacity="0.4"/>
+  <text x="300" y="240" font-family="Georgia,serif" font-size="20" font-weight="bold"
+        fill="#c040e0" text-anchor="middle" filter="url(#glow)">Paineel</text>
+  <text x="300" y="260" font-family="Georgia,serif" font-size="12"
+        fill="#c040e0" text-anchor="middle" opacity="0.65">City of Heretics · Above The Hole</text>
+
+</svg>

@@ -1,0 +1,95 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 600 280" width="600" height="280">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%"   stop-color="#070810"/>
+      <stop offset="100%" stop-color="#0c0e18"/>
+    </linearGradient>
+    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="4" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="softglow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="8" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+    <filter id="shadow">
+      <feDropShadow dx="0" dy="2" stdDeviation="3" flood-color="rgba(0,0,0,0.6)"/>
+    </filter>
+  </defs>
+<rect width="600" height="280" fill="url(#bg)"/>
+    <g opacity="0.6">
+    <polygon points="0,200 80,100 160,200" fill="#1a2030"/>
+    <polygon points="100,200 200,70 300,200" fill="#1a2030"/>
+    <polygon points="250,200 350,90 430,200" fill="#1a2030"/>
+    <polygon points="380,200 480,60 580,200" fill="#1a2030"/>
+    <polygon points="480,200 560,110  600,200" fill="#1a2030"/>
+    <!-- snow caps -->
+    <polygon points="75,105  80,100 85,105"  fill="white" opacity="0.7"/>
+    <polygon points="193,77 200,70 207,77" fill="white" opacity="0.7"/>
+    <polygon points="344,96 350,90 356,96" fill="white" opacity="0.7"/>
+    <polygon points="473,67 480,60 487,67" fill="white" opacity="0.7"/>
+  </g>
+    <g transform="translate(300,155)" fill="#3a3860" opacity="0.8">
+    <!-- main keep -->
+    <rect x="-60" y="-90" width="120" height="110"/>
+    <!-- battlements -->
+    <rect x="-60" y="-105" width="20" height="18"/>
+    <rect x="-30" y="-105" width="20" height="18"/>
+    <rect x="0"   y="-105" width="20" height="18"/>
+    <rect x="30"  y="-105" width="20" height="18"/>
+    <!-- flanking towers -->
+    <rect x="-105" y="-75" width="45" height="95"/>
+    <rect x="60"   y="-75" width="45" height="95"/>
+    <!-- tower battlements left -->
+    <rect x="-105" y="-90" width="14" height="18"/>
+    <rect x="-83"  y="-90" width="14" height="18"/>
+    <!-- tower battlements right -->
+    <rect x="60"   y="-90" width="14" height="18"/>
+    <rect x="82"   y="-90" width="14" height="18"/>
+    <!-- gate -->
+    <path d="M-22,20 Q-22,-15 0,-15 Q22,-15 22,20 Z" fill="#3a3860" opacity="0.3"/>
+    <!-- windows -->
+    <path d="M-20,-60 Q-20,-75 -10,-75 Q0,-75 0,-60 Z" fill="gold" opacity="0.4"/>
+    <path d="M10,-60 Q10,-75 20,-75 Q30,-75 30,-60 Z" fill="gold" opacity="0.4"/>
+  </g>
+    <g transform="translate(300,100)" stroke="#a0a8e0" stroke-width="4" fill="none" filter="url(#glow)" opacity="0.8">
+    <!-- main arms -->
+    <line x1="0" y1="-65" x2="0" y2="65"/>
+    <line x1="-65" y1="0" x2="65" y2="0"/>
+    <line x1="-45" y1="-45" x2="45" y2="45"/>
+    <line x1="45" y1="-45" x2="-45" y2="45"/>
+    <!-- branch decorations -->
+    <line x1="-15" y1="-39" x2="0" y2="-32"/>
+    <line x1="15"  y1="-39" x2="0" y2="-32"/>
+    <line x1="-15" y1="39" x2="0" y2="32"/>
+    <line x1="15"  y1="39" x2="0" y2="32"/>
+    <line x1="-39" y1="-15" x2="-32" y2="0"/>
+    <line x1="-39" y1="15" x2="-32" y2="0"/>
+    <line x1="39" y1="-15" x2="32" y2="0"/>
+    <line x1="39" y1="15" x2="32" y2="0"/>
+    <!-- center -->
+    <circle cx="0" cy="0" r="10" fill="#a0a8e0" opacity="0.5"/>
+  </g>
+  <!-- giant-scale stonework hint -->
+  <g stroke="#6060a0" stroke-width="3" fill="none" opacity="0.3">
+    <rect x="180" y="170" width="240" height="80"/>
+    <line x1="180" y1="200" x2="420" y2="200"/>
+    <line x1="240" y1="170" x2="240" y2="250"/>
+    <line x1="300" y1="170" x2="300" y2="250"/>
+    <line x1="360" y1="170" x2="360" y2="250"/>
+  </g>
+  <rect x="6" y="6" width="588" height="268" fill="none" stroke="#d0c8ff" stroke-width="1" stroke-opacity="0.45" rx="6"/>
+  <rect x="10" y="10" width="580" height="260" fill="none" stroke="#d0c8ff" stroke-width="0.5" stroke-opacity="0.23" rx="4"/>
+  <g stroke="#d0c8ff" stroke-width="1.8" fill="none" stroke-opacity="0.7">
+    <path d="M22,22 L22,40 M22,22 L40,22"/>
+    <path d="M578,22 L578,40 M578,22 L560,22"/>
+    <path d="M22,258 L22,240 M22,258 L40,258"/>
+    <path d="M578,258 L578,240 M578,258 L560,258"/>
+  </g>
+  <line x1="80" y1="226" x2="520" y2="226" stroke="#d0c8ff" stroke-width="0.6" stroke-opacity="0.4"/>
+  <text x="300" y="240" font-family="Georgia,serif" font-size="20" font-weight="bold"
+        fill="#d0c8ff" text-anchor="middle" filter="url(#glow)">Kael Drakkal</text>
+  <text x="300" y="260" font-family="Georgia,serif" font-size="12"
+        fill="#d0c8ff" text-anchor="middle" opacity="0.65">City of Giants · Velious</text>
+
+</svg>
