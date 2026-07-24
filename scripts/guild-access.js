@@ -293,7 +293,7 @@
   async function mutateDirectoryOnServer(action, payload) {
     const token = await getIdentityToken();
     if (!token) {
-      throw new Error('Owner authentication is required to save guild management changes.');
+      throw new Error('Authentication is required to save guild account changes.');
     }
     const response = await fetch(DIRECTORY_ENDPOINT, {
       method: 'POST',
@@ -316,6 +316,20 @@
     }
     persistentStore.applyAuthoritativeValue(DIRECTORY_STORAGE_KEY, result.value, result.version);
     return result;
+  }
+
+  async function updateRosterProfileOnServer(email, profile) {
+    const targetEmail = normalizeEmail(email);
+    const existing = findRecordByEmail(targetEmail);
+    if (!targetEmail || !existing) {
+      throw new Error('The authorized roster account could not be found.');
+    }
+    await mutateDirectoryOnServer('update-roster-profile', {
+      email: targetEmail,
+      profile,
+      expectedUpdatedAt: existing.updatedAt
+    });
+    return findRecordByEmail(targetEmail);
   }
 
   async function upsertRecordOnServer(input) {
@@ -523,6 +537,7 @@
     getCurrentMember,
     ensureMemberRecord,
     findRecordByEmail,
+    updateRosterProfileOnServer,
     getGuildRecord,
     upsertRecordOnServer,
     removeRecordOnServer,

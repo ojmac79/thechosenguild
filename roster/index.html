@@ -250,32 +250,58 @@
         editor: false,
         isOwner: false,
         canEditRoster: false,
-        currentUserName: ''
+        currentUserName: '',
+        currentUserEmail: ''
       };
 
       function normalizeEmail(value) {
         return String(value || '').trim().toLowerCase();
       }
 
+      function readRosterLevel(value) {
+        if (value === null || value === undefined || value === '') {
+          return null;
+        }
+        const level = Number(value);
+        return Number.isInteger(level) && level >= 1 && level <= 125 ? level : null;
+      }
+
       function readAuthorizedAccounts() {
+        const member = getCurrentMember();
+        const permissions = window.TheChosenGuildAccess.getPermissions(member);
+        if (member && (permissions.isOwner || permissions.canUseRoster)) {
+          return window.TheChosenGuildAccess.readDirectory().members
+            .filter((record) => (
+              record &&
+              record.verifiedNetlify === true &&
+              (record.status === 'active' || record.status === 'probation')
+            ))
+            .map((record) => ({
+              id: `identity-${record.id}`,
+              accountEmail: normalizeEmail(record.email),
+              expectedUpdatedAt: String(record.updatedAt || ''),
+              name: String(record.rosterName || record.name || 'Guild Member').trim().slice(0, 80),
+              level: readRosterLevel(record.rosterLevel),
+              className: normalizeClassName(record.rosterClass || '') || 'Authorized Site Account',
+              rank: String(record.rosterRank || record.title || record.level || 'Guild Member').trim().slice(0, 80),
+              lastOn: normalizeLastOn(record.rosterLastOn),
+              identityManaged: true
+            }));
+        }
         try {
           const accounts = JSON.parse(localStorage.getItem(AUTHORIZED_ACCOUNT_STORAGE_KEY) || '[]');
           if (!Array.isArray(accounts)) {
             return [];
           }
-          return accounts.map((account, index) => {
-            const lastSeenAt = String(account && account.lastSeenAt || '');
-            const parsedLastSeen = Date.parse(lastSeenAt);
-            return {
+          return accounts.map((account, index) => ({
               id: `identity-${String(account && account.id || index)}`,
               name: String(account && account.name || 'Guild Member').trim().slice(0, 80),
-              level: null,
-              className: 'Authorized Site Account',
+              level: readRosterLevel(account && account.rosterLevel),
+              className: normalizeClassName(account && account.rosterClass) || 'Authorized Site Account',
               rank: String(account && account.title || account && account.level || 'Guild Member').trim().slice(0, 80),
-              lastOn: Number.isFinite(parsedLastSeen) ? new Date(parsedLastSeen).toISOString().slice(0, 10) : '',
+              lastOn: normalizeLastOn(account && account.rosterLastOn),
               identityManaged: true
-            };
-          });
+            }));
         } catch (error) {
           return [];
         }
@@ -426,7 +452,7 @@
 
       function getFilteredEntries() {
         const query = state.query.toLowerCase();
-        const allEntries = [...state.entries, ...readAuthorizedAccounts()];
+        const allEntries = getAllRosterEntries();
         const filtered = !query
           ? allEntries
           : allEntries.filter((entry) => {
@@ -439,6 +465,10 @@
               );
             });
         return getSortedEntries(filtered);
+      }
+
+      function getAllRosterEntries() {
+        return [...state.entries, ...readAuthorizedAccounts()];
       }
 
       function resetForm() {
@@ -460,15 +490,17 @@
 
       function render() {
         const rows = getFilteredEntries();
-        const totalEntries = state.entries.length + readAuthorizedAccounts().length;
+        const totalEntries = getAllRosterEntries().length;
         rosterCount.textContent = `Showing ${rows.length} of ${totalEntries} roster entries`;
         rosterEmpty.hidden = rows.length !== 0;
         actionsHeader.hidden = !state.editor;
 
         rosterTableBody.innerHTML = rows
           .map((entry) => {
-            const userCanEdit = state.editor && !entry.identityManaged && (
-              state.isOwner || normalizeEmail(entry.name) === state.currentUserName
+            const userCanEdit = state.editor && (
+              entry.identityManaged
+                ? state.isOwner || entry.accountEmail === state.currentUserEmail
+                : state.isOwner || normalizeEmail(entry.name) === state.currentUserName
             );
             const userCanDelete = state.isOwner && !entry.identityManaged;
             let actions = '';
@@ -511,6 +543,7 @@
         // canUseRoster (defined in guild-access.js) checks access.roster flag + active status.
         state.canEditRoster = permissions.canUseRoster;
         state.currentUserName = member ? normalizeEmail(member.name) : '';
+        state.currentUserEmail = member ? normalizeEmail(member.email) : '';
         state.editor = state.isOwner || state.canEditRoster;
         rosterOwnerPanel.hidden = !state.editor;
 
@@ -520,7 +553,7 @@
           rosterRankField.hidden = false;
           rosterRank.required = true;
           rosterPanelTitle.textContent = 'Roster Manager';
-          rosterPanelNote.textContent = 'Authorized editor controls. Changes are persistent and public across the site.';
+          rosterPanelNote.textContent = 'Manage guild characters and authorized site account roster profiles. Changes are persistent and public.';
           if (!state.editingId) {
             rosterSaveButton.textContent = 'Add Entry';
             rosterSaveButton.hidden = false;
@@ -530,7 +563,7 @@
           rosterRankField.hidden = true;
           rosterRank.required = false;
           rosterPanelTitle.textContent = 'Edit Your Entry';
-          rosterPanelNote.textContent = 'Click the Edit button next to your character name to update your entry.';
+          rosterPanelNote.textContent = 'Click Edit next to your authorized account or matching character entry to update it.';
           if (!state.editingId) {
             rosterSaveButton.hidden = true;
             setEditorNotice('', '');
@@ -558,20 +591,28 @@
         }
       });
 
-      rosterForm.addEventListener('submit', (event) => {
+      rosterForm.addEventListener('submit', async (event) => {
         event.preventDefault();
         if (!state.editor) {
           return;
         }
 
-        const editingEntry = state.editingId ? state.entries.find((e) => e.id === state.editingId) : null;
+        const editingEntry = state.editingId
+          ? getAllRosterEntries().find((entry) => entry.id === state.editingId)
+          : null;
 
         if (!state.isOwner) {
           if (!state.editingId) {
             setEditorNotice('Click the Edit button next to your character name to update your entry.', 'error');
             return;
           }
-          if (!editingEntry || normalizeEmail(editingEntry.name) !== state.currentUserName) {
+          const editingOwnAccount = editingEntry &&
+            editingEntry.identityManaged &&
+            editingEntry.accountEmail === state.currentUserEmail;
+          const editingOwnCharacter = editingEntry &&
+            !editingEntry.identityManaged &&
+            normalizeEmail(editingEntry.name) === state.currentUserName;
+          if (!editingOwnAccount && !editingOwnCharacter) {
             setEditorNotice('You can only edit your own roster entry.', 'error');
             return;
           }
@@ -589,6 +630,28 @@
 
         if (!nextEntry) {
           setEditorNotice('Please provide valid roster details before saving.', 'error');
+          return;
+        }
+
+        if (editingEntry && editingEntry.identityManaged) {
+          rosterSaveButton.disabled = true;
+          setEditorNotice('Saving the authorized account roster profile...', '');
+          try {
+            await window.TheChosenGuildAccess.updateRosterProfileOnServer(
+              editingEntry.accountEmail,
+              nextEntry
+            );
+            resetForm();
+            render();
+            setEditorNotice(`Updated ${nextEntry.name}.`, 'success');
+          } catch (error) {
+            setEditorNotice(
+              error && error.message ? error.message : 'The authorized account roster profile could not be saved.',
+              'error'
+            );
+          } finally {
+            rosterSaveButton.disabled = false;
+          }
           return;
         }
 
@@ -617,8 +680,11 @@
 
         const action = button.getAttribute('data-action');
         const id = button.getAttribute('data-id');
-        const target = state.entries.find((entry) => entry.id === id);
+        const target = getAllRosterEntries().find((entry) => entry.id === id);
         if (!target) {
+          return;
+        }
+        if (target.identityManaged && action === 'delete') {
           return;
         }
 
@@ -626,7 +692,9 @@
           if (action === 'delete') {
             return;
           }
-          if (action === 'edit' && normalizeEmail(target.name) !== state.currentUserName) {
+          const editingOwnAccount = target.identityManaged && target.accountEmail === state.currentUserEmail;
+          const editingOwnCharacter = !target.identityManaged && normalizeEmail(target.name) === state.currentUserName;
+          if (action === 'edit' && !editingOwnAccount && !editingOwnCharacter) {
             return;
           }
         }
