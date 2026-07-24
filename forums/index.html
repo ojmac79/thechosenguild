@@ -207,6 +207,7 @@
       const uiState = {
         openReplyForms: new Set(),
         openReplyLists: new Set(),
+        openNestedReplyLists: new Set(),
         autoOpenedReplyLists: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
@@ -247,6 +248,10 @@
 
       function pluralize(count, singular, plural) {
         return count === 1 ? singular : plural;
+      }
+
+      function formatReplyToggleLabel(count, isOpen) {
+        return `${isOpen ? 'Hide' : 'Show'} Replies (${count})`;
       }
 
       function truncateLabel(value, maxLength = 56) {
@@ -876,17 +881,30 @@
 
         const children = (childrenMap.get(reply.id) || []).slice().sort((a, b) => a.createdAt - b.createdAt);
         if (children.length) {
-          const childrenEl = document.createElement('div');
-          childrenEl.className = 'forum-thread__reply-children';
-          children.forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, {
-              spaceKey,
-              permissions,
-              canOpenReplyComposer,
-              childrenMap
-            }));
-          });
-          replyEl.appendChild(childrenEl);
+          const nestedRepliesOpen = uiState.openNestedReplyLists.has(reply.id);
+          const nestedCount = children.length;
+          const nestedToggle = document.createElement('button');
+          nestedToggle.type = 'button';
+          nestedToggle.className = 'resource-item__edit forum-thread__replies-toggle';
+          nestedToggle.textContent = formatReplyToggleLabel(nestedCount, nestedRepliesOpen);
+          nestedToggle.dataset.action = 'toggle-nested-replies';
+          nestedToggle.dataset.replyId = reply.id;
+          nestedToggle.setAttribute('aria-expanded', nestedRepliesOpen ? 'true' : 'false');
+          replyEl.appendChild(nestedToggle);
+
+          if (nestedRepliesOpen) {
+            const childrenEl = document.createElement('div');
+            childrenEl.className = 'forum-thread__reply-children';
+            children.forEach((child) => {
+              childrenEl.appendChild(buildReplyEl(child, {
+                spaceKey,
+                permissions,
+                canOpenReplyComposer,
+                childrenMap
+              }));
+            });
+            replyEl.appendChild(childrenEl);
+          }
         }
 
         return replyEl;
@@ -1064,7 +1082,7 @@
             const toggle = document.createElement('button');
             toggle.type = 'button';
             toggle.className = 'resource-item__edit forum-thread__replies-toggle';
-            toggle.textContent = repliesOpen ? `Hide Replies (${totalReplyCount})` : `Show Replies (${totalReplyCount})`;
+            toggle.textContent = formatReplyToggleLabel(totalReplyCount, repliesOpen);
             toggle.dataset.action = 'toggle-replies';
             toggle.dataset.space = spaceKey;
             toggle.dataset.threadId = thread.id;
@@ -1512,6 +1530,20 @@
               uiState.autoOpenedReplyLists.delete(threadId);
             } else {
               uiState.openReplyLists.add(threadId);
+            }
+            render();
+            return;
+          }
+
+          if (action === 'toggle-nested-replies') {
+            const replyId = button.dataset.replyId;
+            if (!replyId) {
+              return;
+            }
+            if (uiState.openNestedReplyLists.has(replyId)) {
+              uiState.openNestedReplyLists.delete(replyId);
+            } else {
+              uiState.openNestedReplyLists.add(replyId);
             }
             render();
             return;
