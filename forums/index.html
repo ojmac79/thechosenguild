@@ -1642,6 +1642,7 @@
             if (!threadId || !replyId) {
               return;
             }
+            uiState.openReplyLists.add(threadId);
             uiState.openReplyForms.add(threadId);
             uiState.replyingToReplyId[threadId] = replyId;
             render();
@@ -1671,6 +1672,7 @@
                 linkInput && linkInput.value,
                 imageUrl
               );
+              uiState.openReplyLists.add(threadId);
               uiState.openReplyForms.delete(threadId);
               delete uiState.replyingToReplyId[threadId];
               render();
