@@ -650,7 +650,8 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
 }
 .forum-thread__actions--reply { margin-top: 0.45rem; }
 .forum-thread__quick-action,
-.forum-thread__composer-toggle {
+.forum-thread__composer-toggle,
+.forum-thread__replies-toggle {
   padding: 0.35rem 0.7rem;
   border-radius: 999px;
   font-size: 0.82rem;
@@ -662,6 +663,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   padding-left: 1rem;
   border-left: 1px solid rgba(255, 255, 255, 0.1);
 }
+.forum-thread__replies[hidden] { display: none; }
 .forum-thread__reply { padding: 0.65rem 0.75rem; border-radius: 12px; background: rgba(255,255,255,0.03); }
 .forum-thread__reply-header {
   display: flex;
