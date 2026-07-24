@@ -440,14 +440,16 @@
         if (!uiState.openReplyForms.size) {
           return;
         }
-        const threadIds = new Set((forumState[spaceKey]?.threads || []).map((thread) => thread.id));
-        if (!threadIds.size) {
+        const threads = forumState[spaceKey]?.threads || [];
+        if (!threads.length) {
           return;
         }
         for (const threadId of uiState.openReplyForms) {
-          if (threadIds.has(threadId)) {
+          if (threads.some((thread) => thread.id === threadId)) {
             uiState.openReplyForms.delete(threadId);
-            delete uiState.replyingToReplyId[threadId];
+            if (Object.prototype.hasOwnProperty.call(uiState.replyingToReplyId, threadId)) {
+              delete uiState.replyingToReplyId[threadId];
+            }
           }
         }
       }
