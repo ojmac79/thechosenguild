@@ -101,7 +101,6 @@
             <button class="btn-primary" type="submit">Post to Public Forum</button>
           </form>
 
-          <div class="forum2-filters" id="publicFilters" hidden></div>
           <div class="forum-thread-list" id="publicThreadList"></div>
         </section>
 
@@ -164,7 +163,6 @@
             <button class="btn-primary" type="submit">Post to Private Forum</button>
           </form>
 
-          <div class="forum2-filters" id="privateFilters" hidden></div>
           <div class="forum-thread-list" id="privateThreadList" hidden></div>
         </section>
       </main>
@@ -200,8 +198,6 @@
       const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
       const guildAccess = window.TheChosenGuildAccess;
       const uiState = {
-        publicFilter: 'all',
-        privateFilter: 'all',
         openReplyForms: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
@@ -786,27 +782,6 @@
         return replyEl;
       }
 
-      function renderCategoryFilters(spaceKey, categories) {
-        const container = document.getElementById(`${spaceKey}Filters`);
-        container.innerHTML = '';
-
-        const filterButtons = [{ id: 'all', name: 'All Categories', description: '' }, ...categories];
-        const selected = uiState[`${spaceKey}Filter`];
-
-        filterButtons.forEach((category) => {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = `forum2-filter-btn${selected === category.id ? ' active' : ''}`;
-          button.dataset.filterId = category.id;
-          button.dataset.space = spaceKey;
-          button.textContent = category.name;
-          if (category.description) {
-            button.title = category.description;
-          }
-          container.appendChild(button);
-        });
-      }
-
       function renderCategoryManager(spaceKey, isModerator) {
         const manager = document.getElementById(`${spaceKey}CategoryManager`);
         const list = document.getElementById(`${spaceKey}CategoryList`);
@@ -863,7 +838,6 @@
 
       function renderThreads(spaceKey, permissions, member, privateAccess) {
         const container = document.getElementById(`${spaceKey}ThreadList`);
-        const selectedFilter = 'all';
         const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
 
         // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
@@ -878,13 +852,9 @@
           }
         });
 
-        const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
-          return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
-        });
+        const threads = sortThreads(forumState[spaceKey].threads);
         const canReply = spaceKey === 'public' || (!!member && !!privateAccess);
-        const visibleCategories = forumState[spaceKey].categories.filter((category) => {
-          return selectedFilter === 'all' ? true : category.id === selectedFilter;
-        });
+        const visibleCategories = forumState[spaceKey].categories;
         const threadsByCategory = new Map();
         threads.forEach((thread) => {
           const existing = threadsByCategory.get(thread.categoryId) || [];
@@ -1191,15 +1161,11 @@
         privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
 
         const privateGate = document.getElementById('privateGate');
-        const publicFilters = document.getElementById('publicFilters');
-        const privateFilters = document.getElementById('privateFilters');
         const privateList = document.getElementById('privateThreadList');
 
         privateGate.hidden = privateAccess;
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
-        publicFilters.hidden = true;
-        privateFilters.hidden = true;
         privateList.hidden = !privateAccess;
         publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'New Post';
         privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'New Post';
@@ -1257,7 +1223,6 @@
         }
 
         await runForumOperation('delete-category', spaceKey, { categoryId });
-        uiState[`${spaceKey}Filter`] = 'all';
       }
 
       async function addThread(spaceKey, title, body, categoryId, linkUrl, imageUrl) {
@@ -1381,15 +1346,6 @@
           } catch (error) {
             document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
           }
-        });
-
-        document.getElementById(`${spaceKey}Filters`).addEventListener('click', (event) => {
-          const button = event.target.closest('[data-filter-id]');
-          if (!button) {
-            return;
-          }
-          uiState[`${spaceKey}Filter`] = button.dataset.filterId || 'all';
-          render();
         });
 
         document.getElementById(`${spaceKey}CategoryList`).addEventListener('click', async (event) => {
