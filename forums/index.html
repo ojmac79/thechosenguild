@@ -977,6 +977,7 @@
             .sort((a, b) => a.createdAt - b.createdAt);
 
           const threadUiKey = getThreadUiKey(spaceKey, thread.id);
+          const threadContentId = `threadContent-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
           const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const repliesOpen = uiState.openReplyLists.has(thread.id);
@@ -991,6 +992,7 @@
           contentToggle.dataset.action = 'toggle-thread-content';
           contentToggle.dataset.space = spaceKey;
           contentToggle.dataset.threadId = thread.id;
+          contentToggle.setAttribute('aria-controls', threadContentId);
           contentToggle.setAttribute('aria-label', `${threadContentOpen ? 'Hide' : 'Show'} post: ${thread.title}`);
           contentToggle.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
           actions.appendChild(contentToggle);
@@ -1061,13 +1063,18 @@
             article.appendChild(actions);
           }
 
+          const threadContent = document.createElement('div');
+          threadContent.id = threadContentId;
+          threadContent.hidden = !threadContentOpen;
+          threadContent.setAttribute('aria-hidden', threadContentOpen ? 'false' : 'true');
           if (threadContentOpen) {
             const body = document.createElement('div');
             body.className = 'forum-thread__body';
             appendLinkedText(body, thread.body);
-            article.appendChild(body);
-            appendPostMedia(article, thread);
+            threadContent.appendChild(body);
+            appendPostMedia(threadContent, thread);
           }
+          article.appendChild(threadContent);
 
           if (topLevelReplies.length && repliesOpen) {
             const repliesContainer = document.createElement('div');
