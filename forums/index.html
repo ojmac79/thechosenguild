@@ -45,7 +45,7 @@
         <p class="hero__eyebrow">Guild Communications</p>
         <h1 class="page-title">Guild Forums</h1>
         <p class="page-subtitle">
-          A compact forum index showing only the public and members-only discussion boards.
+          A compact forum Index showing only the public and members-only discussion boards.
         </p>
 
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
@@ -432,17 +432,19 @@
       }
 
       function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories, cache) {
-        const cacheKey = `${spaceKey}:${String(categoryId || '')}`;
-        if (cache instanceof Map && cache.has(cacheKey)) {
+        const normalizedCategoryId = String(categoryId || '');
+        const hasCache = cache instanceof Map;
+        const cacheKey = `${spaceKey}:${normalizedCategoryId}`;
+        if (hasCache && cache.has(cacheKey)) {
           return cache.get(cacheKey);
         }
         const matchedCategory = Array.isArray(sourceCategories)
-          ? sourceCategories.find((category) => category && category.id === categoryId)
+          ? sourceCategories.find((category) => category && category.id === normalizedCategoryId)
           : null;
         const resolvedCategoryId = matchedCategory
           ? classifyCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`)
-          : classifyCategoryId(spaceKey, categoryId);
-        if (cache instanceof Map) {
+          : classifyCategoryId(spaceKey, normalizedCategoryId);
+        if (hasCache) {
           cache.set(cacheKey, resolvedCategoryId);
         }
         return resolvedCategoryId;
@@ -1154,8 +1156,8 @@
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
           const latestThread = categoryThreads.length ? categoryThreads[0] : null;
-          const latestTopicText = latestThread ? `Latest topic: ${truncateLabel(latestThread.title)}` : '';
-          categorySummary.textContent = [category.description, countLabel, latestTopicText].filter(Boolean).join(META_DELIMITER);
+          const latestPostText = latestThread ? `Latest post: ${truncateLabel(latestThread.title)}` : '';
+          categorySummary.textContent = [category.description, countLabel, latestPostText].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);
           categoryHeader.appendChild(categorySummary);

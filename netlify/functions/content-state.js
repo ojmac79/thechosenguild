@@ -407,11 +407,12 @@ function classifyForumCategoryId(spaceKey, value) {
 }
 
 function resolveForumCategoryId(spaceKey, categoryId, categoryMap) {
-  const matchedCategory = categoryMap instanceof Map ? categoryMap.get(String(categoryId || '')) : null;
+  const normalizedCategoryId = String(categoryId || '');
+  const matchedCategory = categoryMap instanceof Map ? categoryMap.get(normalizedCategoryId) : null;
   if (matchedCategory) {
     return classifyForumCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`);
   }
-  return classifyForumCategoryId(spaceKey, categoryId);
+  return classifyForumCategoryId(spaceKey, normalizedCategoryId);
 }
 
 function defaultForumState() {
