@@ -198,6 +198,7 @@
         }
       };
       let serverAccess = 'public';
+      const META_SEPARATOR = ' • ';
 
       function getCurrentMember() {
         return guildAccess.getCurrentMember();
@@ -869,7 +870,7 @@
           return;
         }
 
-        function buildThreadArticle(thread, categoryName) {
+        function buildThreadArticle(thread, categoryName, canReplyToThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
 
@@ -886,7 +887,7 @@
           const postedOn = new Date(thread.createdAt).toLocaleString();
           const totalReplyCount = replyCountByThread.get(thread.id) || 0;
           const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
-          meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn} • ${replyLabel}`;
+          meta.textContent = [thread.authorName, categoryName, postedOn, replyLabel].join(META_SEPARATOR);
 
           titleWrap.appendChild(title);
           titleWrap.appendChild(meta);
@@ -973,7 +974,7 @@
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          if (canReply && !thread.isLocked) {
+          if (canReplyToThread && !thread.isLocked) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
 
             const replyToggle = document.createElement('button');
@@ -1094,7 +1095,7 @@
           threadStack.className = 'forum2-category__threads';
 
           categoryThreads.forEach((thread) => {
-            threadStack.appendChild(buildThreadArticle(thread, category.name));
+            threadStack.appendChild(buildThreadArticle(thread, category.name, canReply));
           });
 
           categorySection.appendChild(threadStack);
