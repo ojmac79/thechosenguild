@@ -207,6 +207,7 @@
       const uiState = {
         openReplyForms: new Set(),
         openReplyLists: new Set(),
+        autoOpenedReplyLists: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -449,6 +450,10 @@
         for (const threadId of uiState.openReplyForms) {
           if (threads.some((thread) => thread.id === threadId)) {
             uiState.openReplyForms.delete(threadId);
+            if (uiState.autoOpenedReplyLists.has(threadId)) {
+              uiState.openReplyLists.delete(threadId);
+              uiState.autoOpenedReplyLists.delete(threadId);
+            }
             if (Object.hasOwn(uiState.replyingToReplyId, threadId)) {
               delete uiState.replyingToReplyId[threadId];
             }
@@ -1481,9 +1486,16 @@
             }
             if (uiState.openReplyForms.has(threadId)) {
               uiState.openReplyForms.delete(threadId);
+              if (uiState.autoOpenedReplyLists.has(threadId)) {
+                uiState.openReplyLists.delete(threadId);
+                uiState.autoOpenedReplyLists.delete(threadId);
+              }
               delete uiState.replyingToReplyId[threadId];
             } else {
-              uiState.openReplyLists.add(threadId);
+              if (!uiState.openReplyLists.has(threadId)) {
+                uiState.openReplyLists.add(threadId);
+                uiState.autoOpenedReplyLists.add(threadId);
+              }
               uiState.openReplyForms.add(threadId);
             }
             render();
@@ -1497,6 +1509,7 @@
             }
             if (uiState.openReplyLists.has(threadId)) {
               uiState.openReplyLists.delete(threadId);
+              uiState.autoOpenedReplyLists.delete(threadId);
             } else {
               uiState.openReplyLists.add(threadId);
             }
