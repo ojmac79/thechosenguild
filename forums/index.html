@@ -437,7 +437,7 @@
       }
 
       function clearReplyFormsForSpace(spaceKey) {
-        const threadIds = new Set((forumState[spaceKey] && forumState[spaceKey].threads || []).map((thread) => thread.id));
+        const threadIds = new Set((forumState[spaceKey]?.threads || []).map((thread) => thread.id));
         if (!threadIds.size) {
           return;
         }
