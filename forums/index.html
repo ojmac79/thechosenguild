@@ -444,12 +444,12 @@
         if (!threadIds.size) {
           return;
         }
-        uiState.openReplyForms.forEach((threadId) => {
+        for (const threadId of uiState.openReplyForms) {
           if (threadIds.has(threadId)) {
             uiState.openReplyForms.delete(threadId);
             delete uiState.replyingToReplyId[threadId];
           }
-        });
+        }
       }
 
       function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories, cache) {
@@ -996,7 +996,7 @@
           const threadContentId = `threadContent-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
           const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
-          const showEntryFields = uiState.openThreadForms[spaceKey];
+          const isNewPostOpen = uiState.openThreadForms[spaceKey];
           const repliesOpen = uiState.openReplyLists.has(thread.id);
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
@@ -1030,7 +1030,7 @@
             hasActions = true;
           }
 
-          if (canOpenReplyComposer && showEntryFields) {
+          if (canOpenReplyComposer && isNewPostOpen) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
             const replyToggle = document.createElement('button');
             replyToggle.type = 'button';
@@ -1108,7 +1108,7 @@
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          if (canOpenReplyComposer && showEntryFields) {
+          if (canOpenReplyComposer && isNewPostOpen) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
             if (isFormOpen) {
               const form = document.createElement('div');
