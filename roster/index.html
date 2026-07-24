@@ -257,10 +257,6 @@
         return String(value || '').trim().toLowerCase();
       }
 
-      function normalizeName(value) {
-        return String(value || '').trim().toLowerCase();
-      }
-
       function readAuthorizedAccounts() {
         try {
           const accounts = JSON.parse(localStorage.getItem(AUTHORIZED_ACCOUNT_STORAGE_KEY) || '[]');
@@ -472,7 +468,7 @@
         rosterTableBody.innerHTML = rows
           .map((entry) => {
             const userCanEdit = state.editor && !entry.identityManaged && (
-              state.isOwner || normalizeName(entry.name) === state.currentUserName
+              state.isOwner || normalizeEmail(entry.name) === state.currentUserName
             );
             const userCanDelete = state.isOwner && !entry.identityManaged;
             let actions = '';
@@ -512,8 +508,9 @@
         const member = getCurrentMember();
         const permissions = window.TheChosenGuildAccess.getPermissions(member);
         state.isOwner = permissions.isOwner;
+        // canUseRoster (defined in guild-access.js) checks access.roster flag + active status.
         state.canEditRoster = permissions.canUseRoster;
-        state.currentUserName = member ? normalizeName(member.name) : '';
+        state.currentUserName = member ? normalizeEmail(member.name) : '';
         state.editor = state.isOwner || state.canEditRoster;
         rosterOwnerPanel.hidden = !state.editor;
 
@@ -567,14 +564,14 @@
           return;
         }
 
-        const ownEntry = state.editingId ? state.entries.find((e) => e.id === state.editingId) : null;
+        const editingEntry = state.editingId ? state.entries.find((e) => e.id === state.editingId) : null;
 
         if (!state.isOwner) {
           if (!state.editingId) {
             setEditorNotice('Click the Edit button next to your character name to update your entry.', 'error');
             return;
           }
-          if (!ownEntry || normalizeName(ownEntry.name) !== state.currentUserName) {
+          if (!editingEntry || normalizeEmail(editingEntry.name) !== state.currentUserName) {
             setEditorNotice('You can only edit your own roster entry.', 'error');
             return;
           }
@@ -585,7 +582,8 @@
           name: rosterName.value,
           level: rosterLevel.value,
           className: rosterClass.value,
-          rank: state.isOwner ? rosterRank.value : (ownEntry ? ownEntry.rank : DEFAULT_RANK),
+          // Non-owners cannot change rank; the guard above ensures editingEntry is non-null for non-owners.
+          rank: state.isOwner ? rosterRank.value : (editingEntry ? editingEntry.rank : DEFAULT_RANK),
           lastOn: rosterLastOn.value
         });
 
@@ -628,7 +626,7 @@
           if (action === 'delete') {
             return;
           }
-          if (action === 'edit' && normalizeName(target.name) !== state.currentUserName) {
+          if (action === 'edit' && normalizeEmail(target.name) !== state.currentUserName) {
             return;
           }
         }
