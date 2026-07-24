@@ -950,7 +950,6 @@
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
-          const repliesOpen = uiState.openReplyLists.has(thread.id);
           const repliesContainerId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
 
           const header = document.createElement('div');
@@ -1058,18 +1057,14 @@
             const repliesContainer = document.createElement('div');
             repliesContainer.id = repliesContainerId;
             repliesContainer.className = 'forum-thread__replies';
-            repliesContainer.hidden = !repliesOpen;
-            repliesContainer.setAttribute('aria-hidden', repliesOpen ? 'false' : 'true');
-            if (repliesOpen) {
-              topLevelReplies.forEach((reply) => {
-                repliesContainer.appendChild(buildReplyEl(reply, {
-                  spaceKey,
-                  permissions,
-                  canOpenReplyComposer,
-                  childrenMap
-                }));
-              });
-            }
+            topLevelReplies.forEach((reply) => {
+              repliesContainer.appendChild(buildReplyEl(reply, {
+                spaceKey,
+                permissions,
+                canOpenReplyComposer,
+                childrenMap
+              }));
+            });
             article.appendChild(repliesContainer);
           }
 
