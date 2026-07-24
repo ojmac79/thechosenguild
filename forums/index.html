@@ -1078,10 +1078,6 @@
           threadContent.hidden = !threadContentOpen;
           threadContent.setAttribute('aria-hidden', threadContentOpen ? 'false' : 'true');
           if (threadContentOpen) {
-            const body = document.createElement('div');
-            body.className = 'forum-thread__body';
-            appendLinkedText(body, thread.body);
-            threadContent.appendChild(body);
             appendPostMedia(threadContent, thread);
           }
           article.appendChild(threadContent);
