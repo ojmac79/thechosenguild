@@ -250,6 +250,23 @@
         return count === 1 ? singular : plural;
       }
 
+      function getThreadRoute() {
+        const params = new URLSearchParams(window.location.search);
+        const spaceKey = String(params.get('space') || '').trim();
+        const threadId = String(params.get('thread') || '').trim();
+        if (!threadId || (spaceKey !== 'public' && spaceKey !== 'private')) {
+          return null;
+        }
+        return { spaceKey, threadId };
+      }
+
+      function buildThreadHref(spaceKey, threadId) {
+        const params = new URLSearchParams(window.location.search);
+        params.set('space', spaceKey);
+        params.set('thread', threadId);
+        return `${window.location.pathname}?${params.toString()}`;
+      }
+
       function buildReplyToggleLabel(count, isOpen) {
         return `${isOpen ? 'Hide' : 'Show'} Replies (${count})`;
       }
@@ -989,24 +1006,59 @@
           return;
         }
 
-        function buildThreadArticle(thread, categoryName, canReplyToThread) {
+        const activeThreadRoute = getThreadRoute();
+        const focusedThreadId = activeThreadRoute && activeThreadRoute.spaceKey === spaceKey
+          ? activeThreadRoute.threadId
+          : null;
+        const isThreadFocusMode = Boolean(focusedThreadId);
+        if (activeThreadRoute && activeThreadRoute.spaceKey !== spaceKey) {
+          container.innerHTML = '';
+          return;
+        }
+        if (focusedThreadId && !threads.some((thread) => thread.id === focusedThreadId)) {
+          container.innerHTML = '';
+          const empty = document.createElement('article');
+          empty.className = 'panel forum-thread';
+          const message = document.createElement('p');
+          message.className = 'empty-state';
+          message.textContent = 'That post could not be found.';
+          empty.appendChild(message);
+          container.appendChild(empty);
+          return;
+        }
+
+        function buildThreadArticle(thread, categoryName, canReplyToThread, isFocusedThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+          if (!isFocusedThread) {
+            article.classList.add('forum-thread--title-only');
+          }
 
           const topLevelReplies = forumState[spaceKey].replies
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
           const hasReplies = topLevelReplies.length > 0;
-          const repliesOpen = uiState.openReplyLists.has(thread.id);
+          const repliesOpen = isFocusedThread || uiState.openReplyLists.has(thread.id);
           const repliesId = buildSafeId('threadReplies', spaceKey, thread.id);
+
+          const title = document.createElement('h3');
+          title.className = 'forum-thread__title';
+          if (isFocusedThread) {
+            title.appendChild(document.createTextNode(thread.title));
+          } else {
+            const titleLink = document.createElement('a');
+            titleLink.className = 'forum-thread__title-link';
+            titleLink.href = buildThreadHref(spaceKey, thread.id);
+            titleLink.textContent = thread.title;
+            title.appendChild(titleLink);
+            article.appendChild(title);
+            return article;
+          }
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
 
           const titleWrap = document.createElement('div');
-          const title = document.createElement('h3');
-          title.className = 'forum-thread__title';
-          title.appendChild(document.createTextNode(thread.title));
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
@@ -1209,7 +1261,13 @@
         }
 
         visibleCategories.forEach((category) => {
-          const categoryThreads = threadsByCategory.get(category.id) || [];
+          const allCategoryThreads = threadsByCategory.get(category.id) || [];
+          const categoryThreads = focusedThreadId
+            ? allCategoryThreads.filter((thread) => thread.id === focusedThreadId)
+            : allCategoryThreads;
+          if (isThreadFocusMode && !categoryThreads.length) {
+            return;
+          }
           const categorySection = document.createElement('section');
           categorySection.className = 'panel forum2-category';
 
@@ -1243,8 +1301,17 @@
           const threadStack = document.createElement('div');
           threadStack.className = 'forum2-category__threads';
 
+          if (isThreadFocusMode && categoryThreads.length) {
+            const backLink = document.createElement('a');
+            backLink.className = 'forum-thread__back-link';
+            backLink.href = window.location.pathname;
+            backLink.textContent = '← Back to all post titles';
+            threadStack.appendChild(backLink);
+          }
+
           categoryThreads.forEach((thread) => {
-            threadStack.appendChild(buildThreadArticle(thread, category.name, canReply));
+            const isFocusedThread = Boolean(focusedThreadId) && thread.id === focusedThreadId;
+            threadStack.appendChild(buildThreadArticle(thread, category.name, canReply, isFocusedThread));
           });
 
           categorySection.appendChild(threadStack);

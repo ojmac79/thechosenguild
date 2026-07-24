@@ -605,6 +605,30 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
 .forum-thread--member { border-left: 2px solid var(--accent); }
 .forum-thread__header { display: flex; align-items: flex-start; justify-content: space-between; gap: 0.8rem; }
 .forum-thread__title { margin: 0 0 0.16rem; font-size: 0.98rem; line-height: 1.25; }
+.forum-thread__title-link {
+  color: var(--text);
+  text-decoration: none;
+}
+.forum-thread__title-link:hover,
+.forum-thread__title-link:focus-visible {
+  color: var(--accent);
+  text-decoration: underline;
+}
+.forum-thread--title-only {
+  padding: 0.68rem 0.82rem;
+}
+.forum-thread--title-only .forum-thread__title {
+  margin: 0;
+}
+.forum-thread__back-link {
+  color: var(--accent);
+  font-weight: 700;
+  text-decoration: none;
+}
+.forum-thread__back-link:hover,
+.forum-thread__back-link:focus-visible {
+  text-decoration: underline;
+}
 .forum-thread__title--toggle { cursor: pointer; user-select: none; }
 .forum-thread__title--toggle:hover { color: var(--accent); }
 .forum-thread__title-indicator { font-size: 0.75em; opacity: 0.65; margin-left: 0.25rem; }
