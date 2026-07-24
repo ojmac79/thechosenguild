@@ -50,22 +50,25 @@
 
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
           <div class="forum2-space__header">
-            <h2 class="forum2-space__title">Public Forum</h2>
-            <span class="forum-badge">Open to everyone</span>
+            <div class="forum2-space__heading">
+              <h2 class="forum2-space__title">Public Forum</h2>
+              <span class="forum-badge">Open to everyone</span>
+            </div>
+            <button class="btn-primary" id="publicNewPostButton" type="button" aria-expanded="false" aria-controls="publicThreadForm">New Post</button>
           </div>
           <p class="forum2-note" id="publicAuthNote"></p>
 
-          <div class="panel forum2-manager" id="publicCategoryManager" hidden>
-            <h3 class="forum2-manager__title">Manage Public Categories</h3>
+          <details class="panel forum2-manager" id="publicCategoryManager" hidden>
+            <summary class="forum2-manager__title">Manage Public Categories</summary>
             <form class="forum2-inline-form" id="publicCategoryForm">
               <input type="text" id="publicCategoryName" placeholder="Category name" required />
               <input type="text" id="publicCategoryDescription" placeholder="Short description" required />
               <button class="btn-primary" type="submit">Add Category</button>
             </form>
             <div id="publicCategoryList" class="forum2-manager__list"></div>
-          </div>
+          </details>
 
-          <form class="panel forum2-form" id="publicThreadForm">
+          <form class="panel forum2-form" id="publicThreadForm" hidden>
             <label class="resource-field">
               <span>Category</span>
               <select id="publicThreadCategory" required></select>
@@ -92,14 +95,16 @@
             <button class="btn-primary" type="submit">Post to Public Forum</button>
           </form>
 
-          <div class="forum2-filters" id="publicFilters"></div>
           <div class="forum-thread-list" id="publicThreadList"></div>
         </section>
 
         <section class="forum2-space" id="privateSpace" aria-label="Private members-only forum">
           <div class="forum2-space__header">
-            <h2 class="forum2-space__title">Private Members Forum</h2>
-            <span class="forum-badge forum-badge--member">Members only</span>
+            <div class="forum2-space__heading">
+              <h2 class="forum2-space__title">Private Members Forum</h2>
+              <span class="forum-badge forum-badge--member">Members only</span>
+            </div>
+            <button class="btn-primary" id="privateNewPostButton" type="button" aria-expanded="false" aria-controls="privateThreadForm" hidden>New Post</button>
           </div>
           <div class="panel forum-gate" id="privateGate">
             <p class="forum-gate__text">
@@ -110,15 +115,15 @@
 
           <p class="forum2-note" id="privateAuthNote"></p>
 
-          <div class="panel forum2-manager" id="privateCategoryManager" hidden>
-            <h3 class="forum2-manager__title">Manage Private Categories</h3>
+          <details class="panel forum2-manager" id="privateCategoryManager" hidden>
+            <summary class="forum2-manager__title">Manage Private Categories</summary>
             <form class="forum2-inline-form" id="privateCategoryForm">
               <input type="text" id="privateCategoryName" placeholder="Category name" required />
               <input type="text" id="privateCategoryDescription" placeholder="Short description" required />
               <button class="btn-primary" type="submit">Add Category</button>
             </form>
             <div id="privateCategoryList" class="forum2-manager__list"></div>
-          </div>
+          </details>
 
           <form class="panel forum2-form" id="privateThreadForm" hidden>
             <label class="resource-field">
@@ -146,7 +151,6 @@
             <button class="btn-primary" type="submit">Post to Private Forum</button>
           </form>
 
-          <div class="forum2-filters" id="privateFilters" hidden></div>
           <div class="forum-thread-list" id="privateThreadList" hidden></div>
         </section>
       </main>
@@ -182,8 +186,9 @@
       const FORUM_REMOTE_ENDPOINT = '/.netlify/functions/content-state?scope=forum';
       const guildAccess = window.TheChosenGuildAccess;
       const uiState = {
-        publicFilter: 'all',
-        privateFilter: 'all',
+        openThreadForms: new Set(),
+        openCategories: new Set(),
+        openThreads: new Set(),
         openReplyForms: new Set(),
         replyingToReplyId: {}
       };
@@ -672,7 +677,7 @@
         }
       }
 
-      function buildReplyEl(reply, spaceKey, permissions, childrenMap) {
+      function buildReplyEl(reply, spaceKey, permissions, childrenMap, canReply) {
         const replyEl = document.createElement('div');
         replyEl.className = 'forum-thread__reply';
 
@@ -707,20 +712,33 @@
         replyEl.appendChild(body);
         appendPostMedia(replyEl, reply);
 
-        if (canModerate(permissions)) {
+        if (canReply || canModerate(permissions)) {
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           actions.style.marginTop = '0.35rem';
 
-          const deleteBtn = document.createElement('button');
-          deleteBtn.type = 'button';
-          deleteBtn.className = 'resource-item__delete';
-          deleteBtn.textContent = 'Delete';
-          deleteBtn.dataset.action = 'delete-reply';
-          deleteBtn.dataset.space = spaceKey;
-          deleteBtn.dataset.replyId = reply.id;
+          if (canReply) {
+            const replyBtn = document.createElement('button');
+            replyBtn.type = 'button';
+            replyBtn.className = 'forum-thread__reply-action';
+            replyBtn.textContent = 'Reply';
+            replyBtn.dataset.action = 'reply-to-reply';
+            replyBtn.dataset.space = spaceKey;
+            replyBtn.dataset.threadId = reply.threadId;
+            replyBtn.dataset.replyId = reply.id;
+            actions.appendChild(replyBtn);
+          }
 
-          actions.appendChild(deleteBtn);
+          if (canModerate(permissions)) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'resource-item__delete';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.dataset.action = 'delete-reply';
+            deleteBtn.dataset.space = spaceKey;
+            deleteBtn.dataset.replyId = reply.id;
+            actions.appendChild(deleteBtn);
+          }
           replyEl.appendChild(actions);
         }
 
@@ -729,33 +747,12 @@
           const childrenEl = document.createElement('div');
           childrenEl.className = 'forum-thread__reply-children';
           children.forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, childrenMap));
+            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, childrenMap, canReply));
           });
           replyEl.appendChild(childrenEl);
         }
 
         return replyEl;
-      }
-
-      function renderCategoryFilters(spaceKey, categories) {
-        const container = document.getElementById(`${spaceKey}Filters`);
-        container.innerHTML = '';
-
-        const filterButtons = [{ id: 'all', name: 'All Categories', description: '' }, ...categories];
-        const selected = uiState[`${spaceKey}Filter`];
-
-        filterButtons.forEach((category) => {
-          const button = document.createElement('button');
-          button.type = 'button';
-          button.className = `forum2-filter-btn${selected === category.id ? ' active' : ''}`;
-          button.dataset.filterId = category.id;
-          button.dataset.space = spaceKey;
-          button.textContent = category.name;
-          if (category.description) {
-            button.title = category.description;
-          }
-          container.appendChild(button);
-        });
       }
 
       function renderCategoryManager(spaceKey, isModerator) {
@@ -814,11 +811,7 @@
 
       function renderThreads(spaceKey, permissions, member, privateAccess) {
         const container = document.getElementById(`${spaceKey}ThreadList`);
-        const selectedFilter = uiState[`${spaceKey}Filter`];
-        const categoryMap = new Map(forumState[spaceKey].categories.map((category) => [category.id, category]));
         const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
-
-        // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
         const replyCountByThread = new Map();
         const childrenMap = new Map();
         forumState[spaceKey].replies.forEach((reply) => {
@@ -829,214 +822,210 @@
             childrenMap.set(reply.parentReplyId, siblings);
           }
         });
-
-        const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
-          return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
-        });
-
         container.innerHTML = '';
-        if (!threads.length) {
-          const empty = document.createElement('article');
-          empty.className = 'panel forum-thread';
-          const message = document.createElement('p');
-          message.className = 'empty-state';
-          message.textContent = 'No threads yet in this view.';
-          empty.appendChild(message);
-          container.appendChild(empty);
-          return;
-        }
+        forumState[spaceKey].categories.forEach((category) => {
+          const categoryThreads = sortThreads(
+            forumState[spaceKey].threads.filter((thread) => thread.categoryId === category.id)
+          );
+          const replyTotal = categoryThreads.reduce(
+            (total, thread) => total + (replyCountByThread.get(thread.id) || 0),
+            0
+          );
+          const categoryEl = document.createElement('details');
+          categoryEl.className = 'forum-category';
+          const categoryKey = `${spaceKey}:${category.id}`;
+          categoryEl.open = uiState.openCategories.has(categoryKey);
+          categoryEl.addEventListener('toggle', () => {
+            if (categoryEl.open) {
+              uiState.openCategories.add(categoryKey);
+            } else {
+              uiState.openCategories.delete(categoryKey);
+            }
+          });
 
-        threads.forEach((thread) => {
-          const article = document.createElement('article');
-          article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+          const categorySummary = document.createElement('summary');
+          categorySummary.className = 'forum-category__summary';
+          const categoryCopy = document.createElement('span');
+          categoryCopy.className = 'forum-category__copy';
+          const categoryName = document.createElement('strong');
+          categoryName.className = 'forum-category__name';
+          categoryName.textContent = category.name;
+          const categoryDescription = document.createElement('span');
+          categoryDescription.className = 'forum-category__description';
+          categoryDescription.textContent = category.description;
+          categoryCopy.appendChild(categoryName);
+          categoryCopy.appendChild(categoryDescription);
+          const categoryStats = document.createElement('span');
+          categoryStats.className = 'forum-category__stats';
+          categoryStats.textContent = `${categoryThreads.length} topics · ${replyTotal} replies`;
+          categorySummary.appendChild(categoryCopy);
+          categorySummary.appendChild(categoryStats);
+          categoryEl.appendChild(categorySummary);
 
-          const header = document.createElement('div');
-          header.className = 'forum-thread__header';
-
-          const titleWrap = document.createElement('div');
-          const title = document.createElement('h3');
-          title.className = 'forum-thread__title';
-          title.textContent = thread.title;
-
-          const meta = document.createElement('p');
-          meta.className = 'forum-thread__meta';
-          const categoryName = categoryMap.get(thread.categoryId)?.name || forumState[spaceKey].categories[0].name;
-          const postedOn = new Date(thread.createdAt).toLocaleString();
-          const totalReplyCount = replyCountByThread.get(thread.id) || 0;
-          const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
-          meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn} • ${replyLabel}`;
-
-          titleWrap.appendChild(title);
-          titleWrap.appendChild(meta);
-
-          const badgeWrap = document.createElement('div');
-          badgeWrap.className = 'forum2-thread-badges';
-
-          const spaceBadge = document.createElement('span');
-          spaceBadge.className = `forum-badge${spaceKey === 'private' ? ' forum-badge--member' : ''}`;
-          spaceBadge.textContent = spaceKey === 'private' ? 'Members' : 'Public';
-          badgeWrap.appendChild(spaceBadge);
-
-          if (thread.isPinned) {
-            const pinned = document.createElement('span');
-            pinned.className = 'forum-badge';
-            pinned.textContent = 'Pinned';
-            badgeWrap.appendChild(pinned);
+          const topicList = document.createElement('div');
+          topicList.className = 'forum-category__topics';
+          if (!categoryThreads.length) {
+            const empty = document.createElement('p');
+            empty.className = 'forum-category__empty';
+            empty.textContent = 'No topics in this category yet.';
+            topicList.appendChild(empty);
           }
 
-          if (thread.isLocked) {
-            const locked = document.createElement('span');
-            locked.className = 'forum-badge';
-            locked.textContent = 'Locked';
-            badgeWrap.appendChild(locked);
-          }
-
-          header.appendChild(titleWrap);
-          header.appendChild(badgeWrap);
-
-          const body = document.createElement('div');
-          body.className = 'forum-thread__body';
-          appendLinkedText(body, thread.body);
-
-          article.appendChild(header);
-          article.appendChild(body);
-          appendPostMedia(article, thread);
-
-          if (canModerate(permissions)) {
-            const actions = document.createElement('div');
-            actions.className = 'forum-thread__actions';
-
-            const pinButton = document.createElement('button');
-            pinButton.type = 'button';
-            pinButton.className = 'resource-item__edit';
-            pinButton.textContent = thread.isPinned ? 'Unpin' : 'Pin';
-            pinButton.dataset.action = 'toggle-pin';
-            pinButton.dataset.space = spaceKey;
-            pinButton.dataset.threadId = thread.id;
-
-            const lockButton = document.createElement('button');
-            lockButton.type = 'button';
-            lockButton.className = 'resource-item__edit';
-            lockButton.textContent = thread.isLocked ? 'Unlock' : 'Lock';
-            lockButton.dataset.action = 'toggle-lock';
-            lockButton.dataset.space = spaceKey;
-            lockButton.dataset.threadId = thread.id;
-
-            const deleteButton = document.createElement('button');
-            deleteButton.type = 'button';
-            deleteButton.className = 'resource-item__delete';
-            deleteButton.textContent = 'Delete';
-            deleteButton.dataset.action = 'delete-thread';
-            deleteButton.dataset.space = spaceKey;
-            deleteButton.dataset.threadId = thread.id;
-
-            actions.appendChild(pinButton);
-            actions.appendChild(lockButton);
-            actions.appendChild(deleteButton);
-            article.appendChild(actions);
-          }
-
-          // Replies section
-          const topLevelReplies = forumState[spaceKey].replies
-            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
-            .sort((a, b) => a.createdAt - b.createdAt);
-
-          if (topLevelReplies.length) {
-            const repliesContainer = document.createElement('div');
-            repliesContainer.className = 'forum-thread__replies';
-            topLevelReplies.forEach((reply) => {
-              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, permissions, childrenMap));
+          categoryThreads.forEach((thread) => {
+            const threadEl = document.createElement('details');
+            threadEl.className = `forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+            threadEl.open = uiState.openThreads.has(thread.id);
+            threadEl.addEventListener('toggle', () => {
+              if (threadEl.open) {
+                uiState.openThreads.add(thread.id);
+              } else {
+                uiState.openThreads.delete(thread.id);
+              }
             });
-            article.appendChild(repliesContainer);
-          }
+            const threadSummary = document.createElement('summary');
+            threadSummary.className = 'forum-thread__header';
 
-          // Reply form (shown when member has access and thread is not locked)
-          const canReply = spaceKey === 'public' ? true : (!!member && !!privateAccess);
-          if (canReply && !thread.isLocked) {
-            const isFormOpen = uiState.openReplyForms.has(thread.id);
+            const titleWrap = document.createElement('span');
+            const title = document.createElement('strong');
+            title.className = 'forum-thread__title';
+            title.textContent = thread.title;
+            const meta = document.createElement('span');
+            meta.className = 'forum-thread__meta';
+            const totalReplyCount = replyCountByThread.get(thread.id) || 0;
+            meta.textContent = `${thread.authorName} • ${new Date(thread.createdAt).toLocaleString()} • ${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
+            titleWrap.appendChild(title);
+            titleWrap.appendChild(meta);
 
-            const replyToggle = document.createElement('button');
-            replyToggle.type = 'button';
-            replyToggle.className = 'resource-item__edit';
-            replyToggle.style.marginTop = '0.2rem';
-            replyToggle.textContent = isFormOpen ? 'Cancel' : 'Reply';
-            replyToggle.dataset.action = 'toggle-reply-form';
-            replyToggle.dataset.space = spaceKey;
-            replyToggle.dataset.threadId = thread.id;
-            article.appendChild(replyToggle);
+            const badgeWrap = document.createElement('span');
+            badgeWrap.className = 'forum2-thread-badges';
+            if (thread.isPinned) {
+              const pinned = document.createElement('span');
+              pinned.className = 'forum-badge';
+              pinned.textContent = 'Pinned';
+              badgeWrap.appendChild(pinned);
+            }
+            if (thread.isLocked) {
+              const locked = document.createElement('span');
+              locked.className = 'forum-badge';
+              locked.textContent = 'Locked';
+              badgeWrap.appendChild(locked);
+            }
+            threadSummary.appendChild(titleWrap);
+            threadSummary.appendChild(badgeWrap);
+            threadEl.appendChild(threadSummary);
 
-            if (isFormOpen) {
-              const form = document.createElement('div');
-              form.className = 'forum-reply-form';
-              form.dataset.threadId = thread.id;
+            const threadContent = document.createElement('div');
+            threadContent.className = 'forum-thread__content-wrap';
+            const body = document.createElement('div');
+            body.className = 'forum-thread__body';
+            appendLinkedText(body, thread.body);
+            threadContent.appendChild(body);
+            appendPostMedia(threadContent, thread);
 
-              const parentReplyId = uiState.replyingToReplyId[thread.id] || null;
-              if (parentReplyId) {
-                const parentReply = replyMap.get(parentReplyId);
+            if (canModerate(permissions)) {
+              const actions = document.createElement('div');
+              actions.className = 'forum-thread__actions';
+              [
+                ['toggle-pin', thread.isPinned ? 'Unpin' : 'Pin', 'resource-item__edit'],
+                ['toggle-lock', thread.isLocked ? 'Unlock' : 'Lock', 'resource-item__edit'],
+                ['delete-thread', 'Delete', 'resource-item__delete']
+              ].forEach(([action, label, className]) => {
+                const button = document.createElement('button');
+                button.type = 'button';
+                button.className = className;
+                button.textContent = label;
+                button.dataset.action = action;
+                button.dataset.space = spaceKey;
+                button.dataset.threadId = thread.id;
+                actions.appendChild(button);
+              });
+              threadContent.appendChild(actions);
+            }
+
+            const hasReplyAccess = spaceKey === 'public' ? true : Boolean(member && privateAccess);
+            const canReply = hasReplyAccess && !thread.isLocked;
+            const topLevelReplies = forumState[spaceKey].replies
+              .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
+              .sort((a, b) => a.createdAt - b.createdAt);
+            if (topLevelReplies.length) {
+              const repliesContainer = document.createElement('div');
+              repliesContainer.className = 'forum-thread__replies';
+              topLevelReplies.forEach((reply) => {
+                repliesContainer.appendChild(buildReplyEl(reply, spaceKey, permissions, childrenMap, canReply));
+              });
+              threadContent.appendChild(repliesContainer);
+            }
+
+            if (canReply) {
+              const isFormOpen = uiState.openReplyForms.has(thread.id);
+              const replyToggle = document.createElement('button');
+              replyToggle.type = 'button';
+              replyToggle.className = 'forum-thread__reply-action';
+              replyToggle.textContent = isFormOpen ? 'Cancel Reply' : 'Reply';
+              replyToggle.dataset.action = 'toggle-reply-form';
+              replyToggle.dataset.space = spaceKey;
+              replyToggle.dataset.threadId = thread.id;
+              threadContent.appendChild(replyToggle);
+
+              if (isFormOpen) {
+                const form = document.createElement('div');
+                form.className = 'forum-reply-form';
+                const parentReplyId = uiState.replyingToReplyId[thread.id] || null;
+                const parentReply = parentReplyId ? replyMap.get(parentReplyId) : null;
                 if (parentReply) {
                   const indicator = document.createElement('p');
                   indicator.className = 'forum2-note';
                   indicator.textContent = `Replying to ${parentReply.authorName}`;
                   form.appendChild(indicator);
                 }
+                const textarea = document.createElement('textarea');
+                textarea.className = 'forum-reply-form__input';
+                textarea.rows = 2;
+                textarea.placeholder = 'Write a reply…';
+                textarea.id = `replyInput-${thread.id}`;
+                form.appendChild(textarea);
+                if (permissions.isSignedIn) {
+                  const mediaFields = document.createElement('div');
+                  mediaFields.className = 'forum-media-fields forum-media-fields--reply';
+                  const linkInput = document.createElement('input');
+                  linkInput.type = 'url';
+                  linkInput.id = `replyLink-${thread.id}`;
+                  linkInput.maxLength = 2000;
+                  linkInput.placeholder = 'Optional hyperlink URL';
+                  linkInput.setAttribute('aria-label', 'Optional hyperlink URL');
+                  const imageInput = document.createElement('input');
+                  imageInput.type = 'file';
+                  imageInput.id = `replyImage-${thread.id}`;
+                  imageInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
+                  imageInput.setAttribute('aria-label', 'Optional image');
+                  mediaFields.appendChild(linkInput);
+                  mediaFields.appendChild(imageInput);
+                  form.appendChild(mediaFields);
+                }
+                const submitBtn = document.createElement('button');
+                submitBtn.type = 'button';
+                submitBtn.className = 'btn-primary';
+                submitBtn.textContent = 'Post Reply';
+                submitBtn.dataset.action = 'post-reply';
+                submitBtn.dataset.space = spaceKey;
+                submitBtn.dataset.threadId = thread.id;
+                if (parentReplyId) {
+                  submitBtn.dataset.parentReplyId = parentReplyId;
+                }
+                form.appendChild(submitBtn);
+                threadContent.appendChild(form);
               }
-
-              const textarea = document.createElement('textarea');
-              textarea.className = 'forum-reply-form__input';
-              textarea.rows = 2;
-              textarea.placeholder = 'Write a reply…';
-              textarea.id = `replyInput-${thread.id}`;
-              form.appendChild(textarea);
-
-              if (permissions.isSignedIn) {
-                const mediaFields = document.createElement('div');
-                mediaFields.className = 'forum-media-fields forum-media-fields--reply';
-
-                const linkInput = document.createElement('input');
-                linkInput.type = 'url';
-                linkInput.id = `replyLink-${thread.id}`;
-                linkInput.maxLength = 2000;
-                linkInput.placeholder = 'Optional hyperlink URL';
-                linkInput.setAttribute('aria-label', 'Optional hyperlink URL');
-
-                const imageInput = document.createElement('input');
-                imageInput.type = 'file';
-                imageInput.id = `replyImage-${thread.id}`;
-                imageInput.accept = 'image/jpeg,image/png,image/webp,image/gif';
-                imageInput.setAttribute('aria-label', 'Optional image');
-
-                mediaFields.appendChild(linkInput);
-                mediaFields.appendChild(imageInput);
-                form.appendChild(mediaFields);
-              }
-
-              const formActions = document.createElement('div');
-              formActions.className = 'forum-reply-form__actions';
-
-              const submitBtn = document.createElement('button');
-              submitBtn.type = 'button';
-              submitBtn.className = 'btn-primary';
-              submitBtn.textContent = 'Post Reply';
-              submitBtn.dataset.action = 'post-reply';
-              submitBtn.dataset.space = spaceKey;
-              submitBtn.dataset.threadId = thread.id;
-              if (parentReplyId) {
-                submitBtn.dataset.parentReplyId = parentReplyId;
-              }
-
-              formActions.appendChild(submitBtn);
-              form.appendChild(formActions);
-              article.appendChild(form);
+            } else if (thread.isLocked) {
+              const lockedNote = document.createElement('p');
+              lockedNote.className = 'forum2-note';
+              lockedNote.textContent = 'This thread is locked.';
+              threadContent.appendChild(lockedNote);
             }
-          } else if (thread.isLocked) {
-            const lockedNote = document.createElement('p');
-            lockedNote.className = 'forum2-note';
-            lockedNote.style.marginTop = '0.2rem';
-            lockedNote.textContent = 'This thread is locked.';
-            article.appendChild(lockedNote);
-          }
-
-          container.appendChild(article);
+            threadEl.appendChild(threadContent);
+            topicList.appendChild(threadEl);
+          });
+          categoryEl.appendChild(topicList);
+          container.appendChild(categoryEl);
         });
       }
 
@@ -1074,28 +1063,30 @@
 
         const publicForm = document.getElementById('publicThreadForm');
         const privateForm = document.getElementById('privateThreadForm');
+        const publicNewPostButton = document.getElementById('publicNewPostButton');
+        const privateNewPostButton = document.getElementById('privateNewPostButton');
         document.getElementById('publicThreadMediaFields').hidden = !permissions.isSignedIn;
         document.getElementById('privateThreadMediaFields').hidden = !permissions.isSignedIn;
         publicForm.querySelector('button[type="submit"]').disabled = false;
         privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
+        publicForm.hidden = !uiState.openThreadForms.has('public');
+        publicNewPostButton.setAttribute('aria-expanded', String(!publicForm.hidden));
 
         const privateGate = document.getElementById('privateGate');
-        const privateFilters = document.getElementById('privateFilters');
         const privateList = document.getElementById('privateThreadList');
 
         privateGate.hidden = privateAccess;
-        privateForm.hidden = !privateAccess;
-        privateFilters.hidden = !privateAccess;
+        privateNewPostButton.hidden = !privateAccess;
+        privateForm.hidden = !privateAccess || !uiState.openThreadForms.has('private');
+        privateNewPostButton.setAttribute('aria-expanded', String(!privateForm.hidden));
         privateList.hidden = !privateAccess;
 
         renderCategoryManager('public', moderator);
         renderCategoryManager('private', moderator && privateAccess);
 
-        renderCategoryFilters('public', forumState.public.categories);
         renderThreads('public', permissions, member, privateAccess);
 
         if (privateAccess) {
-          renderCategoryFilters('private', forumState.private.categories);
           renderThreads('private', permissions, member, privateAccess);
         }
       }
@@ -1140,7 +1131,6 @@
         }
 
         await runForumOperation('delete-category', spaceKey, { categoryId });
-        uiState[`${spaceKey}Filter`] = 'all';
       }
 
       async function addThread(spaceKey, title, body, categoryId, linkUrl, imageUrl) {
@@ -1199,6 +1189,7 @@
             imageUrl
           );
           event.target.reset();
+          uiState.openThreadForms.delete('public');
           render();
           document.getElementById('publicAuthNote').textContent = 'Public thread saved permanently.';
         } catch (error) {
@@ -1235,6 +1226,7 @@
             imageUrl
           );
           event.target.reset();
+          uiState.openThreadForms.delete('private');
           render();
           document.getElementById('privateAuthNote').textContent = 'Member thread saved permanently.';
         } catch (error) {
@@ -1245,6 +1237,18 @@
       });
 
       ['public', 'private'].forEach((spaceKey) => {
+        document.getElementById(`${spaceKey}NewPostButton`).addEventListener('click', () => {
+          if (uiState.openThreadForms.has(spaceKey)) {
+            uiState.openThreadForms.delete(spaceKey);
+          } else {
+            uiState.openThreadForms.add(spaceKey);
+          }
+          render();
+          if (uiState.openThreadForms.has(spaceKey)) {
+            document.getElementById(`${spaceKey}ThreadTitle`).focus();
+          }
+        });
+
         const categoryForm = document.getElementById(`${spaceKey}CategoryForm`);
         categoryForm.addEventListener('submit', async (event) => {
           event.preventDefault();
@@ -1262,15 +1266,6 @@
           } catch (error) {
             document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
           }
-        });
-
-        document.getElementById(`${spaceKey}Filters`).addEventListener('click', (event) => {
-          const button = event.target.closest('[data-filter-id]');
-          if (!button) {
-            return;
-          }
-          uiState[`${spaceKey}Filter`] = button.dataset.filterId || 'all';
-          render();
         });
 
         document.getElementById(`${spaceKey}CategoryList`).addEventListener('click', async (event) => {
@@ -1313,6 +1308,20 @@
           const member = getCurrentMember();
           const permissions = guildAccess.getPermissions(member);
 
+          if (action === 'reply-to-reply') {
+            const threadId = button.dataset.threadId;
+            const replyId = button.dataset.replyId;
+            if (!threadId || !replyId) {
+              return;
+            }
+            uiState.openThreads.add(threadId);
+            uiState.openReplyForms.add(threadId);
+            uiState.replyingToReplyId[threadId] = replyId;
+            render();
+            document.getElementById(`replyInput-${threadId}`)?.focus();
+            return;
+          }
+
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
             if (!threadId) {
@@ -1323,6 +1332,7 @@
               delete uiState.replyingToReplyId[threadId];
             } else {
               uiState.openReplyForms.add(threadId);
+              uiState.openThreads.add(threadId);
             }
             render();
             return;
