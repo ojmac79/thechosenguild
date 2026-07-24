@@ -1076,7 +1076,9 @@
           const categorySummary = document.createElement('p');
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${categoryThreads.length === 1 ? 'post' : 'posts'}`;
-          categorySummary.textContent = category.description ? `${category.description} • ${countLabel}` : countLabel;
+          categorySummary.textContent = category.description
+            ? [category.description, countLabel].join(META_SEPARATOR)
+            : countLabel;
 
           categoryHeader.appendChild(categoryTitle);
           categoryHeader.appendChild(categorySummary);
