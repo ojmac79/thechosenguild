@@ -210,7 +210,7 @@
         }
       };
       let serverAccess = 'public';
-      const META_SEPARATOR = ' • ';
+      const META_DELIMITER = ' • ';
 
       function getCurrentMember() {
         return guildAccess.getCurrentMember();
@@ -855,7 +855,7 @@
         const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
           return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
         });
-        const canReply = spaceKey === 'public' ? true : (!!member && !!privateAccess);
+        const canReply = spaceKey === 'public' || (!!member && !!privateAccess);
         const visibleCategories = forumState[spaceKey].categories.filter((category) => {
           return selectedFilter === 'all' ? true : category.id === selectedFilter;
         });
@@ -868,6 +868,13 @@
 
         container.innerHTML = '';
         if (!visibleCategories.length) {
+          const empty = document.createElement('article');
+          empty.className = 'panel forum-thread';
+          const message = document.createElement('p');
+          message.className = 'empty-state';
+          message.textContent = 'No threads yet in this view.';
+          empty.appendChild(message);
+          container.appendChild(empty);
           return;
         }
 
@@ -899,7 +906,7 @@
           const postedOn = new Date(thread.createdAt).toLocaleString();
           const totalReplyCount = replyCountByThread.get(thread.id) || 0;
           const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
-          meta.textContent = [thread.authorName, categoryName, postedOn, replyLabel].join(META_SEPARATOR);
+          meta.textContent = [thread.authorName, categoryName, postedOn, replyLabel].join(META_DELIMITER);
 
           titleWrap.appendChild(title);
           titleWrap.appendChild(meta);
@@ -1089,7 +1096,7 @@
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${categoryThreads.length === 1 ? 'post' : 'posts'}`;
           categorySummary.textContent = category.description
-            ? [category.description, countLabel].join(META_SEPARATOR)
+            ? [category.description, countLabel].join(META_DELIMITER)
             : countLabel;
 
           categoryHeader.appendChild(categoryTitle);
