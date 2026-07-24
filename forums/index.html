@@ -45,7 +45,7 @@
         <p class="hero__eyebrow">Guild Communications</p>
         <h1 class="page-title">Guild Forums</h1>
         <p class="page-subtitle">
-          Compact category-based forums with public and members-only spaces.
+          A compact, familiar forum layout with separate public and members-only spaces.
         </p>
 
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
@@ -74,7 +74,7 @@
             <div id="publicCategoryList" class="forum2-manager__list"></div>
           </div>
 
-          <form class="panel forum2-form" id="publicThreadForm">
+          <form class="panel forum2-form" id="publicThreadForm" hidden>
             <label class="resource-field">
               <span>Category</span>
               <select id="publicThreadCategory" required></select>
@@ -101,13 +101,13 @@
             <button class="btn-primary" type="submit">Post to Public Forum</button>
           </form>
 
-          <div class="forum2-filters" id="publicFilters"></div>
+          <div class="forum2-filters" id="publicFilters" hidden></div>
           <div class="forum-thread-list" id="publicThreadList"></div>
         </section>
 
         <section class="forum2-space" id="privateSpace" aria-label="Private members-only forum">
           <div class="forum2-space__header">
-            <h2 class="forum2-space__title">Private Members Forum</h2>
+            <h2 class="forum2-space__title">Members Only Forum</h2>
             <div class="forum2-space__actions">
               <span class="forum-badge forum-badge--member">Members only</span>
               <button
@@ -707,7 +707,7 @@
         }
       }
 
-      function buildReplyEl(reply, spaceKey, permissions, childrenMap) {
+      function buildReplyEl(reply, spaceKey, permissions, canReply, childrenMap) {
         const replyEl = document.createElement('div');
         replyEl.className = 'forum-thread__reply';
 
@@ -742,20 +742,34 @@
         replyEl.appendChild(body);
         appendPostMedia(replyEl, reply);
 
-        if (canModerate(permissions)) {
+        if (canReply || canModerate(permissions)) {
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
-          actions.style.marginTop = '0.35rem';
+          actions.classList.add('forum-thread__actions--reply');
 
-          const deleteBtn = document.createElement('button');
-          deleteBtn.type = 'button';
-          deleteBtn.className = 'resource-item__delete';
-          deleteBtn.textContent = 'Delete';
-          deleteBtn.dataset.action = 'delete-reply';
-          deleteBtn.dataset.space = spaceKey;
-          deleteBtn.dataset.replyId = reply.id;
+          if (canReply) {
+            const replyBtn = document.createElement('button');
+            replyBtn.type = 'button';
+            replyBtn.className = 'resource-item__edit forum-thread__quick-action';
+            replyBtn.textContent = 'Reply';
+            replyBtn.dataset.action = 'reply-to-reply';
+            replyBtn.dataset.space = spaceKey;
+            replyBtn.dataset.threadId = reply.threadId;
+            replyBtn.dataset.replyId = reply.id;
+            actions.appendChild(replyBtn);
+          }
 
-          actions.appendChild(deleteBtn);
+          if (canModerate(permissions)) {
+            const deleteBtn = document.createElement('button');
+            deleteBtn.type = 'button';
+            deleteBtn.className = 'resource-item__delete forum-thread__quick-action';
+            deleteBtn.textContent = 'Delete';
+            deleteBtn.dataset.action = 'delete-reply';
+            deleteBtn.dataset.space = spaceKey;
+            deleteBtn.dataset.replyId = reply.id;
+            actions.appendChild(deleteBtn);
+          }
+
           replyEl.appendChild(actions);
         }
 
@@ -764,7 +778,7 @@
           const childrenEl = document.createElement('div');
           childrenEl.className = 'forum-thread__reply-children';
           children.forEach((child) => {
-            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, childrenMap));
+            childrenEl.appendChild(buildReplyEl(child, spaceKey, permissions, canReply, childrenMap));
           });
           replyEl.appendChild(childrenEl);
         }
@@ -849,7 +863,7 @@
 
       function renderThreads(spaceKey, permissions, member, privateAccess) {
         const container = document.getElementById(`${spaceKey}ThreadList`);
-        const selectedFilter = uiState[`${spaceKey}Filter`];
+        const selectedFilter = 'all';
         const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
 
         // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
@@ -995,24 +1009,25 @@
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
 
+          const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
+
           if (topLevelReplies.length) {
             const repliesContainer = document.createElement('div');
             repliesContainer.className = 'forum-thread__replies';
             topLevelReplies.forEach((reply) => {
-              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, permissions, childrenMap));
+              repliesContainer.appendChild(buildReplyEl(reply, spaceKey, permissions, canOpenReplyComposer, childrenMap));
             });
             article.appendChild(repliesContainer);
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          if (canReplyToThread && !thread.isLocked) {
+          if (canOpenReplyComposer) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
 
             const replyToggle = document.createElement('button');
             replyToggle.type = 'button';
-            replyToggle.className = 'resource-item__edit';
-            replyToggle.style.marginTop = '0.2rem';
-            replyToggle.textContent = isFormOpen ? 'Cancel' : 'Reply';
+            replyToggle.className = 'resource-item__edit forum-thread__composer-toggle';
+            replyToggle.textContent = isFormOpen ? 'Close Reply' : 'Reply';
             replyToggle.dataset.action = 'toggle-reply-form';
             replyToggle.dataset.space = spaceKey;
             replyToggle.dataset.threadId = thread.id;
@@ -1028,7 +1043,7 @@
                 const parentReply = replyMap.get(parentReplyId);
                 if (parentReply) {
                   const indicator = document.createElement('p');
-                  indicator.className = 'forum2-note';
+                  indicator.className = 'forum-thread__reply-target';
                   indicator.textContent = `Replying to ${parentReply.authorName}`;
                   form.appendChild(indicator);
                 }
@@ -1176,13 +1191,15 @@
         privateForm.querySelector('button[type="submit"]').disabled = !privateAccess;
 
         const privateGate = document.getElementById('privateGate');
+        const publicFilters = document.getElementById('publicFilters');
         const privateFilters = document.getElementById('privateFilters');
         const privateList = document.getElementById('privateThreadList');
 
         privateGate.hidden = privateAccess;
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
-        privateFilters.hidden = !privateAccess;
+        publicFilters.hidden = true;
+        privateFilters.hidden = true;
         privateList.hidden = !privateAccess;
         publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'New Post';
         privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'New Post';
@@ -1193,11 +1210,9 @@
         renderCategoryManager('public', moderator);
         renderCategoryManager('private', moderator && privateAccess);
 
-        renderCategoryFilters('public', forumState.public.categories);
         renderThreads('public', permissions, member, privateAccess);
 
         if (privateAccess) {
-          renderCategoryFilters('private', forumState.private.categories);
           renderThreads('private', permissions, member, privateAccess);
         }
       }
@@ -1428,6 +1443,18 @@
             } else {
               uiState.openReplyForms.add(threadId);
             }
+            render();
+            return;
+          }
+
+          if (action === 'reply-to-reply') {
+            const threadId = button.dataset.threadId;
+            const replyId = button.dataset.replyId;
+            if (!threadId || !replyId) {
+              return;
+            }
+            uiState.openReplyForms.add(threadId);
+            uiState.replyingToReplyId[threadId] = replyId;
             render();
             return;
           }
