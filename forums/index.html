@@ -207,7 +207,6 @@
       const uiState = {
         openReplyForms: new Set(),
         openReplyLists: new Set(),
-        visibleThreadBodies: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -247,10 +246,6 @@
 
       function pluralize(count, singular, plural) {
         return count === 1 ? singular : plural;
-      }
-
-      function getThreadUiKey(spaceKey, threadId) {
-        return `${spaceKey}:${threadId}`;
       }
 
       function truncateLabel(value, maxLength = 56) {
@@ -950,8 +945,7 @@
         function buildThreadArticle(thread, categoryName, canReplyToThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
-          const threadUiKey = getThreadUiKey(spaceKey, thread.id);
-          const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
+          const repliesOpen = uiState.openReplyLists.has(thread.id);
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
@@ -959,17 +953,17 @@
           const titleWrap = document.createElement('div');
           const title = document.createElement('h3');
           title.className = 'forum-thread__title forum-thread__title--toggle';
-          title.dataset.action = 'toggle-thread-content';
+          title.dataset.action = 'toggle-replies';
           title.dataset.space = spaceKey;
           title.dataset.threadId = thread.id;
-          title.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
+          title.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
           title.setAttribute('role', 'button');
           title.setAttribute('tabindex', '0');
           title.appendChild(document.createTextNode(thread.title));
           const titleIndicator = document.createElement('span');
           titleIndicator.className = 'forum-thread__title-indicator';
           titleIndicator.setAttribute('aria-hidden', 'true');
-          titleIndicator.textContent = threadContentOpen ? ' ▼' : ' ▶';
+          titleIndicator.textContent = repliesOpen ? ' ▼' : ' ▶';
           title.appendChild(titleIndicator);
 
           const meta = document.createElement('p');
@@ -1016,7 +1010,6 @@
 
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const isNewPostOpen = uiState.openThreadForms[spaceKey];
-          const repliesOpen = uiState.openReplyLists.has(thread.id);
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           let hasActions = false;
@@ -1470,7 +1463,7 @@
           if (event.key !== 'Enter' && event.key !== ' ') {
             return;
           }
-          const target = event.target.closest('[data-action="toggle-thread-content"]');
+          const target = event.target.closest('[data-action="toggle-replies"]');
           if (!target) {
             return;
           }
@@ -1487,23 +1480,6 @@
           const action = button.dataset.action;
           const member = getCurrentMember();
           const permissions = guildAccess.getPermissions(member);
-
-          if (action === 'toggle-thread-content') {
-            const threadId = button.dataset.threadId;
-            if (!threadId) {
-              return;
-            }
-            const threadUiKey = getThreadUiKey(spaceKey, threadId);
-            if (uiState.visibleThreadBodies.has(threadUiKey)) {
-              uiState.visibleThreadBodies.delete(threadUiKey);
-              uiState.openReplyLists.delete(threadId);
-            } else {
-              uiState.visibleThreadBodies.add(threadUiKey);
-              uiState.openReplyLists.add(threadId);
-            }
-            render();
-            return;
-          }
 
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
