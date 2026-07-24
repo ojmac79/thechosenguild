@@ -45,7 +45,7 @@
         <p class="hero__eyebrow">Guild Communications</p>
         <h1 class="page-title">Guild Forums</h1>
         <p class="page-subtitle">
-          A compact, familiar forum layout with separate public and members-only spaces.
+          A compact forum Index showing only the public and members-only discussion boards.
         </p>
 
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
@@ -59,7 +59,7 @@
                 type="button"
                 aria-controls="publicThreadForm"
                 aria-expanded="false"
-              >Create Post</button>
+              >New Post</button>
             </div>
           </div>
           <p class="forum2-note" id="publicAuthNote"></p>
@@ -115,7 +115,7 @@
                 type="button"
                 aria-controls="privateThreadForm"
                 aria-expanded="false"
-              >Create Post</button>
+              >New Post</button>
             </div>
           </div>
           <div class="panel forum-gate" id="privateGate">
@@ -199,6 +199,7 @@
       const guildAccess = window.TheChosenGuildAccess;
       const uiState = {
         openReplyForms: new Set(),
+        openReplyLists: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -238,6 +239,14 @@
 
       function pluralize(count, singular, plural) {
         return count === 1 ? singular : plural;
+      }
+
+      function truncateLabel(value, maxLength = 56) {
+        const text = String(value || '').trim();
+        if (!text || text.length <= maxLength) {
+          return text;
+        }
+        return `${text.slice(0, maxLength - 1).trimEnd()}…`;
       }
 
       function redirectToLogin() {
@@ -385,21 +394,71 @@
         return `${prefix}-${Date.now()}-${Math.floor(Math.random() * 100000)}`;
       }
 
+      const CANONICAL_FORUM_CATEGORIES = Object.freeze({
+        public: Object.freeze([
+          { id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' },
+          { id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' }
+        ].map((category) => Object.freeze(category))),
+        private: Object.freeze([
+          { id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' },
+          { id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' }
+        ].map((category) => Object.freeze(category)))
+      });
+      const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
+      const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
+
+      function canonicalCategories(spaceKey) {
+        return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
+      }
+
+      function categoryTokens(value) {
+        return String(value || '').trim().toLowerCase().split(/[^a-z0-9]+/).filter(Boolean);
+      }
+
+      function classifyCategoryId(spaceKey, value) {
+        const tokens = categoryTokens(value);
+        if (spaceKey === 'public') {
+          return tokens.some((token) => PUBLIC_HELP_TOKENS.includes(token))
+            ? 'pub-help'
+            : 'pub-general';
+        }
+        return tokens.some((token) => PRIVATE_OFFICER_TOKENS.includes(token))
+          ? 'priv-officers'
+          : 'priv-general';
+      }
+
+      function threadToggleLabel(isOpen, baseLabel) {
+        return isOpen ? `Close ${baseLabel}` : baseLabel;
+      }
+
+      function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories, cache) {
+        const normalizedCategoryId = String(categoryId || '');
+        const hasCache = cache instanceof Map;
+        const cacheKey = `${spaceKey}:${normalizedCategoryId}`;
+        if (hasCache && cache.has(cacheKey)) {
+          return cache.get(cacheKey);
+        }
+        const matchedCategory = Array.isArray(sourceCategories)
+          ? sourceCategories.find((category) => category && category.id === normalizedCategoryId)
+          : null;
+        const resolvedCategoryId = matchedCategory
+          ? classifyCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`)
+          : classifyCategoryId(spaceKey, normalizedCategoryId);
+        if (hasCache) {
+          cache.set(cacheKey, resolvedCategoryId);
+        }
+        return resolvedCategoryId;
+      }
+
       function defaultState() {
         return {
           public: {
-            categories: [
-              { id: 'pub-general', name: 'General', description: 'Open discussion for anyone.' },
-              { id: 'pub-help', name: 'Help Desk', description: 'Questions for gameplay and setup.' }
-            ],
+            categories: canonicalCategories('public'),
             threads: [],
             replies: []
           },
           private: {
-            categories: [
-              { id: 'priv-council', name: 'Council', description: 'Officer and moderator planning.' },
-              { id: 'priv-raids', name: 'Raid Ops', description: 'Raid strategy and assignments.' }
-            ],
+            categories: canonicalCategories('private'),
             threads: [],
             replies: []
           }
@@ -422,7 +481,7 @@
         };
       }
 
-      function normalizeThread(thread, categories, fallbackPrefix) {
+      function normalizeThread(thread, categories, fallbackPrefix, spaceKey, sourceCategories, categoryIdCache) {
         if (!thread || typeof thread !== 'object') {
           return null;
         }
@@ -436,7 +495,8 @@
           return null;
         }
         const fallbackCategory = validCategoryIds[0];
-        const categoryId = validCategoryIds.includes(thread.categoryId) ? thread.categoryId : fallbackCategory;
+        const requestedCategoryId = resolveCanonicalCategoryId(spaceKey, thread.categoryId, sourceCategories, categoryIdCache);
+        const categoryId = validCategoryIds.includes(requestedCategoryId) ? requestedCategoryId : fallbackCategory;
 
         return {
           id: typeof thread.id === 'string' && thread.id ? thread.id : buildId(fallbackPrefix),
@@ -489,14 +549,21 @@
           const normalized = defaultState();
           ['public', 'private'].forEach((spaceKey) => {
             const sourceSpace = parsed[spaceKey] || {};
-            const fallbackPrefix = spaceKey === 'public' ? 'pub-cat' : 'priv-cat';
-            const categories = Array.isArray(sourceSpace.categories)
-              ? sourceSpace.categories.map((category) => normalizeCategory(category, fallbackPrefix)).filter(Boolean)
+            const sourceCategories = Array.isArray(sourceSpace.categories)
+              ? sourceSpace.categories.map((category) => normalizeCategory(category, `${spaceKey}-source-cat`)).filter(Boolean)
               : [];
-            normalized[spaceKey].categories = categories.length ? categories : normalized[spaceKey].categories;
+            const categoryIdCache = new Map();
+            normalized[spaceKey].categories = canonicalCategories(spaceKey);
             normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
               ? sourceSpace.threads
-                  .map((thread) => normalizeThread(thread, normalized[spaceKey].categories, `${spaceKey}-thread`))
+                  .map((thread) => normalizeThread(
+                    thread,
+                    normalized[spaceKey].categories,
+                    `${spaceKey}-thread`,
+                    spaceKey,
+                    sourceCategories,
+                    categoryIdCache
+                  ))
                   .filter(Boolean)
               : [];
             const threadIds = normalized[spaceKey].threads.map((thread) => thread.id);
@@ -635,14 +702,21 @@
           const normalized = defaultState();
           ['public', 'private'].forEach((spaceKey) => {
             const sourceSpace = parsed[spaceKey] || {};
-            const fallbackPrefix = spaceKey === 'public' ? 'pub-cat' : 'priv-cat';
-            const categories = Array.isArray(sourceSpace.categories)
-              ? sourceSpace.categories.map((category) => normalizeCategory(category, fallbackPrefix)).filter(Boolean)
+            const sourceCategories = Array.isArray(sourceSpace.categories)
+              ? sourceSpace.categories.map((category) => normalizeCategory(category, `${spaceKey}-source-cat`)).filter(Boolean)
               : [];
-            normalized[spaceKey].categories = categories.length ? categories : normalized[spaceKey].categories;
+            const categoryIdCache = new Map();
+            normalized[spaceKey].categories = canonicalCategories(spaceKey);
             normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
               ? sourceSpace.threads
-                  .map((thread) => normalizeThread(thread, normalized[spaceKey].categories, `${spaceKey}-thread`))
+                  .map((thread) => normalizeThread(
+                    thread,
+                    normalized[spaceKey].categories,
+                    `${spaceKey}-thread`,
+                    spaceKey,
+                    sourceCategories,
+                    categoryIdCache
+                  ))
                   .filter(Boolean)
               : [];
             const threadIds = normalized[spaceKey].threads.map((thread) => thread.id);
@@ -790,47 +864,10 @@
 
       function renderCategoryManager(spaceKey, isModerator) {
         const manager = document.getElementById(`${spaceKey}CategoryManager`);
-        const list = document.getElementById(`${spaceKey}CategoryList`);
-        manager.hidden = !isModerator;
-
+        manager.hidden = true;
         if (!isModerator) {
           return;
         }
-
-        list.innerHTML = '';
-        forumState[spaceKey].categories.forEach((category) => {
-          const row = document.createElement('div');
-          row.className = 'forum2-manager__item';
-
-          const summary = document.createElement('p');
-          summary.className = 'forum2-manager__summary';
-          summary.textContent = `${category.name} — ${category.description}`;
-
-          const actions = document.createElement('div');
-          actions.className = 'forum-thread__actions';
-
-          const renameButton = document.createElement('button');
-          renameButton.className = 'resource-item__edit';
-          renameButton.type = 'button';
-          renameButton.textContent = 'Rename';
-          renameButton.dataset.action = 'rename-category';
-          renameButton.dataset.space = spaceKey;
-          renameButton.dataset.categoryId = category.id;
-
-          const deleteButton = document.createElement('button');
-          deleteButton.className = 'resource-item__delete';
-          deleteButton.type = 'button';
-          deleteButton.textContent = 'Delete';
-          deleteButton.dataset.action = 'delete-category';
-          deleteButton.dataset.space = spaceKey;
-          deleteButton.dataset.categoryId = category.id;
-
-          actions.appendChild(renameButton);
-          actions.appendChild(deleteButton);
-          row.appendChild(summary);
-          row.appendChild(actions);
-          list.appendChild(row);
-        });
       }
 
       function sortThreads(threads) {
@@ -870,17 +907,6 @@
 
         container.innerHTML = '';
         if (!visibleCategories.length) {
-          const empty = document.createElement('article');
-          empty.className = 'panel forum-thread';
-          const message = document.createElement('p');
-          message.className = 'empty-state';
-          message.textContent = 'No threads yet in this view.';
-          empty.appendChild(message);
-          container.appendChild(empty);
-          return;
-        }
-
-        if (!threads.length) {
           const empty = document.createElement('article');
           empty.className = 'panel forum-thread';
           const message = document.createElement('p');
@@ -946,10 +972,48 @@
           article.appendChild(body);
           appendPostMedia(article, thread);
 
-          if (canModerate(permissions)) {
-            const actions = document.createElement('div');
-            actions.className = 'forum-thread__actions';
+          // Replies section
+          const topLevelReplies = forumState[spaceKey].replies
+            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
+            .sort((a, b) => a.createdAt - b.createdAt);
 
+          const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
+          const repliesOpen = uiState.openReplyLists.has(thread.id);
+          const actions = document.createElement('div');
+          actions.className = 'forum-thread__actions';
+          let hasActions = false;
+
+          if (topLevelReplies.length) {
+            const repliesButton = document.createElement('button');
+            repliesButton.type = 'button';
+            repliesButton.className = 'resource-item__edit forum-thread__quick-action';
+            repliesButton.textContent = repliesOpen
+              ? `Hide Replies (${topLevelReplies.length})`
+              : `Show Replies (${topLevelReplies.length})`;
+            repliesButton.dataset.action = 'toggle-replies';
+            repliesButton.dataset.space = spaceKey;
+            repliesButton.dataset.threadId = thread.id;
+            repliesButton.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
+            actions.appendChild(repliesButton);
+            hasActions = true;
+          }
+
+          if (canOpenReplyComposer) {
+            const isFormOpen = uiState.openReplyForms.has(thread.id);
+            const replyToggle = document.createElement('button');
+            replyToggle.type = 'button';
+            replyToggle.className = 'resource-item__edit forum-thread__composer-toggle';
+            replyToggle.textContent = isFormOpen ? 'Close Reply' : 'Reply';
+            replyToggle.dataset.action = 'toggle-reply-form';
+            replyToggle.dataset.space = spaceKey;
+            replyToggle.dataset.threadId = thread.id;
+            replyToggle.setAttribute('aria-controls', `replyForm-${thread.id}`);
+            replyToggle.setAttribute('aria-expanded', isFormOpen ? 'true' : 'false');
+            actions.appendChild(replyToggle);
+            hasActions = true;
+          }
+
+          if (canModerate(permissions)) {
             const pinButton = document.createElement('button');
             pinButton.type = 'button';
             pinButton.className = 'resource-item__edit';
@@ -977,17 +1041,14 @@
             actions.appendChild(pinButton);
             actions.appendChild(lockButton);
             actions.appendChild(deleteButton);
+            hasActions = true;
+          }
+
+          if (hasActions) {
             article.appendChild(actions);
           }
 
-          // Replies section
-          const topLevelReplies = forumState[spaceKey].replies
-            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
-            .sort((a, b) => a.createdAt - b.createdAt);
-
-          const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
-
-          if (topLevelReplies.length) {
+          if (topLevelReplies.length && repliesOpen) {
             const repliesContainer = document.createElement('div');
             repliesContainer.className = 'forum-thread__replies';
             topLevelReplies.forEach((reply) => {
@@ -1004,18 +1065,6 @@
           // Reply form (shown when member has access and thread is not locked)
           if (canOpenReplyComposer) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
-
-            const replyToggle = document.createElement('button');
-            replyToggle.type = 'button';
-            replyToggle.className = 'resource-item__edit forum-thread__composer-toggle';
-            replyToggle.textContent = isFormOpen ? 'Close Reply' : 'Reply';
-            replyToggle.dataset.action = 'toggle-reply-form';
-            replyToggle.dataset.space = spaceKey;
-            replyToggle.dataset.threadId = thread.id;
-            replyToggle.setAttribute('aria-controls', `replyForm-${thread.id}`);
-            replyToggle.setAttribute('aria-expanded', isFormOpen ? 'true' : 'false');
-            article.appendChild(replyToggle);
-
             if (isFormOpen) {
               const form = document.createElement('div');
               form.className = 'forum-reply-form';
@@ -1106,7 +1155,9 @@
           const categorySummary = document.createElement('p');
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
-          categorySummary.textContent = [category.description, countLabel].filter(Boolean).join(META_DELIMITER);
+          const latestThread = categoryThreads.length ? categoryThreads[0] : null;
+          const latestPostText = latestThread ? `Latest Post: ${truncateLabel(latestThread.title)}` : '';
+          categorySummary.textContent = [category.description, countLabel, latestPostText].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);
           categoryHeader.appendChild(categorySummary);
@@ -1181,8 +1232,8 @@
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
         privateList.hidden = !privateAccess;
-        publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'Create Post';
-        privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'Create Post';
+        publicToggle.textContent = threadToggleLabel(uiState.openThreadForms.public, 'New Post');
+        privateToggle.textContent = threadToggleLabel(uiState.openThreadForms.private, 'New Post');
         publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
         privateToggle.setAttribute('aria-expanded', uiState.openThreadForms.private ? 'true' : 'false');
         privateToggle.hidden = !privateAccess;
@@ -1417,12 +1468,27 @@
             return;
           }
 
+          if (action === 'toggle-replies') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openReplyLists.has(threadId)) {
+              uiState.openReplyLists.delete(threadId);
+            } else {
+              uiState.openReplyLists.add(threadId);
+            }
+            render();
+            return;
+          }
+
           if (action === 'reply-to-reply') {
             const threadId = button.dataset.threadId;
             const replyId = button.dataset.replyId;
             if (!threadId || !replyId) {
               return;
             }
+            uiState.openReplyLists.add(threadId);
             uiState.openReplyForms.add(threadId);
             uiState.replyingToReplyId[threadId] = replyId;
             render();
@@ -1452,6 +1518,7 @@
                 linkInput && linkInput.value,
                 imageUrl
               );
+              uiState.openReplyLists.add(threadId);
               uiState.openReplyForms.delete(threadId);
               delete uiState.replyingToReplyId[threadId];
               render();
