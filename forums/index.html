@@ -958,22 +958,8 @@
 
           const titleWrap = document.createElement('div');
           const title = document.createElement('h3');
-          title.className = `forum-thread__title${hasReplies ? ' forum-thread__title--toggle' : ''}`;
-          if (hasReplies) {
-            title.dataset.action = 'toggle-replies';
-            title.dataset.space = spaceKey;
-            title.dataset.threadId = thread.id;
-            title.setAttribute('role', 'button');
-            title.setAttribute('tabindex', '0');
-          }
+          title.className = 'forum-thread__title';
           title.appendChild(document.createTextNode(thread.title));
-          if (hasReplies) {
-            const titleIndicator = document.createElement('span');
-            titleIndicator.className = 'forum-thread__title-indicator';
-            titleIndicator.setAttribute('aria-hidden', 'true');
-            titleIndicator.textContent = repliesOpen ? ' ▼' : ' ▶';
-            title.appendChild(titleIndicator);
-          }
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
@@ -1468,18 +1454,6 @@
           }
         });
 
-        document.getElementById(`${spaceKey}ThreadList`).addEventListener('keydown', (event) => {
-          if (event.key !== 'Enter' && event.key !== ' ') {
-            return;
-          }
-          const target = event.target.closest('[data-action="toggle-replies"]');
-          if (!target) {
-            return;
-          }
-          event.preventDefault();
-          target.click();
-        });
-
         document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', async (event) => {
           const button = event.target.closest('[data-action]');
           if (!button) {
@@ -1500,20 +1474,6 @@
               delete uiState.replyingToReplyId[threadId];
             } else {
               uiState.openReplyForms.add(threadId);
-            }
-            render();
-            return;
-          }
-
-          if (action === 'toggle-replies') {
-            const threadId = button.dataset.threadId;
-            if (!threadId) {
-              return;
-            }
-            if (uiState.openReplyLists.has(threadId)) {
-              uiState.openReplyLists.delete(threadId);
-            } else {
-              uiState.openReplyLists.add(threadId);
             }
             render();
             return;
