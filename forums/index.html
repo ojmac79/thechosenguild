@@ -945,26 +945,37 @@
         function buildThreadArticle(thread, categoryName, canReplyToThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+
+          const topLevelReplies = forumState[spaceKey].replies
+            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
+            .sort((a, b) => a.createdAt - b.createdAt);
+          const hasReplies = topLevelReplies.length > 0;
           const repliesOpen = uiState.openReplyLists.has(thread.id);
+          const repliesContainerId = `threadReplies-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
 
           const titleWrap = document.createElement('div');
           const title = document.createElement('h3');
-          title.className = 'forum-thread__title forum-thread__title--toggle';
-          title.dataset.action = 'toggle-replies';
-          title.dataset.space = spaceKey;
-          title.dataset.threadId = thread.id;
-          title.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
-          title.setAttribute('role', 'button');
-          title.setAttribute('tabindex', '0');
+          title.className = `forum-thread__title${hasReplies ? ' forum-thread__title--toggle' : ''}`;
+          if (hasReplies) {
+            title.dataset.action = 'toggle-replies';
+            title.dataset.space = spaceKey;
+            title.dataset.threadId = thread.id;
+            title.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
+            title.setAttribute('aria-controls', repliesContainerId);
+            title.setAttribute('role', 'button');
+            title.setAttribute('tabindex', '0');
+          }
           title.appendChild(document.createTextNode(thread.title));
-          const titleIndicator = document.createElement('span');
-          titleIndicator.className = 'forum-thread__title-indicator';
-          titleIndicator.setAttribute('aria-hidden', 'true');
-          titleIndicator.textContent = repliesOpen ? ' ▼' : ' ▶';
-          title.appendChild(titleIndicator);
+          if (hasReplies) {
+            const titleIndicator = document.createElement('span');
+            titleIndicator.className = 'forum-thread__title-indicator';
+            titleIndicator.setAttribute('aria-hidden', 'true');
+            titleIndicator.textContent = repliesOpen ? ' ▼' : ' ▶';
+            title.appendChild(titleIndicator);
+          }
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
@@ -1002,11 +1013,6 @@
           header.appendChild(badgeWrap);
 
           article.appendChild(header);
-
-          // Replies section
-          const topLevelReplies = forumState[spaceKey].replies
-            .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
-            .sort((a, b) => a.createdAt - b.createdAt);
 
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const isNewPostOpen = uiState.openThreadForms[spaceKey];
@@ -1064,17 +1070,22 @@
             article.appendChild(actions);
           }
 
-          if (topLevelReplies.length && repliesOpen) {
+          if (hasReplies) {
             const repliesContainer = document.createElement('div');
+            repliesContainer.id = repliesContainerId;
             repliesContainer.className = 'forum-thread__replies';
-            topLevelReplies.forEach((reply) => {
-              repliesContainer.appendChild(buildReplyEl(reply, {
-                spaceKey,
-                permissions,
-                canOpenReplyComposer,
-                childrenMap
-              }));
-            });
+            repliesContainer.hidden = !repliesOpen;
+            repliesContainer.setAttribute('aria-hidden', repliesOpen ? 'false' : 'true');
+            if (repliesOpen) {
+              topLevelReplies.forEach((reply) => {
+                repliesContainer.appendChild(buildReplyEl(reply, {
+                  spaceKey,
+                  permissions,
+                  canOpenReplyComposer,
+                  childrenMap
+                }));
+              });
+            }
             article.appendChild(repliesContainer);
           }
 
