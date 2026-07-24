@@ -74,7 +74,7 @@
             <div id="publicCategoryList" class="forum2-manager__list"></div>
           </div>
 
-          <form class="panel forum2-form" id="publicThreadForm" hidden>
+          <form class="panel forum2-form" id="publicThreadForm" hidden aria-hidden="true">
             <label class="resource-field">
               <span>Category</span>
               <select id="publicThreadCategory" required></select>
@@ -137,7 +137,7 @@
             <div id="privateCategoryList" class="forum2-manager__list"></div>
           </div>
 
-          <form class="panel forum2-form" id="privateThreadForm" hidden>
+          <form class="panel forum2-form" id="privateThreadForm" hidden aria-hidden="true">
             <label class="resource-field">
               <span>Category</span>
               <select id="privateThreadCategory" required></select>
@@ -1012,12 +1012,15 @@
             replyToggle.dataset.action = 'toggle-reply-form';
             replyToggle.dataset.space = spaceKey;
             replyToggle.dataset.threadId = thread.id;
+            replyToggle.setAttribute('aria-controls', `replyForm-${thread.id}`);
+            replyToggle.setAttribute('aria-expanded', isFormOpen ? 'true' : 'false');
             article.appendChild(replyToggle);
 
             if (isFormOpen) {
               const form = document.createElement('div');
               form.className = 'forum-reply-form';
               form.dataset.threadId = thread.id;
+              form.id = `replyForm-${thread.id}`;
 
               const parentReplyId = uiState.replyingToReplyId[thread.id] || null;
               if (parentReplyId) {
@@ -1177,6 +1180,8 @@
         privateGate.hidden = privateAccess;
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
+        publicForm.setAttribute('aria-hidden', publicForm.hidden ? 'true' : 'false');
+        privateForm.setAttribute('aria-hidden', privateForm.hidden ? 'true' : 'false');
         privateList.hidden = !privateAccess;
         publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'Create Post';
         privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'Create Post';
