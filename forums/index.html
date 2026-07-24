@@ -59,7 +59,7 @@
                 type="button"
                 aria-controls="publicThreadForm"
                 aria-expanded="false"
-              >New Post</button>
+              >Create Post</button>
             </div>
           </div>
           <p class="forum2-note" id="publicAuthNote"></p>
@@ -115,7 +115,7 @@
                 type="button"
                 aria-controls="privateThreadForm"
                 aria-expanded="false"
-              >New Post</button>
+              >Create Post</button>
             </div>
           </div>
           <div class="panel forum-gate" id="privateGate">
@@ -1178,8 +1178,8 @@
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
         privateList.hidden = !privateAccess;
-        publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'New Post';
-        privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'New Post';
+        publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'Create Post';
+        privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'Create Post';
         publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
         privateToggle.setAttribute('aria-expanded', uiState.openThreadForms.private ? 'true' : 'false');
         privateToggle.hidden = !privateAccess;
