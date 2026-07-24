@@ -51,7 +51,16 @@
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
           <div class="forum2-space__header">
             <h2 class="forum2-space__title">Public Forum</h2>
-            <span class="forum-badge">Open to everyone</span>
+            <div class="forum2-space__actions">
+              <span class="forum-badge">Open to everyone</span>
+              <button
+                class="btn-primary forum2-new-post-toggle"
+                id="publicNewPostToggle"
+                type="button"
+                aria-controls="publicThreadForm"
+                aria-expanded="false"
+              >New Post</button>
+            </div>
           </div>
           <p class="forum2-note" id="publicAuthNote"></p>
 
@@ -99,7 +108,16 @@
         <section class="forum2-space" id="privateSpace" aria-label="Private members-only forum">
           <div class="forum2-space__header">
             <h2 class="forum2-space__title">Private Members Forum</h2>
-            <span class="forum-badge forum-badge--member">Members only</span>
+            <div class="forum2-space__actions">
+              <span class="forum-badge forum-badge--member">Members only</span>
+              <button
+                class="btn-primary forum2-new-post-toggle"
+                id="privateNewPostToggle"
+                type="button"
+                aria-controls="privateThreadForm"
+                aria-expanded="false"
+              >New Post</button>
+            </div>
           </div>
           <div class="panel forum-gate" id="privateGate">
             <p class="forum-gate__text">
@@ -185,9 +203,14 @@
         publicFilter: 'all',
         privateFilter: 'all',
         openReplyForms: new Set(),
-        replyingToReplyId: {}
+        replyingToReplyId: {},
+        openThreadForms: {
+          public: false,
+          private: false
+        }
       };
       let serverAccess = 'public';
+      const META_DELIMITER = ' • ';
 
       function getCurrentMember() {
         return guildAccess.getCurrentMember();
@@ -211,6 +234,18 @@
 
       function canModerate(permissions) {
         return Boolean(permissions && permissions.canModerateForums);
+      }
+
+      function hasPrivateForumAccess(member, permissions) {
+        return Boolean(member && permissions.canUseForums && (serverAccess === 'member' || serverAccess === 'moderator'));
+      }
+
+      function pluralize(count, singular, plural) {
+        return count === 1 ? singular : plural;
+      }
+
+      function redirectToLogin() {
+        window.location.href = '/login/';
       }
 
       function normalizeForumUrl(value) {
@@ -815,7 +850,6 @@
       function renderThreads(spaceKey, permissions, member, privateAccess) {
         const container = document.getElementById(`${spaceKey}ThreadList`);
         const selectedFilter = uiState[`${spaceKey}Filter`];
-        const categoryMap = new Map(forumState[spaceKey].categories.map((category) => [category.id, category]));
         const replyMap = new Map(forumState[spaceKey].replies.map((reply) => [reply.id, reply]));
 
         // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
@@ -833,8 +867,29 @@
         const threads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
           return selectedFilter === 'all' ? true : thread.categoryId === selectedFilter;
         });
+        const canReply = spaceKey === 'public' || (!!member && !!privateAccess);
+        const visibleCategories = forumState[spaceKey].categories.filter((category) => {
+          return selectedFilter === 'all' ? true : category.id === selectedFilter;
+        });
+        const threadsByCategory = new Map();
+        threads.forEach((thread) => {
+          const existing = threadsByCategory.get(thread.categoryId) || [];
+          existing.push(thread);
+          threadsByCategory.set(thread.categoryId, existing);
+        });
 
         container.innerHTML = '';
+        if (!visibleCategories.length) {
+          const empty = document.createElement('article');
+          empty.className = 'panel forum-thread';
+          const message = document.createElement('p');
+          message.className = 'empty-state';
+          message.textContent = 'No threads yet in this view.';
+          empty.appendChild(message);
+          container.appendChild(empty);
+          return;
+        }
+
         if (!threads.length) {
           const empty = document.createElement('article');
           empty.className = 'panel forum-thread';
@@ -846,7 +901,7 @@
           return;
         }
 
-        threads.forEach((thread) => {
+        function buildThreadArticle(thread, categoryName, canReplyToThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
 
@@ -860,11 +915,10 @@
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
-          const categoryName = categoryMap.get(thread.categoryId)?.name || forumState[spaceKey].categories[0].name;
           const postedOn = new Date(thread.createdAt).toLocaleString();
           const totalReplyCount = replyCountByThread.get(thread.id) || 0;
-          const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
-          meta.textContent = `${thread.authorName} • ${categoryName} • ${postedOn} • ${replyLabel}`;
+          const replyLabel = `${totalReplyCount} ${pluralize(totalReplyCount, 'reply', 'replies')}`;
+          meta.textContent = [thread.authorName, categoryName, postedOn, replyLabel].join(META_DELIMITER);
 
           titleWrap.appendChild(title);
           titleWrap.appendChild(meta);
@@ -951,8 +1005,7 @@
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          const canReply = spaceKey === 'public' ? true : (!!member && !!privateAccess);
-          if (canReply && !thread.isLocked) {
+          if (canReplyToThread && !thread.isLocked) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
 
             const replyToggle = document.createElement('button');
@@ -1036,7 +1089,48 @@
             article.appendChild(lockedNote);
           }
 
-          container.appendChild(article);
+          return article;
+        }
+
+        visibleCategories.forEach((category) => {
+          const categoryThreads = threadsByCategory.get(category.id) || [];
+          const categorySection = document.createElement('section');
+          categorySection.className = 'panel forum2-category';
+
+          const categoryHeader = document.createElement('div');
+          categoryHeader.className = 'forum2-category__header';
+
+          const categoryTitle = document.createElement('h3');
+          categoryTitle.className = 'forum2-category__title';
+          categoryTitle.textContent = category.name;
+
+          const categorySummary = document.createElement('p');
+          categorySummary.className = 'forum2-category__summary';
+          const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
+          categorySummary.textContent = [category.description, countLabel].filter(Boolean).join(META_DELIMITER);
+
+          categoryHeader.appendChild(categoryTitle);
+          categoryHeader.appendChild(categorySummary);
+          categorySection.appendChild(categoryHeader);
+
+          if (!categoryThreads.length) {
+            const emptyCategory = document.createElement('p');
+            emptyCategory.className = 'forum2-note';
+            emptyCategory.textContent = 'No posts in this category yet.';
+            categorySection.appendChild(emptyCategory);
+            container.appendChild(categorySection);
+            return;
+          }
+
+          const threadStack = document.createElement('div');
+          threadStack.className = 'forum2-category__threads';
+
+          categoryThreads.forEach((thread) => {
+            threadStack.appendChild(buildThreadArticle(thread, category.name, canReply));
+          });
+
+          categorySection.appendChild(threadStack);
+          container.appendChild(categorySection);
         });
       }
 
@@ -1061,7 +1155,7 @@
         const member = getCurrentMember();
         const permissions = guildAccess.getPermissions(member);
         const moderator = serverAccess === 'moderator';
-        const privateAccess = serverAccess === 'member' || serverAccess === 'moderator';
+        const privateAccess = hasPrivateForumAccess(member, permissions);
 
         renderMemberBadge(member);
         updateAuthNotes(member, permissions, privateAccess);
@@ -1074,6 +1168,8 @@
 
         const publicForm = document.getElementById('publicThreadForm');
         const privateForm = document.getElementById('privateThreadForm');
+        const publicToggle = document.getElementById('publicNewPostToggle');
+        const privateToggle = document.getElementById('privateNewPostToggle');
         document.getElementById('publicThreadMediaFields').hidden = !permissions.isSignedIn;
         document.getElementById('privateThreadMediaFields').hidden = !permissions.isSignedIn;
         publicForm.querySelector('button[type="submit"]').disabled = false;
@@ -1084,9 +1180,15 @@
         const privateList = document.getElementById('privateThreadList');
 
         privateGate.hidden = privateAccess;
-        privateForm.hidden = !privateAccess;
+        publicForm.hidden = !uiState.openThreadForms.public;
+        privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
         privateFilters.hidden = !privateAccess;
         privateList.hidden = !privateAccess;
+        publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'New Post';
+        privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'New Post';
+        publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
+        privateToggle.setAttribute('aria-expanded', uiState.openThreadForms.private ? 'true' : 'false');
+        privateToggle.hidden = !privateAccess;
 
         renderCategoryManager('public', moderator);
         renderCategoryManager('private', moderator && privateAccess);
@@ -1199,6 +1301,7 @@
             imageUrl
           );
           event.target.reset();
+          uiState.openThreadForms.public = false;
           render();
           document.getElementById('publicAuthNote').textContent = 'Public thread saved permanently.';
         } catch (error) {
@@ -1212,7 +1315,7 @@
         event.preventDefault();
         const member = getCurrentMember();
         if (!guildAccess.getPermissions(member).canUseForums) {
-          window.location.href = '/login/';
+          redirectToLogin();
           return;
         }
 
@@ -1235,6 +1338,7 @@
             imageUrl
           );
           event.target.reset();
+          uiState.openThreadForms.private = false;
           render();
           document.getElementById('privateAuthNote').textContent = 'Member thread saved permanently.';
         } catch (error) {
@@ -1398,6 +1502,23 @@
             document.getElementById(`${spaceKey}AuthNote`).textContent = error.message;
           }
         });
+      });
+
+      document.getElementById('publicNewPostToggle').addEventListener('click', () => {
+        uiState.openThreadForms.public = !uiState.openThreadForms.public;
+        render();
+      });
+
+      document.getElementById('privateNewPostToggle').addEventListener('click', () => {
+        const member = getCurrentMember();
+        const permissions = guildAccess.getPermissions(member);
+        const hasPrivateAccess = hasPrivateForumAccess(member, permissions);
+        if (!hasPrivateAccess) {
+          redirectToLogin();
+          return;
+        }
+        uiState.openThreadForms.private = !uiState.openThreadForms.private;
+        render();
       });
 
       footerAccountButton.addEventListener('click', () => {
