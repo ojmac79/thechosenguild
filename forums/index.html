@@ -436,6 +436,24 @@
         return isOpen ? `Close ${baseLabel}` : baseLabel;
       }
 
+      function clearReplyFormsForSpace(spaceKey) {
+        const threads = forumState[spaceKey]?.threads || [];
+        if (!threads.length) {
+          return;
+        }
+        if (!uiState.openReplyForms.size) {
+          return;
+        }
+        for (const threadId of uiState.openReplyForms) {
+          if (threads.some((thread) => thread.id === threadId)) {
+            uiState.openReplyForms.delete(threadId);
+            if (Object.hasOwn(uiState.replyingToReplyId, threadId)) {
+              delete uiState.replyingToReplyId[threadId];
+            }
+          }
+        }
+      }
+
       function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories, cache) {
         const normalizedCategoryId = String(categoryId || '');
         const hasCache = cache instanceof Map;
@@ -980,6 +998,7 @@
           const threadContentId = `threadContent-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
           const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
+          const isNewPostOpen = uiState.openThreadForms[spaceKey];
           const repliesOpen = uiState.openReplyLists.has(thread.id);
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
@@ -1013,7 +1032,7 @@
             hasActions = true;
           }
 
-          if (canOpenReplyComposer) {
+          if (canOpenReplyComposer && isNewPostOpen) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
             const replyToggle = document.createElement('button');
             replyToggle.type = 'button';
@@ -1091,7 +1110,7 @@
           }
 
           // Reply form (shown when member has access and thread is not locked)
-          if (canOpenReplyComposer) {
+          if (canOpenReplyComposer && isNewPostOpen) {
             const isFormOpen = uiState.openReplyForms.has(thread.id);
             if (isFormOpen) {
               const form = document.createElement('div');
@@ -1613,6 +1632,9 @@
 
       document.getElementById('publicNewPostToggle').addEventListener('click', () => {
         uiState.openThreadForms.public = !uiState.openThreadForms.public;
+        if (!uiState.openThreadForms.public) {
+          clearReplyFormsForSpace('public');
+        }
         render();
       });
 
@@ -1625,6 +1647,9 @@
           return;
         }
         uiState.openThreadForms.private = !uiState.openThreadForms.private;
+        if (!uiState.openThreadForms.private) {
+          clearReplyFormsForSpace('private');
+        }
         render();
       });
 
