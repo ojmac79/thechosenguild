@@ -963,8 +963,6 @@
             title.dataset.action = 'toggle-replies';
             title.dataset.space = spaceKey;
             title.dataset.threadId = thread.id;
-            title.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
-            title.setAttribute('aria-controls', repliesContainerId);
             title.setAttribute('role', 'button');
             title.setAttribute('tabindex', '0');
           }
