@@ -396,13 +396,13 @@
 
       const CANONICAL_FORUM_CATEGORIES = Object.freeze({
         public: Object.freeze([
-          Object.freeze({ id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' }),
-          Object.freeze({ id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' })
-        ]),
+          { id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' },
+          { id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' }
+        ].map((category) => Object.freeze(category))),
         private: Object.freeze([
-          Object.freeze({ id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' }),
-          Object.freeze({ id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' })
-        ])
+          { id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' },
+          { id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' }
+        ].map((category) => Object.freeze(category)))
       });
       const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
       const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
@@ -431,14 +431,21 @@
         return isOpen ? `Close ${baseLabel}` : baseLabel;
       }
 
-      function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories) {
+      function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories, cache) {
+        const cacheKey = `${spaceKey}:${String(categoryId || '')}`;
+        if (cache instanceof Map && cache.has(cacheKey)) {
+          return cache.get(cacheKey);
+        }
         const matchedCategory = Array.isArray(sourceCategories)
           ? sourceCategories.find((category) => category && category.id === categoryId)
           : null;
-        if (matchedCategory) {
-          return classifyCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`);
+        const resolvedCategoryId = matchedCategory
+          ? classifyCategoryId(spaceKey, `${matchedCategory.id} ${matchedCategory.name}`)
+          : classifyCategoryId(spaceKey, categoryId);
+        if (cache instanceof Map) {
+          cache.set(cacheKey, resolvedCategoryId);
         }
-        return classifyCategoryId(spaceKey, categoryId);
+        return resolvedCategoryId;
       }
 
       function defaultState() {
@@ -472,7 +479,7 @@
         };
       }
 
-      function normalizeThread(thread, categories, fallbackPrefix, spaceKey, sourceCategories) {
+      function normalizeThread(thread, categories, fallbackPrefix, spaceKey, sourceCategories, categoryIdCache) {
         if (!thread || typeof thread !== 'object') {
           return null;
         }
@@ -486,7 +493,7 @@
           return null;
         }
         const fallbackCategory = validCategoryIds[0];
-        const requestedCategoryId = resolveCanonicalCategoryId(spaceKey, thread.categoryId, sourceCategories);
+        const requestedCategoryId = resolveCanonicalCategoryId(spaceKey, thread.categoryId, sourceCategories, categoryIdCache);
         const categoryId = validCategoryIds.includes(requestedCategoryId) ? requestedCategoryId : fallbackCategory;
 
         return {
@@ -543,6 +550,7 @@
             const sourceCategories = Array.isArray(sourceSpace.categories)
               ? sourceSpace.categories.map((category) => normalizeCategory(category, `${spaceKey}-source-cat`)).filter(Boolean)
               : [];
+            const categoryIdCache = new Map();
             normalized[spaceKey].categories = canonicalCategories(spaceKey);
             normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
               ? sourceSpace.threads
@@ -551,7 +559,8 @@
                     normalized[spaceKey].categories,
                     `${spaceKey}-thread`,
                     spaceKey,
-                    sourceCategories
+                    sourceCategories,
+                    categoryIdCache
                   ))
                   .filter(Boolean)
               : [];
@@ -694,6 +703,7 @@
             const sourceCategories = Array.isArray(sourceSpace.categories)
               ? sourceSpace.categories.map((category) => normalizeCategory(category, `${spaceKey}-source-cat`)).filter(Boolean)
               : [];
+            const categoryIdCache = new Map();
             normalized[spaceKey].categories = canonicalCategories(spaceKey);
             normalized[spaceKey].threads = Array.isArray(sourceSpace.threads)
               ? sourceSpace.threads
@@ -702,7 +712,8 @@
                     normalized[spaceKey].categories,
                     `${spaceKey}-thread`,
                     spaceKey,
-                    sourceCategories
+                    sourceCategories,
+                    categoryIdCache
                   ))
                   .filter(Boolean)
               : [];
@@ -980,6 +991,7 @@
             repliesButton.dataset.action = 'toggle-replies';
             repliesButton.dataset.space = spaceKey;
             repliesButton.dataset.threadId = thread.id;
+            repliesButton.setAttribute('aria-expanded', repliesOpen ? 'true' : 'false');
             actions.appendChild(repliesButton);
             hasActions = true;
           }
@@ -1142,8 +1154,8 @@
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
           const latestThread = categoryThreads.length ? categoryThreads[0] : null;
-          const latestLabel = latestThread ? `Latest topic: ${truncateLabel(latestThread.title)}` : '';
-          categorySummary.textContent = [category.description, countLabel, latestLabel].filter(Boolean).join(META_DELIMITER);
+          const latestTopicText = latestThread ? `Latest topic: ${truncateLabel(latestThread.title)}` : '';
+          categorySummary.textContent = [category.description, countLabel, latestTopicText].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);
           categoryHeader.appendChild(categorySummary);

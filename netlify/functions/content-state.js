@@ -375,13 +375,13 @@ function buildId(prefix) {
 
 const CANONICAL_FORUM_CATEGORIES = Object.freeze({
   public: Object.freeze([
-    Object.freeze({ id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' }),
-    Object.freeze({ id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' })
-  ]),
+    { id: 'pub-general', name: 'Public General', description: 'Open discussion for guild news, introductions, and general chatter.' },
+    { id: 'pub-help', name: 'Help Desk', description: 'Questions, troubleshooting, and gameplay help for visitors and members.' }
+  ].map((category) => Object.freeze(category))),
   private: Object.freeze([
-    Object.freeze({ id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' }),
-    Object.freeze({ id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' })
-  ])
+    { id: 'priv-general', name: 'Members Only General', description: 'Private guild discussion for verified members.' },
+    { id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' }
+  ].map((category) => Object.freeze(category)))
 });
 const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
 const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
@@ -451,10 +451,11 @@ function normalizeForumState(source) {
           if (!title || !body) {
             return null;
           }
+          const resolvedCategoryId = resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap);
           return {
             id: cleanText(thread.id, 160) || buildId(`${spaceKey}-thread`),
-            categoryId: categoryIds.has(resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap))
-              ? resolveForumCategoryId(spaceKey, thread.categoryId, categoryMap)
+            categoryId: categoryIds.has(resolvedCategoryId)
+              ? resolvedCategoryId
               : normalizedCategories[0].id,
             title,
             body,
