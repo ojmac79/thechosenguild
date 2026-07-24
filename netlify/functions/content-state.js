@@ -150,6 +150,28 @@ function itemVersion(items, versions, key) {
   return typeof (items && items[key]) === 'string' ? Math.max(1, storedVersion) : storedVersion;
 }
 
+function normalizeRosterLevel(value) {
+  const level = Number(value);
+  return Number.isInteger(level) && level >= 1 && level <= 125 ? level : null;
+}
+
+function cleanRosterClass(value) {
+  return cleanText(value, 80)
+    .split('/')
+    .map((part) => part.trim().toUpperCase())
+    .filter(Boolean)
+    .join(' / ');
+}
+
+function cleanRosterDate(value) {
+  const date = cleanText(value, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+    return '';
+  }
+  const parsed = new Date(`${date}T00:00:00.000Z`);
+  return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date ? date : '';
+}
+
 function publicAuthorizedRoster(items) {
   return parseDirectory(items).members
     .filter((member) => (
@@ -158,9 +180,12 @@ function publicAuthorizedRoster(items) {
       ACTIVE_MEMBER_STATUSES.has(cleanText(member.status, 40).toLowerCase())
     ))
     .map((member) => ({
-      name: cleanText(member.name, 80) || 'Guild Member',
-      title: cleanText(member.title, 80) || 'Guild Member',
-      level: cleanText(member.level, 40) || 'member'
+      name: cleanText(member.rosterName || member.name, 80) || 'Guild Member',
+      title: cleanText(member.rosterRank || member.title, 80) || 'Guild Member',
+      level: cleanText(member.level, 40) || 'member',
+      rosterLevel: normalizeRosterLevel(member.rosterLevel),
+      rosterClass: cleanRosterClass(member.rosterClass),
+      rosterLastOn: cleanRosterDate(member.rosterLastOn)
     }));
 }
 
@@ -366,6 +391,104 @@ async function updateManagedDirectory(store, action, body) {
     member: savedMember,
     removedEmail,
     conflict: recordConflict
+  };
+}
+
+async function updateAuthorizedRosterProfile(store, requesterEmail, body) {
+  const targetEmail = requesterEmail === OWNER_EMAIL
+    ? normalizeEmail(body && body.email)
+    : requesterEmail;
+  const profile = body && body.profile && typeof body.profile === 'object' ? body.profile : {};
+  const rosterName = cleanText(profile.name, 80);
+  const rosterLevel = normalizeRosterLevel(profile.level);
+  const rosterClass = cleanRosterClass(profile.className);
+  const rosterLastOn = cleanRosterDate(profile.lastOn);
+  const rosterRank = cleanText(profile.rank, 80);
+  let savedMember = null;
+  let conflict = false;
+  let forbidden = false;
+  let notFound = false;
+
+  if (!targetEmail || !rosterName || rosterLevel === null || !rosterClass || !rosterLastOn) {
+    return { invalid: true };
+  }
+  if (requesterEmail === OWNER_EMAIL && !rosterRank) {
+    return { invalid: true };
+  }
+
+  const payload = await updateJsonAtomically(
+    store,
+    KV_KEY,
+    { items: {}, versions: {}, updatedAt: '' },
+    (existing) => {
+      const items = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const versions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      const directory = parseDirectory(items);
+      const index = directory.members.findIndex(
+        (member) => normalizeEmail(member && member.email) === targetEmail
+      );
+      const current = index >= 0 ? directory.members[index] : null;
+      if (!current) {
+        notFound = true;
+        return null;
+      }
+      if (
+        current.verifiedNetlify !== true ||
+        !ACTIVE_MEMBER_STATUSES.has(cleanText(current.status, 40).toLowerCase()) ||
+        (requesterEmail !== OWNER_EMAIL && !Boolean(current.access && current.access.roster))
+      ) {
+        forbidden = true;
+        return null;
+      }
+      if (
+        cleanText(body && body.expectedUpdatedAt, 80) !==
+        cleanText(current.updatedAt, 80)
+      ) {
+        conflict = true;
+        return null;
+      }
+
+      const now = new Date().toISOString();
+      savedMember = {
+        ...current,
+        rosterName,
+        rosterLevel,
+        rosterClass,
+        rosterLastOn,
+        rosterRank: requesterEmail === OWNER_EMAIL
+          ? rosterRank
+          : cleanText(current.rosterRank || current.title, 80) || 'Guild Member',
+        updatedAt: now
+      };
+      directory.members[index] = savedMember;
+      return {
+        items: {
+          ...items,
+          [DIRECTORY_KEY]: JSON.stringify({
+            version: directory.version,
+            updatedAt: now,
+            members: directory.members
+          })
+        },
+        versions: {
+          ...versions,
+          [DIRECTORY_KEY]: itemVersion(items, versions, DIRECTORY_KEY) + 1
+        },
+        updatedAt: now
+      };
+    }
+  );
+
+  const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+  const versions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+  return {
+    value: items[DIRECTORY_KEY] || JSON.stringify({ version: 1, updatedAt: '', members: [] }),
+    version: itemVersion(items, versions, DIRECTORY_KEY),
+    member: savedMember,
+    conflict,
+    forbidden,
+    notFound,
+    invalid: false
   };
 }
 
@@ -776,15 +899,37 @@ exports.handler = async function handler(event, context) {
   }
 
   if (scope === 'guild-directory') {
-    if (email !== OWNER_EMAIL) {
-      return json(403, { error: 'Only the site owner may update the guild directory.' });
-    }
     if (event.httpMethod !== 'POST') {
       return json(405, { error: 'Method not allowed.' });
     }
     const action = cleanText(body.action, 40);
+    if (action === 'update-roster-profile') {
+      const targetEmail = email === OWNER_EMAIL
+        ? normalizeEmail(body && body.email)
+        : email;
+      if (!targetEmail || (email !== OWNER_EMAIL && normalizeEmail(body && body.email) && normalizeEmail(body.email) !== email)) {
+        return json(403, { error: 'You may only update your own roster entry.' });
+      }
+      const result = await updateAuthorizedRosterProfile(store, email, body);
+      if (result.invalid) {
+        return json(400, { error: 'Complete all roster fields with valid values.' });
+      }
+      if (result.notFound) {
+        return json(404, { error: 'The authorized account no longer exists.' });
+      }
+      if (result.forbidden) {
+        return json(403, { error: 'Only active authorized accounts with roster access may update roster profiles.' });
+      }
+      if (result.conflict) {
+        return json(409, { error: 'This roster profile changed on the server. Reload the page and try again.' });
+      }
+      return json(200, result);
+    }
+    if (email !== OWNER_EMAIL) {
+      return json(403, { error: 'Only the site owner may update the guild directory.' });
+    }
     if (action !== 'upsert' && action !== 'restore' && action !== 'remove') {
-      return json(400, { error: 'Expected an upsert, restore, or remove action.' });
+      return json(400, { error: 'Expected an upsert, restore, remove, or roster profile action.' });
     }
     if ((action === 'upsert' || action === 'restore') && !normalizeEmail(body && body.member && body.member.email)) {
       return json(400, { error: 'A member email is required.' });
