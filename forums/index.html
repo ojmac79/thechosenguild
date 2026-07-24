@@ -404,6 +404,8 @@
           Object.freeze({ id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' })
         ])
       });
+      const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
+      const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
 
       function canonicalCategories(spaceKey) {
         return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
@@ -416,19 +418,17 @@
       function classifyCategoryId(spaceKey, value) {
         const tokens = categoryTokens(value);
         if (spaceKey === 'public') {
-          return tokens.some((token) => token === 'help' || token === 'support' || token === 'desk')
+          return tokens.some((token) => PUBLIC_HELP_TOKENS.includes(token))
             ? 'pub-help'
             : 'pub-general';
         }
-        return tokens.some((token) => (
-          token === 'officer' ||
-          token === 'officers' ||
-          token === 'council' ||
-          token === 'raid' ||
-          token === 'leadership'
-        ))
+        return tokens.some((token) => PRIVATE_OFFICER_TOKENS.includes(token))
           ? 'priv-officers'
           : 'priv-general';
+      }
+
+      function threadToggleLabel(isOpen, baseLabel) {
+        return isOpen ? `Close ${baseLabel}` : baseLabel;
       }
 
       function resolveCanonicalCategoryId(spaceKey, categoryId, sourceCategories) {
@@ -1218,8 +1218,8 @@
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
         privateList.hidden = !privateAccess;
-        publicToggle.textContent = uiState.openThreadForms.public ? 'Close New Post' : 'New Post';
-        privateToggle.textContent = uiState.openThreadForms.private ? 'Close New Post' : 'New Post';
+        publicToggle.textContent = threadToggleLabel(uiState.openThreadForms.public, 'New Post');
+        privateToggle.textContent = threadToggleLabel(uiState.openThreadForms.private, 'New Post');
         publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
         privateToggle.setAttribute('aria-expanded', uiState.openThreadForms.private ? 'true' : 'false');
         privateToggle.hidden = !privateAccess;

@@ -383,6 +383,8 @@ const CANONICAL_FORUM_CATEGORIES = Object.freeze({
     Object.freeze({ id: 'priv-officers', name: 'Officers Area', description: 'Leadership planning, coordination, and officer-only topics.' })
   ])
 });
+const PUBLIC_HELP_TOKENS = Object.freeze(['help', 'support', 'desk']);
+const PRIVATE_OFFICER_TOKENS = Object.freeze(['officer', 'officers', 'council', 'raid', 'leadership']);
 
 function forumCategoriesForSpace(spaceKey) {
   return (CANONICAL_FORUM_CATEGORIES[spaceKey] || []).map((category) => ({ ...category }));
@@ -395,17 +397,11 @@ function forumCategoryTokens(value) {
 function classifyForumCategoryId(spaceKey, value) {
   const tokens = forumCategoryTokens(value);
   if (spaceKey === 'public') {
-    return tokens.some((token) => token === 'help' || token === 'support' || token === 'desk')
+    return tokens.some((token) => PUBLIC_HELP_TOKENS.includes(token))
       ? 'pub-help'
       : 'pub-general';
   }
-  return tokens.some((token) => (
-    token === 'officer' ||
-    token === 'officers' ||
-    token === 'council' ||
-    token === 'raid' ||
-    token === 'leadership'
-  ))
+  return tokens.some((token) => PRIVATE_OFFICER_TOKENS.includes(token))
     ? 'priv-officers'
     : 'priv-general';
 }
