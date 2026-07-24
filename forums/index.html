@@ -207,6 +207,7 @@
       const uiState = {
         openReplyForms: new Set(),
         openReplyLists: new Set(),
+        openThreadBodies: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -957,7 +958,24 @@
           const titleWrap = document.createElement('div');
           const title = document.createElement('h3');
           title.className = 'forum-thread__title';
-          title.appendChild(document.createTextNode(thread.title));
+          const isThreadBodyOpen = uiState.openThreadBodies.has(thread.id);
+          const contentId = `threadContent-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+          const titleButton = document.createElement('button');
+          titleButton.type = 'button';
+          titleButton.className = 'forum-thread__title-button';
+          titleButton.dataset.action = 'toggle-thread-content';
+          titleButton.dataset.space = spaceKey;
+          titleButton.dataset.threadId = thread.id;
+          titleButton.setAttribute('aria-controls', contentId);
+          titleButton.setAttribute('aria-expanded', isThreadBodyOpen ? 'true' : 'false');
+          titleButton.setAttribute('aria-label', `${isThreadBodyOpen ? 'Hide' : 'Show'} post: ${thread.title}`);
+          titleButton.appendChild(document.createTextNode(thread.title));
+          const titleIndicator = document.createElement('span');
+          titleIndicator.className = 'forum-thread__title-indicator';
+          titleIndicator.setAttribute('aria-hidden', 'true');
+          titleIndicator.textContent = isThreadBodyOpen ? '▾' : '▸';
+          titleButton.appendChild(titleIndicator);
+          title.appendChild(titleButton);
 
           const meta = document.createElement('p');
           meta.className = 'forum-thread__meta';
@@ -995,6 +1013,17 @@
           header.appendChild(badgeWrap);
 
           article.appendChild(header);
+
+          const threadContent = document.createElement('div');
+          threadContent.className = 'forum-thread__post';
+          threadContent.id = contentId;
+          threadContent.hidden = !isThreadBodyOpen;
+          const body = document.createElement('div');
+          body.className = 'forum-thread__body';
+          appendLinkedText(body, thread.body);
+          threadContent.appendChild(body);
+          appendPostMedia(threadContent, thread);
+          article.appendChild(threadContent);
 
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const isNewPostOpen = uiState.openThreadForms[spaceKey];
@@ -1457,6 +1486,24 @@
           const action = button.dataset.action;
           const member = getCurrentMember();
           const permissions = guildAccess.getPermissions(member);
+
+          if (action === 'toggle-thread-content') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            if (uiState.openThreadBodies.has(threadId)) {
+              uiState.openThreadBodies.delete(threadId);
+            } else {
+              uiState.openThreadBodies.add(threadId);
+            }
+            render();
+            const refreshedButton = Array.from(
+              document.querySelectorAll('[data-action="toggle-thread-content"]')
+            ).find((candidate) => candidate.dataset.threadId === threadId);
+            refreshedButton?.focus();
+            return;
+          }
 
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
