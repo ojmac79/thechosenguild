@@ -1481,6 +1481,18 @@
           }
         });
 
+        document.getElementById(`${spaceKey}ThreadList`).addEventListener('keydown', (event) => {
+          if (event.key !== 'Enter' && event.key !== ' ') {
+            return;
+          }
+          const target = event.target.closest('[data-action="toggle-thread-content"]');
+          if (!target) {
+            return;
+          }
+          event.preventDefault();
+          target.click();
+        });
+
         document.getElementById(`${spaceKey}ThreadList`).addEventListener('click', async (event) => {
           const button = event.target.closest('[data-action]');
           if (!button) {
