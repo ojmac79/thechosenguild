@@ -200,6 +200,7 @@
       const uiState = {
         openReplyForms: new Set(),
         openReplyLists: new Set(),
+        visibleThreadBodies: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -239,6 +240,10 @@
 
       function pluralize(count, singular, plural) {
         return count === 1 ? singular : plural;
+      }
+
+      function getThreadUiKey(spaceKey, threadId) {
+        return `${spaceKey}:${threadId}`;
       }
 
       function truncateLabel(value, maxLength = 56) {
@@ -964,24 +969,34 @@
           header.appendChild(titleWrap);
           header.appendChild(badgeWrap);
 
-          const body = document.createElement('div');
-          body.className = 'forum-thread__body';
-          appendLinkedText(body, thread.body);
-
           article.appendChild(header);
-          article.appendChild(body);
-          appendPostMedia(article, thread);
 
           // Replies section
           const topLevelReplies = forumState[spaceKey].replies
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
 
+          const threadUiKey = getThreadUiKey(spaceKey, thread.id);
+          const threadContentId = `threadContent-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
+          const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const repliesOpen = uiState.openReplyLists.has(thread.id);
           const actions = document.createElement('div');
           actions.className = 'forum-thread__actions';
           let hasActions = false;
+
+          const contentToggle = document.createElement('button');
+          contentToggle.type = 'button';
+          contentToggle.className = 'resource-item__edit forum-thread__quick-action';
+          contentToggle.textContent = threadContentOpen ? 'Hide Post' : 'Show Post';
+          contentToggle.dataset.action = 'toggle-thread-content';
+          contentToggle.dataset.space = spaceKey;
+          contentToggle.dataset.threadId = thread.id;
+          contentToggle.setAttribute('aria-controls', threadContentId);
+          contentToggle.setAttribute('aria-label', `${threadContentOpen ? 'Hide' : 'Show'} post: ${thread.title}`);
+          contentToggle.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
+          actions.appendChild(contentToggle);
+          hasActions = true;
 
           if (topLevelReplies.length) {
             const repliesButton = document.createElement('button');
@@ -1047,6 +1062,19 @@
           if (hasActions) {
             article.appendChild(actions);
           }
+
+          const threadContent = document.createElement('div');
+          threadContent.id = threadContentId;
+          threadContent.hidden = !threadContentOpen;
+          threadContent.setAttribute('aria-hidden', threadContentOpen ? 'false' : 'true');
+          if (threadContentOpen) {
+            const body = document.createElement('div');
+            body.className = 'forum-thread__body';
+            appendLinkedText(body, thread.body);
+            threadContent.appendChild(body);
+            appendPostMedia(threadContent, thread);
+          }
+          article.appendChild(threadContent);
 
           if (topLevelReplies.length && repliesOpen) {
             const repliesContainer = document.createElement('div');
@@ -1452,6 +1480,21 @@
           const action = button.dataset.action;
           const member = getCurrentMember();
           const permissions = guildAccess.getPermissions(member);
+
+          if (action === 'toggle-thread-content') {
+            const threadId = button.dataset.threadId;
+            if (!threadId) {
+              return;
+            }
+            const threadUiKey = getThreadUiKey(spaceKey, threadId);
+            if (uiState.visibleThreadBodies.has(threadUiKey)) {
+              uiState.visibleThreadBodies.delete(threadUiKey);
+            } else {
+              uiState.visibleThreadBodies.add(threadUiKey);
+            }
+            render();
+            return;
+          }
 
           if (action === 'toggle-reply-form') {
             const threadId = button.dataset.threadId;
