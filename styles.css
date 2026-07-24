@@ -738,6 +738,7 @@ body[data-eq-zone="nexus"] { --eq-accent: #c6a5f7; --eq-accent-strong: #7151ad; 
   font-family: 'Cinzel', serif;
   font-size: 1.2rem;
 }
+.forum2-space [hidden] { display: none !important; }
 .forum2-new-post-toggle {
   padding: 0.42rem 0.82rem;
   font-size: 0.84rem;
