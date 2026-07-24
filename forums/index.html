@@ -950,6 +950,8 @@
         function buildThreadArticle(thread, categoryName, canReplyToThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+          const threadUiKey = getThreadUiKey(spaceKey, thread.id);
+          const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
 
           const header = document.createElement('div');
           header.className = 'forum-thread__header';
@@ -960,7 +962,6 @@
           title.dataset.action = 'toggle-thread-content';
           title.dataset.space = spaceKey;
           title.dataset.threadId = thread.id;
-          title.setAttribute('aria-controls', threadContentId);
           title.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
           title.setAttribute('role', 'button');
           title.setAttribute('tabindex', '0');
@@ -1013,9 +1014,6 @@
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
             .sort((a, b) => a.createdAt - b.createdAt);
 
-          const threadUiKey = getThreadUiKey(spaceKey, thread.id);
-          const threadContentId = `threadContent-${spaceKey}-${thread.id}`.replace(/[^a-zA-Z0-9_-]/g, '-');
-          const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const isNewPostOpen = uiState.openThreadForms[spaceKey];
           const repliesOpen = uiState.openReplyLists.has(thread.id);
@@ -1072,12 +1070,6 @@
           if (hasActions) {
             article.appendChild(actions);
           }
-
-          const threadContent = document.createElement('div');
-          threadContent.id = threadContentId;
-          threadContent.hidden = !threadContentOpen;
-          threadContent.setAttribute('aria-hidden', threadContentOpen ? 'false' : 'true');
-          article.appendChild(threadContent);
 
           if (topLevelReplies.length && repliesOpen) {
             const repliesContainer = document.createElement('div');
