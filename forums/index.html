@@ -200,7 +200,7 @@
       const uiState = {
         openReplyForms: new Set(),
         openReplyLists: new Set(),
-        openThreadBodies: new Set(),
+        visibleThreadBodies: new Set(),
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -977,7 +977,7 @@
             .sort((a, b) => a.createdAt - b.createdAt);
 
           const threadUiKey = getThreadUiKey(spaceKey, thread.id);
-          const threadContentOpen = uiState.openThreadBodies.has(threadUiKey);
+          const threadContentOpen = uiState.visibleThreadBodies.has(threadUiKey);
           const canOpenReplyComposer = canReplyToThread && !thread.isLocked;
           const repliesOpen = uiState.openReplyLists.has(thread.id);
           const actions = document.createElement('div');
@@ -991,6 +991,7 @@
           contentToggle.dataset.action = 'toggle-thread-content';
           contentToggle.dataset.space = spaceKey;
           contentToggle.dataset.threadId = thread.id;
+          contentToggle.setAttribute('aria-label', `${threadContentOpen ? 'Hide' : 'Show'} post: ${thread.title}`);
           contentToggle.setAttribute('aria-expanded', threadContentOpen ? 'true' : 'false');
           actions.appendChild(contentToggle);
           hasActions = true;
@@ -1479,10 +1480,10 @@
               return;
             }
             const threadUiKey = getThreadUiKey(spaceKey, threadId);
-            if (uiState.openThreadBodies.has(threadUiKey)) {
-              uiState.openThreadBodies.delete(threadUiKey);
+            if (uiState.visibleThreadBodies.has(threadUiKey)) {
+              uiState.visibleThreadBodies.delete(threadUiKey);
             } else {
-              uiState.openThreadBodies.add(threadUiKey);
+              uiState.visibleThreadBodies.add(threadUiKey);
             }
             render();
             return;
