@@ -183,6 +183,7 @@
       const ROSTER_STORAGE_KEY = 'theChosenRosterManagedV1';
       const AUTHORIZED_ACCOUNT_STORAGE_KEY = 'theChosenAuthorizedRosterAccountsV1';
       const RANK_ORDER = { Leader: 0, 'Senior Officer': 1, Officer: 2, Recruit: 3 };
+      const DEFAULT_RANK = 'Recruit';
       const DEFAULT_ROSTER = [
         { id: 'roster-1', name: 'Karma', level: 50, className: 'SHD / MNK / SHM', rank: 'Leader', lastOn: '2026-07-21' },
         { id: 'roster-2', name: 'Evorie', level: 10, className: 'NEC / MAG / ENC', rank: 'Senior Officer', lastOn: '2026-07-21' },
@@ -253,6 +254,10 @@
       };
 
       function normalizeEmail(value) {
+        return String(value || '').trim().toLowerCase();
+      }
+
+      function normalizeName(value) {
         return String(value || '').trim().toLowerCase();
       }
 
@@ -467,7 +472,7 @@
         rosterTableBody.innerHTML = rows
           .map((entry) => {
             const userCanEdit = state.editor && !entry.identityManaged && (
-              state.isOwner || entry.name.toLowerCase() === state.currentUserName
+              state.isOwner || normalizeName(entry.name) === state.currentUserName
             );
             const userCanDelete = state.isOwner && !entry.identityManaged;
             let actions = '';
@@ -508,7 +513,7 @@
         const permissions = window.TheChosenGuildAccess.getPermissions(member);
         state.isOwner = permissions.isOwner;
         state.canEditRoster = permissions.canUseRoster;
-        state.currentUserName = member ? String(member.name || '').trim().toLowerCase() : '';
+        state.currentUserName = member ? normalizeName(member.name) : '';
         state.editor = state.isOwner || state.canEditRoster;
         rosterOwnerPanel.hidden = !state.editor;
 
@@ -562,28 +567,25 @@
           return;
         }
 
+        const ownEntry = state.editingId ? state.entries.find((e) => e.id === state.editingId) : null;
+
         if (!state.isOwner) {
           if (!state.editingId) {
             setEditorNotice('Click the Edit button next to your character name to update your entry.', 'error');
             return;
           }
-          const ownEntry = state.entries.find((e) => e.id === state.editingId);
-          if (!ownEntry || ownEntry.name.toLowerCase() !== state.currentUserName) {
+          if (!ownEntry || normalizeName(ownEntry.name) !== state.currentUserName) {
             setEditorNotice('You can only edit your own roster entry.', 'error');
             return;
           }
         }
-
-        const existingRank = state.editingId
-          ? (state.entries.find((e) => e.id === state.editingId) || {}).rank
-          : null;
 
         const nextEntry = sanitizeEntry({
           id: state.editingId || `roster-${Date.now()}`,
           name: rosterName.value,
           level: rosterLevel.value,
           className: rosterClass.value,
-          rank: state.isOwner ? rosterRank.value : (existingRank || 'Recruit'),
+          rank: state.isOwner ? rosterRank.value : (ownEntry ? ownEntry.rank : DEFAULT_RANK),
           lastOn: rosterLastOn.value
         });
 
@@ -626,7 +628,7 @@
           if (action === 'delete') {
             return;
           }
-          if (action === 'edit' && target.name.toLowerCase() !== state.currentUserName) {
+          if (action === 'edit' && normalizeName(target.name) !== state.currentUserName) {
             return;
           }
         }
