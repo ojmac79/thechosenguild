@@ -55,6 +55,24 @@
           Public view is enabled. An approved guild account is required to edit page content.
         </p>
 
+        <form class="panel forum-search" id="forumSearchForm" role="search" data-noneditable="true">
+          <label class="forum-search__label" for="forumSearchInput">Search discussions</label>
+          <div class="forum-search__row">
+            <input
+              class="forum-search__input"
+              id="forumSearchInput"
+              type="search"
+              placeholder="Search categories, topics, posts, authors, or replies"
+              autocomplete="off"
+            />
+            <button class="btn-primary" type="submit">Search</button>
+            <button class="btn-torch" id="forumSearchClear" type="button" hidden>Clear</button>
+          </div>
+          <p class="forum-search__status" id="forumSearchStatus" aria-live="polite">
+            Search public discussions and any members-only forums available to your account.
+          </p>
+        </form>
+
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
           <div class="forum2-space__header">
             <h2 class="forum2-space__title">Public Forum</h2>
@@ -109,6 +127,7 @@
           </form>
 
           <div class="forum-thread-list" id="publicThreadList"></div>
+          <div class="forum-pagination" id="publicPagination" hidden></div>
         </section>
 
         <section class="forum2-space" id="privateSpace" aria-label="Private members-only forum">
@@ -171,6 +190,7 @@
           </form>
 
           <div class="forum-thread-list" id="privateThreadList" hidden></div>
+          <div class="forum-pagination" id="privatePagination" hidden></div>
         </section>
       </main>
 
@@ -208,6 +228,15 @@
         openReplyForms: new Set(),
         openReplyLists: new Set(),
         openThreadBodies: new Set(),
+        searchQuery: '',
+        threadLimits: {
+          public: 5,
+          private: 5
+        },
+        searchResultCounts: {
+          public: 0,
+          private: 0
+        },
         replyingToReplyId: {},
         openThreadForms: {
           public: false,
@@ -255,6 +284,19 @@
           return text;
         }
         return `${text.slice(0, maxLength - 1).trimEnd()}…`;
+      }
+
+      function forumSearchTerms() {
+        return String(uiState.searchQuery || '')
+          .trim()
+          .toLocaleLowerCase()
+          .split(/\s+/)
+          .filter(Boolean);
+      }
+
+      function resetThreadLimits() {
+        uiState.threadLimits.public = 5;
+        uiState.threadLimits.private = 5;
       }
 
       function redirectToLogin() {
@@ -897,12 +939,51 @@
       }
 
       function sortThreads(threads) {
-        return [...threads].sort((a, b) => {
-          if (a.isPinned !== b.isPinned) {
-            return a.isPinned ? -1 : 1;
-          }
-          return b.createdAt - a.createdAt;
-        });
+        return [...threads].sort((a, b) => b.createdAt - a.createdAt);
+      }
+
+      function renderTopicPagination(spaceKey, totalCount, visibleCount) {
+        const container = document.getElementById(`${spaceKey}Pagination`);
+        container.innerHTML = '';
+        container.hidden = totalCount <= 5;
+        if (container.hidden) {
+          return;
+        }
+
+        const summary = document.createElement('p');
+        summary.className = 'forum-pagination__summary';
+        summary.textContent = `Showing ${visibleCount} of ${totalCount} topics. Newest topics appear first within each category.`;
+        container.appendChild(summary);
+
+        const actions = document.createElement('div');
+        actions.className = 'forum-pagination__actions';
+        if (visibleCount < totalCount) {
+          const moreButton = document.createElement('button');
+          moreButton.type = 'button';
+          moreButton.className = 'btn-torch';
+          moreButton.textContent = `Show More (${Math.min(5, totalCount - visibleCount)})`;
+          moreButton.dataset.paginationAction = 'more';
+          moreButton.dataset.space = spaceKey;
+          actions.appendChild(moreButton);
+
+          const allButton = document.createElement('button');
+          allButton.type = 'button';
+          allButton.className = 'btn-torch';
+          allButton.textContent = 'Show All';
+          allButton.dataset.paginationAction = 'all';
+          allButton.dataset.space = spaceKey;
+          actions.appendChild(allButton);
+        }
+        if (visibleCount > 5) {
+          const recentButton = document.createElement('button');
+          recentButton.type = 'button';
+          recentButton.className = 'btn-torch';
+          recentButton.textContent = 'Show Recent';
+          recentButton.dataset.paginationAction = 'recent';
+          recentButton.dataset.space = spaceKey;
+          actions.appendChild(recentButton);
+        }
+        container.appendChild(actions);
       }
 
       function renderThreads(spaceKey, permissions, member, privateAccess) {
@@ -911,9 +992,13 @@
 
         // Pre-compute reply counts (all replies per thread) and children map to avoid O(n*m) loops.
         const replyCountByThread = new Map();
+        const repliesByThread = new Map();
         const childrenMap = new Map();
         forumState[spaceKey].replies.forEach((reply) => {
           replyCountByThread.set(reply.threadId, (replyCountByThread.get(reply.threadId) || 0) + 1);
+          const threadReplies = repliesByThread.get(reply.threadId) || [];
+          threadReplies.push(reply);
+          repliesByThread.set(reply.threadId, threadReplies);
           if (reply.parentReplyId) {
             const siblings = childrenMap.get(reply.parentReplyId) || [];
             siblings.push(reply);
@@ -921,23 +1006,62 @@
           }
         });
 
-        const threads = sortThreads(forumState[spaceKey].threads);
+        const searchTerms = forumSearchTerms();
+        const categoryMap = new Map(
+          forumState[spaceKey].categories.map((category) => [category.id, category])
+        );
+        const matchingThreads = sortThreads(forumState[spaceKey].threads).filter((thread) => {
+          if (!searchTerms.length) {
+            return true;
+          }
+          const category = categoryMap.get(thread.categoryId);
+          const replies = repliesByThread.get(thread.id) || [];
+          const searchText = [
+            category && category.name,
+            category && category.description,
+            thread.title,
+            thread.body,
+            thread.authorName,
+            thread.linkUrl,
+            ...replies.flatMap((reply) => [reply.body, reply.authorName, reply.linkUrl])
+          ]
+            .filter(Boolean)
+            .join(' ')
+            .toLocaleLowerCase();
+          return searchTerms.every((term) => searchText.includes(term));
+        });
+        uiState.searchResultCounts[spaceKey] = matchingThreads.length;
+        const threadLimit = uiState.threadLimits[spaceKey];
+        const threads = matchingThreads.slice(0, threadLimit);
         const canReply = spaceKey === 'public' || (!!member && !!privateAccess);
-        const visibleCategories = forumState[spaceKey].categories;
+        const allThreadsByCategory = new Map();
+        matchingThreads.forEach((thread) => {
+          const existing = allThreadsByCategory.get(thread.categoryId) || [];
+          existing.push(thread);
+          allThreadsByCategory.set(thread.categoryId, existing);
+        });
         const threadsByCategory = new Map();
         threads.forEach((thread) => {
           const existing = threadsByCategory.get(thread.categoryId) || [];
           existing.push(thread);
           threadsByCategory.set(thread.categoryId, existing);
         });
+        const visibleCategories = searchTerms.length
+          ? forumState[spaceKey].categories.filter((category) => {
+              return (threadsByCategory.get(category.id) || []).length > 0;
+            })
+          : forumState[spaceKey].categories;
 
         container.innerHTML = '';
+        renderTopicPagination(spaceKey, matchingThreads.length, threads.length);
         if (!visibleCategories.length) {
           const empty = document.createElement('article');
           empty.className = 'panel forum-thread';
           const message = document.createElement('p');
           message.className = 'empty-state';
-          message.textContent = 'No threads yet in this view.';
+          message.textContent = searchTerms.length
+            ? 'No topics match your search in this forum.'
+            : 'No threads yet in this view.';
           empty.appendChild(message);
           container.appendChild(empty);
           return;
@@ -946,6 +1070,7 @@
         function buildThreadArticle(thread, categoryName, canReplyToThread) {
           const article = document.createElement('article');
           article.className = `panel forum-thread${spaceKey === 'private' ? ' forum-thread--member' : ''}`;
+          article.dataset.forumThreadId = thread.id;
 
           const topLevelReplies = forumState[spaceKey].replies
             .filter((reply) => reply.threadId === thread.id && !reply.parentReplyId)
@@ -1193,6 +1318,7 @@
 
         visibleCategories.forEach((category) => {
           const categoryThreads = threadsByCategory.get(category.id) || [];
+          const allCategoryThreads = allThreadsByCategory.get(category.id) || [];
           const categorySection = document.createElement('section');
           categorySection.className = 'panel forum2-category';
 
@@ -1205,8 +1331,8 @@
 
           const categorySummary = document.createElement('p');
           categorySummary.className = 'forum2-category__summary';
-          const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
-          const latestThread = categoryThreads.length ? categoryThreads[0] : null;
+          const countLabel = `${allCategoryThreads.length} ${pluralize(allCategoryThreads.length, 'post', 'posts')}`;
+          const latestThread = allCategoryThreads.length ? allCategoryThreads[0] : null;
           const latestPostText = latestThread ? `Latest Post: ${truncateLabel(latestThread.title)}` : '';
           categorySummary.textContent = [category.description, countLabel, latestPostText].filter(Boolean).join(META_DELIMITER);
 
@@ -1217,7 +1343,9 @@
           if (!categoryThreads.length) {
             const emptyCategory = document.createElement('p');
             emptyCategory.className = 'forum2-note';
-            emptyCategory.textContent = 'No posts in this category yet.';
+            emptyCategory.textContent = allCategoryThreads.length
+              ? 'Older topics in this category are hidden. Use Show More or Show All.'
+              : 'No posts in this category yet.';
             categorySection.appendChild(emptyCategory);
             container.appendChild(categorySection);
             return;
@@ -1252,6 +1380,21 @@
           : 'Your account can read public threads, but private guild forum access is not enabled.';
       }
 
+      function updateSearchStatus(privateAccess) {
+        const query = String(uiState.searchQuery || '').trim();
+        const clearButton = document.getElementById('forumSearchClear');
+        const status = document.getElementById('forumSearchStatus');
+        clearButton.hidden = !query;
+        if (!query) {
+          status.textContent = 'Search public discussions and any members-only forums available to your account.';
+          return;
+        }
+        const publicCount = uiState.searchResultCounts.public;
+        const privateCount = privateAccess ? uiState.searchResultCounts.private : 0;
+        const resultCount = publicCount + privateCount;
+        status.textContent = `${resultCount} ${pluralize(resultCount, 'topic', 'topics')} found for “${query}”.`;
+      }
+
       function render() {
         const member = getCurrentMember();
         const permissions = guildAccess.getPermissions(member);
@@ -1278,11 +1421,15 @@
 
         const privateGate = document.getElementById('privateGate');
         const privateList = document.getElementById('privateThreadList');
+        const privatePagination = document.getElementById('privatePagination');
 
         privateGate.hidden = privateAccess;
         publicForm.hidden = !uiState.openThreadForms.public;
         privateForm.hidden = !privateAccess || !uiState.openThreadForms.private;
         privateList.hidden = !privateAccess;
+        if (!privateAccess) {
+          privatePagination.hidden = true;
+        }
         publicToggle.textContent = threadToggleLabel(uiState.openThreadForms.public, 'New Post');
         privateToggle.textContent = threadToggleLabel(uiState.openThreadForms.private, 'New Post');
         publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
@@ -1297,6 +1444,7 @@
         if (privateAccess) {
           renderThreads('private', permissions, member, privateAccess);
         }
+        updateSearchStatus(privateAccess);
       }
 
       async function addCategory(spaceKey, name, description) {
@@ -1444,7 +1592,50 @@
         }
       });
 
+      const forumSearchForm = document.getElementById('forumSearchForm');
+      const forumSearchInput = document.getElementById('forumSearchInput');
+      const forumSearchClear = document.getElementById('forumSearchClear');
+
+      forumSearchForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        uiState.searchQuery = forumSearchInput.value;
+        resetThreadLimits();
+        render();
+      });
+
+      forumSearchInput.addEventListener('input', () => {
+        uiState.searchQuery = forumSearchInput.value;
+        resetThreadLimits();
+        render();
+      });
+
+      forumSearchClear.addEventListener('click', () => {
+        forumSearchInput.value = '';
+        uiState.searchQuery = '';
+        resetThreadLimits();
+        render();
+        forumSearchInput.focus();
+      });
+
       ['public', 'private'].forEach((spaceKey) => {
+        document.getElementById(`${spaceKey}Pagination`).addEventListener('click', (event) => {
+          const button = event.target.closest('[data-pagination-action]');
+          if (!button) {
+            return;
+          }
+          if (button.dataset.paginationAction === 'more') {
+            uiState.threadLimits[spaceKey] += 5;
+          }
+          if (button.dataset.paginationAction === 'all') {
+            uiState.threadLimits[spaceKey] = Number.POSITIVE_INFINITY;
+          }
+          if (button.dataset.paginationAction === 'recent') {
+            uiState.threadLimits[spaceKey] = 5;
+          }
+          render();
+          document.getElementById(`${spaceKey}Pagination`).querySelector('button')?.focus();
+        });
+
         const categoryForm = document.getElementById(`${spaceKey}CategoryForm`);
         categoryForm.addEventListener('submit', async (event) => {
           event.preventDefault();
