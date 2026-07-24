@@ -47,6 +47,13 @@
         <p class="page-subtitle">
           A compact forum Index showing only the public and members-only discussion boards.
         </p>
+        <div class="resource-section__header" data-noneditable="true">
+          <h2 class="resource-section__title">Page Content</h2>
+          <button id="toggleForumDescEdit" class="btn-torch" type="button" aria-pressed="false" hidden>Enable Content Editing</button>
+        </div>
+        <p id="forumDescEditNotice" class="resource-notice" aria-live="polite" data-noneditable="true">
+          Public view is enabled. An approved guild account is required to edit page content.
+        </p>
 
         <section class="forum2-space" id="publicSpace" aria-label="Public forum">
           <div class="forum2-space__header">
@@ -1702,6 +1709,68 @@
 
       render();
       void syncForumStateWithRemote();
+    </script>
+    <script>
+      (function () {
+        const toggleBtn = document.getElementById('toggleForumDescEdit');
+        const editNotice = document.getElementById('forumDescEditNotice');
+        const editTargets = Array.from(
+          document.querySelectorAll('.page > .hero__eyebrow, .page > .page-title, .page > .page-subtitle')
+        );
+        let editingEnabled = false;
+
+        function canEdit() {
+          const ga = window.TheChosenGuildAccess;
+          return Boolean(ga && ga.getPermissions(ga.getCurrentMember()).canEditSite);
+        }
+
+        function setEditingState(enabled) {
+          editingEnabled = enabled;
+          editTargets.forEach(function (el) {
+            el.setAttribute('contenteditable', enabled ? 'true' : 'false');
+          });
+          toggleBtn.textContent = enabled ? 'Disable Content Editing' : 'Enable Content Editing';
+          toggleBtn.setAttribute('aria-pressed', enabled ? 'true' : 'false');
+        }
+
+        function updateAccess() {
+          const allowed = canEdit();
+          toggleBtn.hidden = !allowed;
+          if (!allowed && editingEnabled) {
+            setEditingState(false);
+          }
+          editNotice.textContent = allowed
+            ? 'Authorized editor access enabled. Use the button to enable header content editing.'
+            : 'Public view is enabled. An approved guild account is required to edit page content.';
+        }
+
+        toggleBtn.addEventListener('click', function () {
+          if (!canEdit()) {
+            editNotice.textContent = 'An approved guild account is required to enable header content editing.';
+            return;
+          }
+          setEditingState(!editingEnabled);
+          editNotice.textContent = editingEnabled
+            ? 'Content editing is enabled for this session.'
+            : 'Content editing is disabled.';
+        });
+
+        setEditingState(false);
+        updateAccess();
+        window.addEventListener('storage', function (event) {
+          if (window.TheChosenGuildAccess && event.key === window.TheChosenGuildAccess.DIRECTORY_STORAGE_KEY) {
+            updateAccess();
+          }
+        });
+        window.addEventListener('theChosen:persistent-store-ready', updateAccess);
+        if (window.netlifyIdentity) {
+          window.netlifyIdentity.on('login', updateAccess);
+          window.netlifyIdentity.on('logout', function () {
+            setEditingState(false);
+            updateAccess();
+          });
+        }
+      })();
     </script>
   </body>
 </html>
