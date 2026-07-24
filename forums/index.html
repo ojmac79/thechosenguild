@@ -251,7 +251,7 @@
       }
 
       function buildReplyToggleLabel(count, isOpen) {
-        return `${isOpen ? 'Collapse' : 'Expand'} Replies (${count})`;
+        return `${isOpen ? 'Hide' : 'Show'} Replies (${count})`;
       }
 
       function shortHash(value) {
@@ -1528,16 +1528,8 @@
             }
             if (uiState.openReplyForms.has(threadId)) {
               uiState.openReplyForms.delete(threadId);
-              if (uiState.autoOpenedThreadReplies.has(threadId)) {
-                uiState.openReplyLists.delete(threadId);
-                uiState.autoOpenedThreadReplies.delete(threadId);
-              }
               delete uiState.replyingToReplyId[threadId];
             } else {
-              if (!uiState.openReplyLists.has(threadId)) {
-                uiState.openReplyLists.add(threadId);
-                uiState.autoOpenedThreadReplies.add(threadId);
-              }
               uiState.openReplyForms.add(threadId);
             }
             render();
@@ -1579,7 +1571,6 @@
             if (!threadId || !replyId) {
               return;
             }
-            uiState.openReplyLists.add(threadId);
             uiState.openReplyForms.add(threadId);
             uiState.replyingToReplyId[threadId] = replyId;
             render();
@@ -1609,7 +1600,6 @@
                 linkInput && linkInput.value,
                 imageUrl
               );
-              uiState.openReplyLists.add(threadId);
               uiState.openReplyForms.delete(threadId);
               delete uiState.replyingToReplyId[threadId];
               render();
