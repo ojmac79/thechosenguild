@@ -74,7 +74,7 @@
             <div id="publicCategoryList" class="forum2-manager__list"></div>
           </div>
 
-          <form class="panel forum2-form" id="publicThreadForm" hidden>
+          <form class="panel forum2-form" id="publicThreadForm">
             <label class="resource-field">
               <span>Category</span>
               <select id="publicThreadCategory" required></select>
@@ -238,6 +238,14 @@
 
       function hasPrivateForumAccess(member, permissions) {
         return Boolean(member && permissions.canUseForums && (serverAccess === 'member' || serverAccess === 'moderator'));
+      }
+
+      function pluralize(count, singular, plural) {
+        return count === 1 ? singular : plural;
+      }
+
+      function redirectToLogin() {
+        window.location.href = '/login/';
       }
 
       function normalizeForumUrl(value) {
@@ -909,7 +917,7 @@
           meta.className = 'forum-thread__meta';
           const postedOn = new Date(thread.createdAt).toLocaleString();
           const totalReplyCount = replyCountByThread.get(thread.id) || 0;
-          const replyLabel = `${totalReplyCount} ${totalReplyCount === 1 ? 'reply' : 'replies'}`;
+          const replyLabel = `${totalReplyCount} ${pluralize(totalReplyCount, 'reply', 'replies')}`;
           meta.textContent = [thread.authorName, categoryName, postedOn, replyLabel].join(META_DELIMITER);
 
           titleWrap.appendChild(title);
@@ -1098,7 +1106,7 @@
 
           const categorySummary = document.createElement('p');
           categorySummary.className = 'forum2-category__summary';
-          const countLabel = `${categoryThreads.length} ${categoryThreads.length === 1 ? 'post' : 'posts'}`;
+          const countLabel = `${categoryThreads.length} ${pluralize(categoryThreads.length, 'post', 'posts')}`;
           categorySummary.textContent = [category.description, countLabel].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);
@@ -1307,7 +1315,7 @@
         event.preventDefault();
         const member = getCurrentMember();
         if (!guildAccess.getPermissions(member).canUseForums) {
-          window.location.href = '/login/';
+          redirectToLogin();
           return;
         }
 
@@ -1506,7 +1514,7 @@
         const permissions = guildAccess.getPermissions(member);
         const hasPrivateAccess = hasPrivateForumAccess(member, permissions);
         if (!hasPrivateAccess) {
-          window.location.href = '/login/';
+          redirectToLogin();
           return;
         }
         uiState.openThreadForms.private = !uiState.openThreadForms.private;
