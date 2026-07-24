@@ -236,6 +236,10 @@
         return Boolean(permissions && permissions.canModerateForums);
       }
 
+      function hasPrivateForumAccess(member, permissions) {
+        return Boolean(member && permissions.canUseForums && (serverAccess === 'member' || serverAccess === 'moderator'));
+      }
+
       function normalizeForumUrl(value) {
         const raw = String(value || '').trim();
         if (!raw || raw.length > 2000) {
@@ -1095,9 +1099,7 @@
           const categorySummary = document.createElement('p');
           categorySummary.className = 'forum2-category__summary';
           const countLabel = `${categoryThreads.length} ${categoryThreads.length === 1 ? 'post' : 'posts'}`;
-          categorySummary.textContent = category.description
-            ? [category.description, countLabel].join(META_DELIMITER)
-            : countLabel;
+          categorySummary.textContent = [category.description, countLabel].filter(Boolean).join(META_DELIMITER);
 
           categoryHeader.appendChild(categoryTitle);
           categoryHeader.appendChild(categorySummary);
@@ -1145,7 +1147,7 @@
         const member = getCurrentMember();
         const permissions = guildAccess.getPermissions(member);
         const moderator = serverAccess === 'moderator';
-        const privateAccess = serverAccess === 'member' || serverAccess === 'moderator';
+        const privateAccess = hasPrivateForumAccess(member, permissions);
 
         renderMemberBadge(member);
         updateAuthNotes(member, permissions, privateAccess);
@@ -1502,7 +1504,7 @@
       document.getElementById('privateNewPostToggle').addEventListener('click', () => {
         const member = getCurrentMember();
         const permissions = guildAccess.getPermissions(member);
-        const hasPrivateAccess = permissions.canUseForums && (serverAccess === 'member' || serverAccess === 'moderator');
+        const hasPrivateAccess = hasPrivateForumAccess(member, permissions);
         if (!hasPrivateAccess) {
           window.location.href = '/login/';
           return;
