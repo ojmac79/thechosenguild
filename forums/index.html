@@ -53,7 +53,13 @@
             <h2 class="forum2-space__title">Public Forum</h2>
             <div class="forum2-space__actions">
               <span class="forum-badge">Open to everyone</span>
-              <button class="btn-primary forum2-new-post-toggle" id="publicNewPostToggle" type="button">New Post</button>
+              <button
+                class="btn-primary forum2-new-post-toggle"
+                id="publicNewPostToggle"
+                type="button"
+                aria-controls="publicThreadForm"
+                aria-expanded="false"
+              >New Post</button>
             </div>
           </div>
           <p class="forum2-note" id="publicAuthNote"></p>
@@ -104,7 +110,13 @@
             <h2 class="forum2-space__title">Private Members Forum</h2>
             <div class="forum2-space__actions">
               <span class="forum-badge forum-badge--member">Members only</span>
-              <button class="btn-primary forum2-new-post-toggle" id="privateNewPostToggle" type="button">New Post</button>
+              <button
+                class="btn-primary forum2-new-post-toggle"
+                id="privateNewPostToggle"
+                type="button"
+                aria-controls="privateThreadForm"
+                aria-expanded="false"
+              >New Post</button>
             </div>
           </div>
           <div class="panel forum-gate" id="privateGate">
@@ -1157,6 +1169,8 @@
         privateList.hidden = !privateAccess;
         publicToggle.textContent = uiState.openThreadForms.public ? 'Close Post Editor' : 'New Post';
         privateToggle.textContent = uiState.openThreadForms.private ? 'Close Post Editor' : 'New Post';
+        publicToggle.setAttribute('aria-expanded', uiState.openThreadForms.public ? 'true' : 'false');
+        privateToggle.setAttribute('aria-expanded', uiState.openThreadForms.private ? 'true' : 'false');
         privateToggle.hidden = !privateAccess;
 
         renderCategoryManager('public', moderator);
