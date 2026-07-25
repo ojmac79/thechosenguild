@@ -6,7 +6,8 @@
     NEWS_STORAGE_KEY,
     'theChosenCurrentMember',
     'theChosenForumStateV2',
-    'theChosenMemberAvatarsV1'
+    'theChosenMemberAvatarsV1',
+    'theChosenRosterManagedV1'
   ]);
   const ENDPOINT = '/.netlify/functions/content-state?scope=kv';
   const storage = window.localStorage;

@@ -10,6 +10,8 @@ const FORUM_REPLY_PREFIX = 'forum-replies/';
 const KV_KEY = 'kv-state-v1';
 const DIRECTORY_KEY = 'theChosenGuildDirectoryV1';
 const AUTHORIZED_ROSTER_KEY = 'theChosenAuthorizedRosterAccountsV1';
+const MANAGED_ROSTER_KEY = 'roster-state-v1';
+const LEGACY_MANAGED_ROSTER_KEY = 'theChosenRosterManagedV1';
 const ACTIVE_MEMBER_STATUSES = new Set(['active', 'probation']);
 const LOCAL_ONLY_KV_KEYS = new Set([
   'theChosenCurrentMember',
@@ -31,7 +33,9 @@ function json(statusCode, body) {
 
 function readScope(event) {
   const scope = String((event.queryStringParameters && event.queryStringParameters.scope) || '').trim().toLowerCase();
-  return scope === 'news' || scope === 'forum' || scope === 'kv' || scope === 'guild-directory' ? scope : '';
+  return scope === 'news' || scope === 'forum' || scope === 'kv' || scope === 'guild-directory' || scope === 'roster'
+    ? scope
+    : '';
 }
 
 function normalizeEmail(value) {
@@ -87,6 +91,7 @@ function isValidKvKey(key) {
   return typeof key === 'string' &&
     key.startsWith('theChosen') &&
     key !== AUTHORIZED_ROSTER_KEY &&
+    key !== LEGACY_MANAGED_ROSTER_KEY &&
     !LOCAL_ONLY_KV_KEYS.has(key);
 }
 
@@ -170,6 +175,194 @@ function cleanRosterDate(value) {
   }
   const parsed = new Date(`${date}T00:00:00.000Z`);
   return !Number.isNaN(parsed.getTime()) && parsed.toISOString().slice(0, 10) === date ? date : '';
+}
+
+function nextRosterTimestamp(previous) {
+  const now = new Date();
+  const previousTime = Date.parse(cleanText(previous, 80));
+  if (Number.isFinite(previousTime) && now.getTime() <= previousTime) {
+    return new Date(previousTime + 1).toISOString();
+  }
+  return now.toISOString();
+}
+
+function normalizeManagedRosterEntry(entry, fallbackId) {
+  if (!entry || typeof entry !== 'object') {
+    return null;
+  }
+  const name = cleanText(entry.name, 80);
+  const level = normalizeRosterLevel(entry.level);
+  const className = cleanRosterClass(entry.className || entry.class);
+  const rank = cleanText(entry.rank, 50);
+  const lastOn = cleanRosterDate(entry.lastOn);
+  if (!name || level === null || !className || !rank || !lastOn) {
+    return null;
+  }
+  return {
+    id: cleanText(entry.id || fallbackId, 160) || buildId('roster'),
+    name,
+    level,
+    className,
+    rank,
+    lastOn,
+    ownerEmail: normalizeEmail(entry.ownerEmail),
+    updatedAt: cleanText(entry.updatedAt, 80)
+  };
+}
+
+function normalizeManagedRosterState(source) {
+  const state = source && typeof source === 'object' ? source : {};
+  const entries = Array.isArray(state.entries)
+    ? state.entries
+        .map((entry, index) => normalizeManagedRosterEntry(entry, `roster-${index + 1}`))
+        .filter(Boolean)
+    : [];
+  return {
+    entries,
+    updatedAt: cleanText(state.updatedAt, 80)
+  };
+}
+
+function publicManagedRoster(state) {
+  return normalizeManagedRosterState(state).entries.map((entry) => ({
+    id: entry.id,
+    name: entry.name,
+    level: entry.level,
+    className: entry.className,
+    rank: entry.rank,
+    lastOn: entry.lastOn
+  }));
+}
+
+async function loadManagedRosterState(store) {
+  const existing = await readJson(store, MANAGED_ROSTER_KEY, null);
+  if (existing && Array.isArray(existing.entries)) {
+    return normalizeManagedRosterState(existing);
+  }
+
+  const payload = await readJson(store, KV_KEY, { items: {} });
+  const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+  let legacyEntries = [];
+  try {
+    const parsed = JSON.parse(items[LEGACY_MANAGED_ROSTER_KEY] || '[]');
+    legacyEntries = Array.isArray(parsed) ? parsed : [];
+  } catch (error) {
+    legacyEntries = [];
+  }
+  const now = nextRosterTimestamp('');
+  const migrated = normalizeManagedRosterState({ entries: legacyEntries, updatedAt: now });
+  const result = await store.set(MANAGED_ROSTER_KEY, JSON.stringify(migrated), { onlyIfNew: true });
+  if (result.modified) {
+    return migrated;
+  }
+  return normalizeManagedRosterState(
+    await readJson(store, MANAGED_ROSTER_KEY, migrated)
+  );
+}
+
+function rosterMemberForEmail(items, email) {
+  return parseDirectory(items).members.find(
+    (member) => normalizeEmail(member && member.email) === email
+  ) || null;
+}
+
+async function updateManagedRoster(store, requesterEmail, action, body) {
+  const kvPayload = await readJson(store, KV_KEY, { items: {} });
+  const items = kvPayload.items && typeof kvPayload.items === 'object' ? kvPayload.items : {};
+  const requester = rosterMemberForEmail(items, requesterEmail);
+  const owner = requesterEmail === OWNER_EMAIL;
+  const canUseRoster = owner || Boolean(
+    requester &&
+    requester.verifiedNetlify === true &&
+    ACTIVE_MEMBER_STATUSES.has(cleanText(requester.status, 40).toLowerCase()) &&
+    requester.access &&
+    requester.access.roster
+  );
+  if (!canUseRoster) {
+    return { forbidden: true };
+  }
+
+  const currentState = await loadManagedRosterState(store);
+  let conflict = false;
+  let invalid = false;
+  let notFound = false;
+  let operationForbidden = false;
+  const payload = await updateJsonAtomically(store, MANAGED_ROSTER_KEY, currentState, (existing) => {
+    const state = normalizeManagedRosterState(existing);
+    if (cleanText(body && body.expectedUpdatedAt, 80) !== state.updatedAt) {
+      conflict = true;
+      return null;
+    }
+
+    if (action === 'save-entry') {
+      const submitted = normalizeManagedRosterEntry(body && body.entry, '');
+      if (!submitted) {
+        invalid = true;
+        return null;
+      }
+      const index = state.entries.findIndex((entry) => entry.id === submitted.id);
+      const current = index >= 0 ? state.entries[index] : null;
+      if (!owner) {
+        const ownsEntry = current && (
+          current.ownerEmail === requesterEmail ||
+          (!current.ownerEmail && cleanText(current.name, 80).toLowerCase() === cleanText(requester.name, 80).toLowerCase())
+        );
+        if (!ownsEntry) {
+          operationForbidden = true;
+          return null;
+        }
+      }
+
+      const now = nextRosterTimestamp(state.updatedAt);
+      const saved = {
+        ...submitted,
+        rank: owner ? submitted.rank : current.rank,
+        ownerEmail: owner
+          ? normalizeEmail(current && current.ownerEmail)
+          : requesterEmail,
+        updatedAt: now
+      };
+      if (index >= 0) {
+        state.entries[index] = saved;
+      } else if (owner) {
+        state.entries.unshift(saved);
+      } else {
+        operationForbidden = true;
+        return null;
+      }
+      state.updatedAt = now;
+      return state;
+    }
+
+    if (action === 'delete-entry') {
+      if (!owner) {
+        operationForbidden = true;
+        return null;
+      }
+      const entryId = cleanText(body && body.entryId, 160);
+      const index = state.entries.findIndex((entry) => entry.id === entryId);
+      if (index < 0) {
+        notFound = true;
+        return null;
+      }
+      state.entries.splice(index, 1);
+      state.updatedAt = nextRosterTimestamp(state.updatedAt);
+      return state;
+    }
+
+    invalid = true;
+    return null;
+  });
+
+  const state = normalizeManagedRosterState(payload);
+  return {
+    entries: publicManagedRoster(state),
+    updatedAt: state.updatedAt,
+    conflict,
+    forbidden: operationForbidden,
+    invalid,
+    notFound
+  };
 }
 
 function publicAuthorizedRoster(items) {
@@ -873,6 +1066,13 @@ exports.handler = async function handler(event, context) {
     if (scope === 'guild-directory') {
       return json(405, { error: 'Method not allowed.' });
     }
+    if (scope === 'roster') {
+      const state = await loadManagedRosterState(store);
+      return json(200, {
+        entries: publicManagedRoster(state),
+        updatedAt: state.updatedAt
+      });
+    }
     const payload = await loadForumState(store);
     const role = await getForumRole(store, getRequestEmail(context));
     return json(200, forumPayloadForRole(payload.state, role, payload.updatedAt));
@@ -943,6 +1143,30 @@ exports.handler = async function handler(event, context) {
     const result = await updateManagedDirectory(store, action, body);
     if (result.conflict) {
       return json(409, { error: 'This member changed on the server. Reload the registry and try again.' });
+    }
+    return json(200, result);
+  }
+
+  if (scope === 'roster') {
+    if (event.httpMethod !== 'POST') {
+      return json(405, { error: 'Method not allowed.' });
+    }
+    const action = cleanText(body.action, 40);
+    if (action !== 'save-entry' && action !== 'delete-entry') {
+      return json(400, { error: 'Expected a save-entry or delete-entry action.' });
+    }
+    const result = await updateManagedRoster(store, email, action, body);
+    if (result.invalid) {
+      return json(400, { error: 'Complete all roster fields with valid values.' });
+    }
+    if (result.notFound) {
+      return json(404, { error: 'The roster entry no longer exists.' });
+    }
+    if (result.forbidden) {
+      return json(403, { error: 'You are not authorized to change this roster entry.' });
+    }
+    if (result.conflict) {
+      return json(409, { error: 'The roster changed on the server. Reload the page and try again.' });
     }
     return json(200, result);
   }

@@ -182,7 +182,19 @@
     <script>
       const ROSTER_STORAGE_KEY = 'theChosenRosterManagedV1';
       const AUTHORIZED_ACCOUNT_STORAGE_KEY = 'theChosenAuthorizedRosterAccountsV1';
-      const RANK_ORDER = { Leader: 0, 'Senior Officer': 1, Officer: 2, Recruit: 3 };
+      const ROSTER_ENDPOINT = '/.netlify/functions/content-state?scope=roster';
+      const RANK_ORDER = {
+        leader: 0,
+        'guild leader': 0,
+        'senior officer': 1,
+        officer: 2,
+        'guild officer': 2,
+        member: 3,
+        'guild member': 3,
+        recruit: 4,
+        applicant: 5,
+        retired: 6
+      };
       const DEFAULT_RANK = 'Recruit';
       const DEFAULT_ROSTER = [
         { id: 'roster-1', name: 'Karma', level: 50, className: 'SHD / MNK / SHM', rank: 'Leader', lastOn: '2026-07-21' },
@@ -251,7 +263,8 @@
         isOwner: false,
         canEditRoster: false,
         currentUserName: '',
-        currentUserEmail: ''
+        currentUserEmail: '',
+        rosterUpdatedAt: ''
       };
 
       function normalizeEmail(value) {
@@ -407,6 +420,68 @@
         localStorage.setItem(ROSTER_STORAGE_KEY, JSON.stringify(entries));
       }
 
+      function applyServerRoster(payload) {
+        if (!payload || !Array.isArray(payload.entries) || typeof payload.updatedAt !== 'string') {
+          throw new Error('The roster server returned an invalid response.');
+        }
+        state.entries = payload.entries
+          .map((entry, index) => sanitizeEntry(entry, `roster-server-${index + 1}`))
+          .filter(Boolean);
+        state.rosterUpdatedAt = payload.updatedAt;
+        writeEntries(state.entries);
+      }
+
+      async function getIdentityToken() {
+        if (!window.netlifyIdentity || typeof window.netlifyIdentity.currentUser !== 'function') {
+          return '';
+        }
+        const user = window.netlifyIdentity.currentUser();
+        return user && typeof user.jwt === 'function' ? user.jwt() : '';
+      }
+
+      async function syncRosterFromServer() {
+        try {
+          const response = await fetch(ROSTER_ENDPOINT, {
+            credentials: 'same-origin',
+            cache: 'no-store'
+          });
+          if (!response.ok) {
+            throw new Error('The persistent roster could not be loaded.');
+          }
+          applyServerRoster(await response.json());
+          render();
+        } catch (error) {
+          setEditorNotice(
+            error && error.message ? error.message : 'The persistent roster could not be loaded.',
+            'error'
+          );
+        }
+      }
+
+      async function runRosterOperation(action, input) {
+        const token = await getIdentityToken();
+        if (!token) {
+          throw new Error('Sign in with an authorized guild account to save roster changes.');
+        }
+        const response = await fetch(ROSTER_ENDPOINT, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({
+            action,
+            expectedUpdatedAt: state.rosterUpdatedAt,
+            ...input
+          })
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          throw new Error(payload.error || 'The roster change could not be saved.');
+        }
+        applyServerRoster(payload);
+      }
+
       function ensureSeed() {
         const storedValue = localStorage.getItem(ROSTER_STORAGE_KEY);
         const current = readStoredEntries();
@@ -420,8 +495,9 @@
       }
 
       function rankSortValue(rank) {
-        if (Object.prototype.hasOwnProperty.call(RANK_ORDER, rank)) {
-          return RANK_ORDER[rank];
+        const normalizedRank = String(rank || '').trim().toLowerCase();
+        if (Object.prototype.hasOwnProperty.call(RANK_ORDER, normalizedRank)) {
+          return RANK_ORDER[normalizedRank];
         }
         return 99;
       }
@@ -446,7 +522,10 @@
           if (rankDelta !== 0) {
             return rankDelta;
           }
-          return a.name.localeCompare(b.name);
+          const unknownRankDelta = rankSortValue(a.rank) === 99
+            ? a.rank.localeCompare(b.rank, undefined, { sensitivity: 'base' })
+            : 0;
+          return unknownRankDelta || a.name.localeCompare(b.name, undefined, { sensitivity: 'base' });
         });
       }
 
@@ -655,20 +734,25 @@
           return;
         }
 
-        if (state.editingId) {
-          state.entries = state.entries.map((entry) => (entry.id === state.editingId ? nextEntry : entry));
-          setEditorNotice(`Updated ${nextEntry.name}.`, 'success');
-        } else {
-          state.entries = [nextEntry, ...state.entries];
-          setEditorNotice(`Added ${nextEntry.name}.`, 'success');
+        rosterSaveButton.disabled = true;
+        setEditorNotice('Saving the roster change permanently...', '');
+        try {
+          await runRosterOperation('save-entry', { entry: nextEntry });
+          const message = state.editingId ? `Updated ${nextEntry.name}.` : `Added ${nextEntry.name}.`;
+          resetForm();
+          render();
+          setEditorNotice(message, 'success');
+        } catch (error) {
+          setEditorNotice(
+            error && error.message ? error.message : 'The roster change could not be saved.',
+            'error'
+          );
+        } finally {
+          rosterSaveButton.disabled = false;
         }
-
-        writeEntries(state.entries);
-        resetForm();
-        render();
       });
 
-      rosterTableBody.addEventListener('click', (event) => {
+      rosterTableBody.addEventListener('click', async (event) => {
         if (!state.editor) {
           return;
         }
@@ -718,13 +802,23 @@
           if (!confirmed) {
             return;
           }
-          state.entries = state.entries.filter((entry) => entry.id !== target.id);
-          writeEntries(state.entries);
-          if (state.editingId === target.id) {
-            resetForm();
+          button.disabled = true;
+          setEditorNotice('Removing the roster entry permanently...', '');
+          try {
+            await runRosterOperation('delete-entry', { entryId: target.id });
+            if (state.editingId === target.id) {
+              resetForm();
+            }
+            render();
+            setEditorNotice(`Removed ${target.name}.`, 'success');
+          } catch (error) {
+            setEditorNotice(
+              error && error.message ? error.message : 'The roster entry could not be removed.',
+              'error'
+            );
+          } finally {
+            button.disabled = false;
           }
-          setEditorNotice(`Removed ${target.name}.`, 'success');
-          render();
         }
       });
 
@@ -747,12 +841,14 @@
           state.entries = readStoredEntries();
         }
         refreshOwnerState();
+        void syncRosterFromServer();
       });
 
       if (window.netlifyIdentity) {
         window.netlifyIdentity.init();
         window.netlifyIdentity.on('login', () => {
           refreshOwnerState();
+          void syncRosterFromServer();
         });
         window.netlifyIdentity.on('logout', () => {
           refreshOwnerState();
@@ -764,6 +860,10 @@
       }
       refreshOwnerState();
       render();
+      void syncRosterFromServer();
+      window.addEventListener('focus', () => {
+        void syncRosterFromServer();
+      });
     </script>
   </body>
 </html>
