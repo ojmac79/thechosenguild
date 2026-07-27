@@ -271,14 +271,16 @@ async function updateManagedRoster(store, requesterEmail, action, body) {
   const items = kvPayload.items && typeof kvPayload.items === 'object' ? kvPayload.items : {};
   const requester = rosterMemberForEmail(items, requesterEmail);
   const owner = requesterEmail === OWNER_EMAIL;
-  const canUseRoster = owner || Boolean(
+  const canEditRoster = owner || Boolean(
     requester &&
     requester.verifiedNetlify === true &&
     ACTIVE_MEMBER_STATUSES.has(cleanText(requester.status, 40).toLowerCase()) &&
     requester.access &&
-    requester.access.roster
+    (requester.access.editRoster === undefined
+      ? requester.access.roster
+      : requester.access.editRoster)
   );
-  if (!canUseRoster) {
+  if (!canEditRoster) {
     return { forbidden: true };
   }
 
@@ -370,6 +372,7 @@ function publicAuthorizedRoster(items) {
     .filter((member) => (
       member &&
       member.verifiedNetlify === true &&
+      member.rosterListed !== false &&
       ACTIVE_MEMBER_STATUSES.has(cleanText(member.status, 40).toLowerCase())
     ))
     .map((member) => ({
@@ -423,13 +426,17 @@ async function syncIdentityDirectory(store, user) {
       createdAt: cleanText(existing && existing.createdAt, 80) || now,
       updatedAt: identityDetailsChanged ? now : cleanText(existing && existing.updatedAt, 80) || now,
       access: email === OWNER_EMAIL
-        ? { forums: true, roster: true, moderateForums: true, management: true }
+        ? { forums: true, roster: true, editRoster: true, moderateForums: true, management: true }
         : {
             forums: Boolean(existing && existing.access && existing.access.forums),
             roster: Boolean(existing && existing.access && existing.access.roster),
+            editRoster: Boolean(existing && existing.access && (
+              existing.access.editRoster === undefined ? existing.access.roster : existing.access.editRoster
+            )),
             moderateForums: Boolean(existing && existing.access && existing.access.moderateForums),
             management: Boolean(existing && existing.access && existing.access.management)
-          }
+          },
+      rosterListed: existing ? existing.rosterListed !== false : true
     };
     if (index >= 0) {
       directory.members[index] = record;
@@ -479,13 +486,19 @@ function normalizeManagedMember(input, existing) {
     createdAt: cleanText(current.createdAt, 80) || now,
     updatedAt: now,
     access: owner
-      ? { forums: true, roster: true, moderateForums: true, management: true }
+      ? { forums: true, roster: true, editRoster: true, moderateForums: true, management: true }
       : {
           forums: Boolean(submittedAccess.forums),
           roster: Boolean(submittedAccess.roster),
+          editRoster: Boolean(
+            submittedAccess.editRoster === undefined ? submittedAccess.roster : submittedAccess.editRoster
+          ),
           moderateForums: Boolean(submittedAccess.moderateForums),
           management: Boolean(submittedAccess.management)
-        }
+        },
+    rosterListed: Object.prototype.hasOwnProperty.call(input || {}, 'rosterListed')
+      ? Boolean(input.rosterListed)
+      : current.rosterListed !== false
   };
   delete member.removedAt;
   return member;
@@ -551,6 +564,7 @@ async function updateManagedDirectory(store, action, body) {
           access: {
             forums: false,
             roster: false,
+            editRoster: false,
             moderateForums: false,
             management: false
           }
@@ -583,6 +597,7 @@ async function updateManagedDirectory(store, action, body) {
     version: itemVersion(items, versions, DIRECTORY_KEY),
     member: savedMember,
     removedEmail,
+    authorizedRoster: publicAuthorizedRoster(items),
     conflict: recordConflict
   };
 }
@@ -628,11 +643,12 @@ async function updateAuthorizedRosterProfile(store, requesterEmail, body) {
       if (
         current.verifiedNetlify !== true ||
         !ACTIVE_MEMBER_STATUSES.has(cleanText(current.status, 40).toLowerCase()) ||
-        (requesterEmail !== OWNER_EMAIL && !Boolean(current.access && current.access.roster))
+        (requesterEmail !== OWNER_EMAIL && !Boolean(current.access && current.access.editRoster))
       ) {
         forbidden = true;
         return null;
       }
+
       if (
         cleanText(body && body.expectedUpdatedAt, 80) !==
         cleanText(current.updatedAt, 80)
@@ -678,8 +694,77 @@ async function updateAuthorizedRosterProfile(store, requesterEmail, body) {
     value: items[DIRECTORY_KEY] || JSON.stringify({ version: 1, updatedAt: '', members: [] }),
     version: itemVersion(items, versions, DIRECTORY_KEY),
     member: savedMember,
+    authorizedRoster: publicAuthorizedRoster(items),
     conflict,
     forbidden,
+    notFound,
+    invalid: false
+  };
+}
+
+async function deleteAuthorizedRosterProfile(store, body) {
+  const targetEmail = normalizeEmail(body && body.email);
+  let removedMember = null;
+  let conflict = false;
+  let notFound = false;
+  if (!targetEmail) {
+    return { invalid: true };
+  }
+
+  const payload = await updateJsonAtomically(
+    store,
+    KV_KEY,
+    { items: {}, versions: {}, updatedAt: '' },
+    (existing) => {
+      const items = existing.items && typeof existing.items === 'object' ? existing.items : {};
+      const versions = existing.versions && typeof existing.versions === 'object' ? existing.versions : {};
+      const directory = parseDirectory(items);
+      const index = directory.members.findIndex(
+        (member) => normalizeEmail(member && member.email) === targetEmail
+      );
+      const current = index >= 0 ? directory.members[index] : null;
+      if (!current) {
+        notFound = true;
+        return null;
+      }
+      if (cleanText(body && body.expectedUpdatedAt, 80) !== cleanText(current.updatedAt, 80)) {
+        conflict = true;
+        return null;
+      }
+
+      const now = new Date().toISOString();
+      removedMember = {
+        ...current,
+        rosterListed: false,
+        updatedAt: now
+      };
+      directory.members[index] = removedMember;
+      return {
+        items: {
+          ...items,
+          [DIRECTORY_KEY]: JSON.stringify({
+            version: directory.version,
+            updatedAt: now,
+            members: directory.members
+          })
+        },
+        versions: {
+          ...versions,
+          [DIRECTORY_KEY]: itemVersion(items, versions, DIRECTORY_KEY) + 1
+        },
+        updatedAt: now
+      };
+    }
+  );
+
+  const items = payload.items && typeof payload.items === 'object' ? payload.items : {};
+  const versions = payload.versions && typeof payload.versions === 'object' ? payload.versions : {};
+  return {
+    value: items[DIRECTORY_KEY] || JSON.stringify({ version: 1, updatedAt: '', members: [] }),
+    version: itemVersion(items, versions, DIRECTORY_KEY),
+    member: removedMember,
+    authorizedRoster: publicAuthorizedRoster(items),
+    conflict,
     notFound,
     invalid: false
   };
@@ -1103,6 +1188,22 @@ exports.handler = async function handler(event, context) {
       return json(405, { error: 'Method not allowed.' });
     }
     const action = cleanText(body.action, 40);
+    if (action === 'delete-roster-profile') {
+      if (email !== OWNER_EMAIL) {
+        return json(403, { error: 'Only the site owner may remove authorized accounts from the roster.' });
+      }
+      const result = await deleteAuthorizedRosterProfile(store, body);
+      if (result.invalid) {
+        return json(400, { error: 'An authorized account email is required.' });
+      }
+      if (result.notFound) {
+        return json(404, { error: 'The authorized account no longer exists.' });
+      }
+      if (result.conflict) {
+        return json(409, { error: 'This roster profile changed on the server. Reload the page and try again.' });
+      }
+      return json(200, result);
+    }
     if (action === 'update-roster-profile') {
       const targetEmail = email === OWNER_EMAIL
         ? normalizeEmail(body && body.email)
@@ -1118,7 +1219,7 @@ exports.handler = async function handler(event, context) {
         return json(404, { error: 'The authorized account no longer exists.' });
       }
       if (result.forbidden) {
-        return json(403, { error: 'Only active authorized accounts with roster access may update roster profiles.' });
+        return json(403, { error: 'Only active authorized accounts with roster edit permission may update roster profiles.' });
       }
       if (result.conflict) {
         return json(409, { error: 'This roster profile changed on the server. Reload the page and try again.' });

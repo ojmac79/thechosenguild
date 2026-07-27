@@ -282,11 +282,12 @@
       function readAuthorizedAccounts() {
         const member = getCurrentMember();
         const permissions = window.TheChosenGuildAccess.getPermissions(member);
-        if (member && (permissions.isOwner || permissions.canUseRoster)) {
+        if (member && (permissions.isOwner || permissions.canUseRoster || permissions.canEditRoster)) {
           return window.TheChosenGuildAccess.readDirectory().members
             .filter((record) => (
               record &&
               record.verifiedNetlify === true &&
+              record.rosterListed !== false &&
               (record.status === 'active' || record.status === 'probation')
             ))
             .map((record) => ({
@@ -581,7 +582,7 @@
                 ? state.isOwner || entry.accountEmail === state.currentUserEmail
                 : state.isOwner || normalizeEmail(entry.name) === state.currentUserName
             );
-            const userCanDelete = state.isOwner && !entry.identityManaged;
+            const userCanDelete = state.isOwner;
             let actions = '';
             if (state.editor) {
               const editBtn = userCanEdit ? `<button class="resource-item__edit" type="button" data-action="edit" data-id="${escapeHtml(entry.id)}">Edit</button>` : '';
@@ -619,8 +620,7 @@
         const member = getCurrentMember();
         const permissions = window.TheChosenGuildAccess.getPermissions(member);
         state.isOwner = permissions.isOwner;
-        // canUseRoster (defined in guild-access.js) checks access.roster flag + active status.
-        state.canEditRoster = permissions.canUseRoster;
+        state.canEditRoster = permissions.canEditRoster;
         state.currentUserName = member ? normalizeEmail(member.name) : '';
         state.currentUserEmail = member ? normalizeEmail(member.email) : '';
         state.editor = state.isOwner || state.canEditRoster;
@@ -768,10 +768,6 @@
         if (!target) {
           return;
         }
-        if (target.identityManaged && action === 'delete') {
-          return;
-        }
-
         if (!state.isOwner) {
           if (action === 'delete') {
             return;
@@ -803,9 +799,18 @@
             return;
           }
           button.disabled = true;
-          setEditorNotice('Removing the roster entry permanently...', '');
+          setEditorNotice(
+            target.identityManaged
+              ? 'Removing the authorized account from the public roster...'
+              : 'Removing the roster entry permanently...',
+            ''
+          );
           try {
-            await runRosterOperation('delete-entry', { entryId: target.id });
+            if (target.identityManaged) {
+              await window.TheChosenGuildAccess.deleteRosterProfileOnServer(target.accountEmail);
+            } else {
+              await runRosterOperation('delete-entry', { entryId: target.id });
+            }
             if (state.editingId === target.id) {
               resetForm();
             }
