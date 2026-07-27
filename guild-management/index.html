@@ -148,7 +148,15 @@
                     </label>
                     <label class="guild-checkbox">
                       <input id="memberRosterAccess" type="checkbox" />
-                      <span>Roster visibility + editing</span>
+                      <span>Roster access</span>
+                    </label>
+                    <label class="guild-checkbox">
+                      <input id="memberRosterEditAccess" type="checkbox" />
+                      <span>Roster edit permission</span>
+                    </label>
+                    <label class="guild-checkbox">
+                      <input id="memberRosterListed" type="checkbox" />
+                      <span>Show account on public roster</span>
                     </label>
                     <label class="guild-checkbox">
                       <input id="memberModerateAccess" type="checkbox" />
@@ -256,6 +264,8 @@
       const memberStatus = document.getElementById('memberStatus');
       const memberForumsAccess = document.getElementById('memberForumsAccess');
       const memberRosterAccess = document.getElementById('memberRosterAccess');
+      const memberRosterEditAccess = document.getElementById('memberRosterEditAccess');
+      const memberRosterListed = document.getElementById('memberRosterListed');
       const memberModerateAccess = document.getElementById('memberModerateAccess');
       const memberNotes = document.getElementById('memberNotes');
 
@@ -328,6 +338,7 @@
       function clearForm() {
         editingEmail = '';
         memberForm.reset();
+        memberRosterListed.checked = true;
         memberSaveButton.textContent = 'Authorize Member';
         memberEmail.disabled = false;
         setNotice('Authorized editor access is active. Manage verified Netlify members, roster access, and site permissions.', '');
@@ -347,6 +358,8 @@
           memberStatus.value = 'active';
           memberForumsAccess.checked = true;
           memberRosterAccess.checked = true;
+          memberRosterEditAccess.checked = true;
+          memberRosterListed.checked = true;
           memberModerateAccess.checked = true;
         }
         if (memberLevel.value === 'officer') {
@@ -354,6 +367,8 @@
           memberStatus.value = memberStatus.value === 'pending' ? 'active' : memberStatus.value;
           memberForumsAccess.checked = true;
           memberRosterAccess.checked = true;
+          memberRosterEditAccess.checked = true;
+          memberRosterListed.checked = true;
         }
       }
 
@@ -433,6 +448,8 @@
                   <p><strong>Level:</strong> ${escapeHtml(record.level)}</p>
                   <p><strong>Forums:</strong> ${record.access.forums ? 'Enabled' : 'Disabled'}</p>
                   <p><strong>Roster:</strong> ${record.access.roster ? 'Enabled' : 'Disabled'}</p>
+                  <p><strong>Roster Editing:</strong> ${record.access.editRoster ? 'Enabled' : 'Disabled'}</p>
+                  <p><strong>Roster Listing:</strong> ${record.rosterListed !== false ? 'Visible' : 'Removed'}</p>
                   <p><strong>Moderation:</strong> ${record.access.moderateForums ? 'Enabled' : 'Disabled'}</p>
                   <p><strong>Last Seen:</strong> ${formatDate(record.lastSeenAt)}</p>
                 </div>
@@ -442,6 +459,7 @@
                   ${canAdministerMembers ? `<button class="resource-item__edit" type="button" data-action="edit-member" data-email="${safeEmail}">Edit</button>` : ''}
                   ${canAdministerMembers && !owner ? `<button class="resource-item__edit" type="button" data-action="toggle-forums" data-email="${safeEmail}">${record.access.forums ? 'Disable Forums' : 'Enable Forums'}</button>` : ''}
                   ${canAdministerMembers && !owner ? `<button class="resource-item__edit" type="button" data-action="toggle-roster" data-email="${safeEmail}">${record.access.roster ? 'Disable Roster' : 'Enable Roster'}</button>` : ''}
+                  ${canAdministerMembers && !owner ? `<button class="resource-item__edit" type="button" data-action="toggle-roster-edit" data-email="${safeEmail}">${record.access.editRoster ? 'Disable Roster Editing' : 'Enable Roster Editing'}</button>` : ''}
                   ${canAdministerMembers && !owner ? `<button class="resource-item__delete" type="button" data-action="toggle-suspension" data-email="${safeEmail}">${record.status === 'suspended' ? 'Reinstate' : 'Suspend'}</button>` : ''}
                   ${canAdministerMembers && !owner ? `<button class="resource-item__delete" type="button" data-action="remove-member" data-email="${safeEmail}">Remove</button>` : ''}
                 </div>
@@ -484,6 +502,8 @@
         memberStatus.value = record.status || 'pending';
         memberForumsAccess.checked = Boolean(record.access.forums);
         memberRosterAccess.checked = Boolean(record.access.roster);
+        memberRosterEditAccess.checked = Boolean(record.access.editRoster);
+        memberRosterListed.checked = record.rosterListed !== false;
         memberModerateAccess.checked = Boolean(record.access.moderateForums);
         memberNotes.value = record.notes || '';
         memberSaveButton.textContent = 'Update Member';
@@ -522,9 +542,11 @@
           status: leader ? 'active' : memberStatus.value,
           notes: memberNotes.value.trim(),
           verifiedNetlify: Boolean(guildAccess.findRecordByEmail(email)?.verifiedNetlify),
+          rosterListed: memberRosterListed.checked,
           access: {
             forums: leader ? true : memberForumsAccess.checked,
             roster: leader ? true : memberRosterAccess.checked,
+            editRoster: leader ? true : memberRosterEditAccess.checked,
             moderateForums: leader ? true : memberModerateAccess.checked,
             management: leader || memberStatus.value === 'active' || memberStatus.value === 'probation'
           }
@@ -594,6 +616,7 @@
               ...record.access,
               forums: true,
               roster: true,
+              editRoster: true,
               management: true
             }
           }, (saved) => `${saved.email} has been approved and saved on the server.`);
@@ -623,6 +646,19 @@
               roster: !record.access.roster
             }
           }, (saved) => `Roster access for ${saved.email} has been saved on the server.`);
+          button.disabled = false;
+          return;
+        }
+
+        if (action === 'toggle-roster-edit') {
+          button.disabled = true;
+          await persistMember({
+            ...record,
+            access: {
+              ...record.access,
+              editRoster: !record.access.editRoster
+            }
+          }, (saved) => `Roster editing permission for ${saved.email} has been saved on the server.`);
           button.disabled = false;
           return;
         }

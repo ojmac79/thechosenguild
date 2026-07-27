@@ -2,6 +2,7 @@
   const DIRECTORY_STORAGE_KEY = 'theChosenGuildDirectoryV1';
   const CURRENT_MEMBER_STORAGE_KEY = 'theChosenCurrentMember';
   const MEMBER_AVATARS_STORAGE_KEY = 'theChosenMemberAvatarsV1';
+  const AUTHORIZED_ROSTER_STORAGE_KEY = 'theChosenAuthorizedRosterAccountsV1';
   const DIRECTORY_ENDPOINT = '/.netlify/functions/content-state?scope=guild-directory';
   const OWNER_EMAIL = 'ojmac79@gmail.com';
   const ACTIVE_STATUSES = new Set(['active', 'probation']);
@@ -58,9 +59,11 @@
       access: {
         forums: owner,
         roster: owner,
+        editRoster: owner,
         moderateForums: owner,
         management: owner
-      }
+      },
+      rosterListed: true
     };
   }
 
@@ -68,6 +71,9 @@
     const next = {
       forums: Boolean(access && access.forums),
       roster: Boolean(access && access.roster),
+      editRoster: Boolean(access && (
+        access.editRoster === undefined ? access.roster : access.editRoster
+      )),
       moderateForums: Boolean(access && access.moderateForums),
       management: Boolean(access && access.management)
     };
@@ -75,6 +81,7 @@
     if (isOwner) {
       next.forums = true;
       next.roster = true;
+      next.editRoster = true;
       next.moderateForums = true;
       next.management = true;
     }
@@ -107,7 +114,8 @@
       lastSeenAt: typeof record.lastSeenAt === 'string' ? record.lastSeenAt : base.lastSeenAt,
       createdAt: typeof record.createdAt === 'string' ? record.createdAt : base.createdAt,
       updatedAt: typeof record.updatedAt === 'string' ? record.updatedAt : base.updatedAt,
-      access: normalizeAccess(record.access, owner)
+      access: normalizeAccess(record.access, owner),
+      rosterListed: record.rosterListed !== false
     };
 
     if (owner) {
@@ -315,6 +323,9 @@
       throw new Error('Persistent guild storage is unavailable.');
     }
     persistentStore.applyAuthoritativeValue(DIRECTORY_STORAGE_KEY, result.value, result.version);
+    if (Array.isArray(result.authorizedRoster)) {
+      localStorage.setItem(AUTHORIZED_ROSTER_STORAGE_KEY, JSON.stringify(result.authorizedRoster));
+    }
     return result;
   }
 
@@ -330,6 +341,19 @@
       expectedUpdatedAt: existing.updatedAt
     });
     return findRecordByEmail(targetEmail);
+  }
+
+  async function deleteRosterProfileOnServer(email) {
+    const targetEmail = normalizeEmail(email);
+    const existing = findRecordByEmail(targetEmail);
+    if (!targetEmail || !existing) {
+      throw new Error('The authorized roster account could not be found.');
+    }
+    await mutateDirectoryOnServer('delete-roster-profile', {
+      email: targetEmail,
+      expectedUpdatedAt: existing.updatedAt
+    });
+    return true;
   }
 
   async function upsertRecordOnServer(input) {
@@ -477,6 +501,7 @@
       status,
       canUseForums: Boolean(record && record.access.forums && statusAllowsAccess),
       canUseRoster: Boolean(record && record.access.roster && statusAllowsAccess),
+      canEditRoster: Boolean(record && record.access.editRoster && statusAllowsAccess),
       canModerateForums: Boolean(record && record.access.moderateForums && statusAllowsAccess),
       canManageGuild: Boolean(record && statusAllowsAccess),
       canEditSite: Boolean(record && statusAllowsAccess),
@@ -538,6 +563,7 @@
     ensureMemberRecord,
     findRecordByEmail,
     updateRosterProfileOnServer,
+    deleteRosterProfileOnServer,
     getGuildRecord,
     upsertRecordOnServer,
     removeRecordOnServer,
